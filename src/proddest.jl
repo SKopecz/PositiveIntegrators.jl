@@ -1,0 +1,180 @@
+using OrdinaryDiffEq
+using LinearAlgebra
+using Kwonly: @add_kwonly
+using SparseArrays
+import SciMLBase: __has_mass_matrix, __has_analytic, __has_tgrad,
+                  __has_jac, __has_jvp, __has_vjp, __has_jac_prototype,
+                  __has_sparsity, __has_Wfact, __has_Wfact_t,
+                  __has_paramjac, __has_syms, __has_indepsym, __has_paramsyms,
+                  __has_observed, DEFAULT_OBSERVED, __has_colorvec,
+                  __has_sys
+using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpecialize
+
+# New ODE function ProdDestFunction
+struct ProdDestFunction{iip, specialize, P, D, PrototypeP, PrototypeD, TMM, C,
+                        Ta, Tt, TJ, JVP, VJP, JP, SP, TW, TWt, TPJ, S, S2, S3, O,
+                        TCV, SYS} <: AbstractODEFunction{iip}
+    p::P
+    d::D
+    p_prototype::PrototypeP
+    d_prototype::PrototypeD
+    mass_matrix::TMM
+    cache::C
+    analytic::Ta
+    tgrad::Tt
+    jac::TJ
+    jvp::JVP
+    vjp::VJP
+    jac_prototype::JP
+    sparsity::SP
+    Wfact::TW
+    Wfact_t::TWt
+    paramjac::TPJ
+    syms::S
+    indepsym::S2
+    paramsyms::S3
+    observed::O
+    colorvec::TCV
+    sys::SYS
+end
+
+ProdDestFunction(P, D; kwargs...) = ProdDestFunction{isinplace(P, 4)}(P, D; kwargs...)
+
+function ProdDestFunction{iip}(P, D; kwargs...) where {iip}
+    ProdDestFunction{iip, FullSpecialize}(P, D; kwargs...)
+end
+
+function ProdDestFunction{iip, specialize}(P, D;
+    p_prototype = nothing,
+    d_prototype = nothing,
+    mass_matrix=__has_mass_matrix(P) ?
+                P.mass_matrix : I,
+    _func_cache=nothing,
+    analytic=__has_analytic(P) ? P.analytic :
+             nothing,
+    tgrad=__has_tgrad(P) ? P.tgrad : nothing,
+    jac=__has_jac(P) ? P.jac : nothing,
+    jvp=__has_jvp(P) ? P.jvp : nothing,
+    vjp=__has_vjp(P) ? P.vjp : nothing,
+    jac_prototype=__has_jac_prototype(P) ?
+                  P.jac_prototype :
+                  nothing,
+    sparsity=__has_sparsity(P) ? P.sparsity :
+             jac_prototype,
+    Wfact=__has_Wfact(P) ? P.Wfact : nothing,
+    Wfact_t=__has_Wfact_t(P) ? P.Wfact_t : nothing,
+    paramjac=__has_paramjac(P) ? P.paramjac :
+             nothing,
+    syms=__has_syms(P) ? P.syms : nothing,
+    indepsym=__has_indepsym(P) ? P.indepsym :
+             nothing,
+    paramsyms=__has_paramsyms(P) ? P.paramsyms :
+              nothing,
+    observed=__has_observed(P) ? P.observed :
+             DEFAULT_OBSERVED,
+    colorvec=__has_colorvec(P) ? P.colorvec :
+             nothing,
+    sys=__has_sys(P) ? P.sys : nothing
+) where {iip, specialize }
+    if specialize === NoSpecialize
+        ProdDestFunction{iip,specialize,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any,
+            Any,Any,Any,Any,Any,
+            Any,Any,Any,Any,Any,Any}(P, D, mass_matrix, _func_cache,
+            analytic,
+            tgrad, jac, jvp, vjp, jac_prototype,
+            sparsity, Wfact, Wfact_t, paramjac,
+            syms, indepsym, paramsyms,
+            observed, colorvec, sys)
+    else
+        ProdDestFunction{iip,specialize,typeof(P),typeof(D),typeof(p_prototype),typeof(d_prototype),
+            typeof(mass_matrix),typeof(_func_cache),typeof(analytic),
+            typeof(tgrad),typeof(jac),typeof(jvp),typeof(vjp),
+            typeof(jac_prototype),typeof(sparsity),
+            typeof(Wfact),typeof(Wfact_t),typeof(paramjac),typeof(syms),
+            typeof(indepsym),typeof(paramsyms),typeof(observed),
+            typeof(colorvec),
+            typeof(sys)}(P, D, p_prototype, d_prototype, mass_matrix,
+            _func_cache, analytic, tgrad, jac,
+            jvp, vjp, jac_prototype,
+            sparsity, Wfact, Wfact_t, paramjac, syms, indepsym,
+            paramsyms, observed, colorvec, sys)
+    end
+end
+
+
+@add_kwonly function ProdDestFunction(P, D, p_prototype, d_prototype, mass_matrix, cache, analytic, tgrad, jac, jvp,
+    vjp, jac_prototype, sparsity, Wfact, Wfact_t, paramjac,
+    syms, indepsym, paramsyms, observed, colorvec, sys)
+    P = ODEFunction(P)
+    D = ODEFunction(D)
+
+    #if !(typeof(P) <: AbstractSciMLOperator || typeof(f1.f) <: AbstractSciMLOperator) &&
+    #isinplace(f1) != isinplace(f2)
+    #throw(NonconformingFunctionsError(["f2"]))
+    #end
+
+    ProdDestFunction{isinplace(P, 4),FullSpecialize,typeof(P),typeof(D),
+        typeof(p_prototype),typeof(d_prototype),typeof(mass_matrix),
+        typeof(cache),typeof(analytic),typeof(tgrad),typeof(jac),typeof(jvp),
+        typeof(vjp),typeof(jac_prototype),typeof(sparsity),
+        typeof(Wfact),typeof(Wfact_t),typeof(paramjac),typeof(syms),
+        typeof(indepsym),typeof(paramsyms),typeof(observed),typeof(colorvec),
+        typeof(sys)}(P, D, mass_matrix, cache, analytic, tgrad, jac, jvp, vjp,
+        jac_prototype, sparsity, Wfact, Wfact_t, paramjac, syms,
+        indepsym,
+        paramsyms, observed, colorvec, sys)
+end
+
+(PD::ProdDestFunction)(u, p, t) = diag(PD.p(u,p,t)) + vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1)) - vec(PD.d(u,p,t))
+
+function (PD::ProdDestFunction)(du, u, p, t)
+    PD.p(PD.p_prototype, u, p, t)
+
+    if PD.p_prototype isa AbstractSparseMatrix
+        # Same result but more efficient - at least currently for SparseMatrixCSC
+        fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
+        mul!(vec(du), PD.p_prototype, PD.d_prototype)
+    else
+        sum!(vec(du), PD.p_prototype)
+    end
+
+    for i=1:length(u)  #vec(du) .+= diag(PD.p_prototype)
+        du[i] += PD.p_prototype[i,i]
+    end
+    sum!(PD.d_prototype', PD.p_prototype)
+    vec(du) .-= PD.d_prototype
+    PD.d(PD.d_prototype, u, p, t)
+    vec(du) .-= PD.d_prototype
+    return nothing
+end
+
+
+# New problem type ProdDestODEProblem
+abstract type AbstractProdDestODEProblem end
+
+struct ProdDestODEProblem{iip} <: AbstractProdDestODEProblem end
+
+function ProdDestODEProblem(P, D, u0, tspan, p = NullParameters();
+                            p_prototype = similar(u0, (length(u0), length(u0))),
+                            d_prototype = similar(u0, (length(u0),)),
+                            kwargs...)
+    p_prototype .= zero(eltype(p_prototype))
+    d_prototype .= zero(eltype(d_prototype))
+    PD = ProdDestFunction(P, D; p_prototype, d_prototype)
+    ProdDestODEProblem(PD, u0, tspan, p; kwargs...)
+end
+
+function ProdDestODEProblem(PD::ProdDestFunction, u0, tspan, p = NullParameters(); kwargs...)
+    ProdDestODEProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
+end
+
+function ProdDestODEProblem{iip}(PD::ProdDestFunction, u0, tspan, p = NullParameters();
+                              kwargs...) where {iip}
+    #if f.cache === nothing && iip
+    #    cache = similar(u0)
+    #    f = SplitFunction{iip}(f.f1, f.f2; mass_matrix = f.mass_matrix,
+    #                           _func_cache = cache, analytic = f.analytic)
+    #end
+    ODEProblem(PD, u0, tspan, p, ProdDestODEProblem{iip}(); kwargs...)
+end
+
