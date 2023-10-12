@@ -1,13 +1,22 @@
 import OrdinaryDiffEq: @muladd, @unpack, @cache, @..,
        OrdinaryDiffEqAdaptiveAlgorithm, calculate_residuals, calculate_residuals!, False, 
        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, 
-       alg_cache, initialize!, perform_step!
+       alg_cache, initialize!, perform_step!,
+       recursivefill!, _vec, DEFAULT_PRECS, wrapprecs, 
+       LinearSolve, dolinsolve
 
 ### MPE #####################################################################################
-struct MPE <: OrdinaryDiffEqAlgorithm end
+struct MPE{F,P} <: OrdinaryDiffEqAlgorithm 
+    linsolve::F
+    precs::P
+end
+
+function MPE(;linsolve = nothing, precs = DEFAULT_PRECS)
+    MPE(linsolve, precs)
+end
 
 #@cache 
-struct MPECache{uType, rateType, PType} <: OrdinaryDiffEqMutableCache
+struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -15,13 +24,32 @@ struct MPECache{uType, rateType, PType} <: OrdinaryDiffEqMutableCache
     fsalfirst::rateType
     P::PType
     D::uType
+    linsolve_tmp::uType  #stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
 end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
     dt, reltol, p, calck,
     ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    MPECache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype),zeros(eltype(u),length(u),length(u)),zero(u))
+
+    tmp = zero(u)
+    P = zeros(eltype(u), length(u), length(u))
+    linsolve_tmp = zero(u)
+
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+    
+
+    linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+    Pl, Pr = wrapprecs(alg.precs(P, nothing, u, p, t, nothing, nothing, nothing,
+            nothing)..., weight, tmp)
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true, 
+        Pl = Pl, Pr = Pr, assumptions = LinearSolve.OperatorAssumptions(true))
+
+    MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u), 
+        linsolve_tmp, linsolve, weight)
 end
 
 struct MPEConstantCache <: OrdinaryDiffEqConstantCache end
@@ -82,7 +110,7 @@ end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, D = cache
+    @unpack P, D, weight = cache
     #@muladd @.. broadcast=false u=0*uprev + 123.0# + dt * integrator.fsalfirst
 
     P .= 0.0
@@ -97,8 +125,12 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
             end
         end
     end
-    tmp = P\uprev #needs to be implemented without allocations.
-    u .= tmp
+    #linres = P\uprev #needs to be implemented without allocations
+    linres = dolinsolve(integrator, cache.linsolve; A = P, b = _vec(uprev),
+            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight)
+
+
+    u .= linres
 
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1

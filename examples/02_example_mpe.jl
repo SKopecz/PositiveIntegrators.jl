@@ -35,6 +35,7 @@ end
 PD_op = ProdDestFunction(linmodP, linmodD; analytic=f_analytic)
 prob_op = ProdDestODEProblem(PD_op, u0, tspan, p)
 
+#=
 # solution
 sol_MPE_op = solve(prob_op, MPE(), dt=0.25)
 sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false)
@@ -51,6 +52,7 @@ plot(p1,p2,plot_title="out-of-place")
 # check convergence order
 using DiffEqDevTools, PrettyTables
 convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()])
+=#
 
 # linear model problem - in-place
 function linmodP!(P,u,p,t)
@@ -82,3 +84,10 @@ plot(p1, p2, plot_title="in-place")
 
 # check convergence order
 convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff=false)])
+
+# try different linear solvers
+using LinearSolve 
+sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt=0.25)
+sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve=RFLUFactorization()), dt=0.25)
+sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve=LUFactorization()), dt=0.25)
+@assert sol_MPE_ip_linsol1.u ≈ sol_MPE_ip_linsol2.u ≈ sol_MPE_ip_linsol3.u
