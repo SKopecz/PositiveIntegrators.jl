@@ -2,20 +2,27 @@
 # and conservative when applied to a positive and conservative PDS.
 # For linear PDS the MPE schemes is equivalent to the implicit Euler scheme.
 #
-# Literature:  
+# Literature:
 # 1) A high-order conservative Patankar-type discretisation for stiff systems of production-destruction
-#    equations; Burchard et al.; APNUM 2003 
+#    equations; Burchard et al.; APNUM 2003
 # 2) On order conditions for modified Patankar-Runge-Kutta schemes; S. Kopecz, A. Meister; APNUM 2018
 #
 # In this script we use the MPE scheme to solve a linear PDS and check that the solution is equivalent
 # to the solution of the implicit Euler scheme.
 
-# load new problem type for production-destruction systems
-include("../src/proddest.jl")
-# load MPRK algorithms
-include("../src/mprk.jl")
+# Install packages
+import Pkg
+Pkg.activate(@__DIR__)
+Pkg.develop(path = dirname(@__DIR__))
+Pkg.instantiate()
+
+# load new problem type for production-destruction systems and MPRK algorithms
+using PositiveIntegrators
+
+using OrdinaryDiffEq
+
 # load utility function for the assesment of the order of numerical schemes
-include("../src/utilities.jl")
+include("utilities.jl")
 
 # problem data
 u0 = [0.9, 0.1]
@@ -25,7 +32,7 @@ p = [5.0, 1.0]
 # linear model problem - out-of-place
 linmodP(u,p,t) = [0.0 p[2]*u[2]; p[1]*u[1] 0.0]
 linmodD(u,p,t) = [0.0; 0.0]
-# analytic solution 
+# analytic solution
 function f_analytic(u0,p,t)
     u₁⁰, u₂⁰ = u0
     a, b = p
@@ -67,7 +74,7 @@ function linmodD!(D,u,p,t)
 end
 PD_ip = ProdDestFunction(linmodP!,linmodD!, p_prototype=zeros(2,2), d_prototype=zeros(2,1),
             analytic=f_analytic)
-#BUG: prob_ip cannot be solved if prototypes are not given. 
+#BUG: prob_ip cannot be solved if prototypes are not given.
 prob_ip = ProdDestODEProblem(PD_ip, u0, tspan, p)
 
 #solutions
@@ -86,7 +93,7 @@ plot(p1, p2, plot_title="in-place")
 convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff=false)])
 
 # try different linear solvers
-using LinearSolve 
+using LinearSolve
 sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt=0.25)
 sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve=RFLUFactorization()), dt=0.25)
 sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve=LUFactorization()), dt=0.25)

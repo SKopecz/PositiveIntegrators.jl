@@ -1,12 +1,6 @@
-import OrdinaryDiffEq: @muladd, @unpack, @cache, @..,
-       OrdinaryDiffEqAdaptiveAlgorithm, calculate_residuals, calculate_residuals!, False, 
-       OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, 
-       alg_cache, initialize!, perform_step!,
-       recursivefill!, _vec, DEFAULT_PRECS, wrapprecs, 
-       LinearSolve, dolinsolve
 
 ### MPE #####################################################################################
-struct MPE{F,P} <: OrdinaryDiffEqAlgorithm 
+struct MPE{F,P} <: OrdinaryDiffEqAlgorithm
     linsolve::F
     precs::P
 end
@@ -15,7 +9,7 @@ function MPE(;linsolve = nothing, precs = DEFAULT_PRECS)
     MPE(linsolve, precs)
 end
 
-#@cache 
+#@cache
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -40,15 +34,15 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
-    
+
 
     linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
     Pl, Pr = wrapprecs(alg.precs(P, nothing, u, p, t, nothing, nothing, nothing,
             nothing)..., weight, tmp)
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true, 
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr, assumptions = LinearSolve.OperatorAssumptions(true))
 
-    MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u), 
+    MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u),
         linsolve_tmp, linsolve, weight)
 end
 
@@ -75,11 +69,11 @@ end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack t, dt, uprev, f, p = integrator
- 
+
     # Attention: Implementation assumes that the pds is positive and conservative,
     # i.e. f.p[i,i] == 0 for all i
 
-    P = f.p(uprev,p,t) # evaluate production terms 
+    P = f.p(uprev,p,t) # evaluate production terms
     D = vec(sum(P,dims=1)) # compute sum of destruction terms from P
     M = -dt*P./reshape(uprev,1,:) # divide production terms by Patankar-weights
     M[diagind(M)] .+= 1.0 .+ dt*D./uprev # add destruction terms on diagonal
@@ -116,7 +110,7 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     P .= 0.0
     f.p(P, uprev, p, t) #evaluate production terms
     sum!(D', P) # sum destruction terms
-    for j=1:length(u)        
+    for j=1:length(u)
         for i = 1:length(u)
             if i == j
                 P[i,i] = 1.0 .+ dt*D[i]/uprev[i]
@@ -148,7 +142,7 @@ end
 
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
 
-#@cache 
+#@cache
 struct MPRK22Cache{uType, rateType, PType,tabType,Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -175,7 +169,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
       zeros(eltype(u),length(u),length(u)),zero(u),zero(u),zeros(eltype(u),length(u),length(u)),zero(u),tab,alg.thread)
 end
 
-struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache 
+struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
     a21::T
     b1::T
     b2::T
@@ -188,7 +182,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     dt, reltol, p, calck,
     ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
-    #Should assert alg.alpha >= 0.5
+    #TODO: Should assert alg.alpha >= 0.5
 
     MPRK22ConstantCache(alg.alpha,1-1/(2*alg.alpha),1/(2*alg.alpha),alg.alpha,floatmin(uEltypeNoUnits))
 end
@@ -213,7 +207,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 
     uprev .= uprev .+ safeguard
 
-    P = f.p(uprev,p,t) # evaluate production terms 
+    P = f.p(uprev,p,t) # evaluate production terms
     D = vec(sum(P,dims=1)) # sum destruction terms
 
     M = -dt*a21*P./reshape(uprev,1,:) # divide production terms by Patankar-weights
@@ -223,7 +217,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     u .= u .+ safeguard
 
     σ = uprev.*(u./uprev).^(1/a21) .+ safeguard
-    
+
     P2 = f.p(u,p,t+a21*dt)
     D2 = vec(sum(P2,dims=1))
     M .= -dt*(b1*P + b2*P2)./reshape(σ,1,:)
@@ -272,7 +266,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f.p(P, uprev, p, t) #evaluate production terms
     sum!(D', P) # sum destruction terms
-    for j=1:length(u)        
+    for j=1:length(u)
         for i = 1:length(u)
             if i == j
                 M[i,i] = 1.0 .+ dt*a21*D[i]/uprev[i]
@@ -281,7 +275,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
             end
         end
     end
-    tmp = M\uprev #needs to be implemented without allocations.
+    tmp = M\uprev #TODO: needs to be implemented without allocations.
     u .= tmp
 
     u .= u .+ smallconst
@@ -290,7 +284,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f.p(P2, u, p, t+a21*dt) #evaluate production terms
     sum!(D2', P2) # sum destruction terms
-    for j=1:length(u)        
+    for j=1:length(u)
         for i = 1:length(u)
             if i == j
                 M[i,i] = 1.0 .+ dt*(b1*D[i] + b2*D2[i])/σ[i]
@@ -299,14 +293,14 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
             end
         end
     end
-    tmp = M\uprev #needs to be implemented without allocations.
+    tmp = M\uprev #TODO: needs to be implemented without allocations.
     u .= tmp
 
     tmp .= u .- σ
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-    integrator.opts.reltol, integrator.opts.internalnorm, t,
-    thread)
-integrator.EEst = integrator.opts.internalnorm(atmp, t)
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         thread)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1

@@ -1,14 +1,3 @@
-using OrdinaryDiffEq
-using LinearAlgebra
-using Kwonly: @add_kwonly
-using SparseArrays
-import SciMLBase: __has_mass_matrix, __has_analytic, __has_tgrad,
-                  __has_jac, __has_jvp, __has_vjp, __has_jac_prototype,
-                  __has_sparsity, __has_Wfact, __has_Wfact_t,
-                  __has_paramjac, __has_syms, __has_indepsym, __has_paramsyms,
-                  __has_observed, DEFAULT_OBSERVED, __has_colorvec,
-                  __has_sys
-using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpecialize
 
 # New ODE function ProdDestFunction
 struct ProdDestFunction{iip, specialize, P, D, PrototypeP, PrototypeD, TMM, C,
