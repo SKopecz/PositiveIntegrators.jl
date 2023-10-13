@@ -21,7 +21,7 @@ using PositiveIntegrators
 
 using OrdinaryDiffEq
 
-# load utility function for the assesment of the order of numerical schemes
+# load utility function for the assessment of the order of numerical schemes
 include("utilities.jl")
 
 # problem data

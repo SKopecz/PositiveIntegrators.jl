@@ -1,4 +1,4 @@
-# A production-destruction sytem (PDS) has the form
+# A production-destruction system (PDS) has the form
 #   uᵢ'(t) = ∑ⱼ(pᵢⱼ(t) - dᵢⱼ(t))
 # with pᵢⱼ(t), dᵢⱼ ≥ 0.
 #
@@ -21,7 +21,7 @@
 # Modified Patankar-Runge-Kutta (MPRK) schemes are based on the production-destruction representation of an ODE.
 #
 # In OrdinaryDiffEq an ODE u' = f(t,u) with t in tspan and parameters p is represented as an ODEProblem(f,u,tspan,p). To
-# respresent f as a PDS the new problem type ProdDestODEProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ)
+# represent f as a PDS the new problem type ProdDestODEProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ)
 # from above, with possibly nonzero diagonal elements. D is the vector to store dᵢᵢ.
 
 # Install packages
@@ -45,11 +45,11 @@ using SparseArrays
 #
 # PDS: P = [0 u₂; 5 u₁ 0], D = [0; 0]
 #
-# We implent four variantions (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
+# We implement four variations (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
 # obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl.
 
 
-# inital values
+# initial values
 u0 = [0.9, 0.1]
 # time domain
 tspan = (0.0, 2.0)
@@ -110,10 +110,10 @@ alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
 #
 # PDS: P = [u₁ 0; u₁ u₂ 0], D = [0; u₂]
 #
-# We implent four variantions (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
+# We implement four variations (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
 # obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl.
 
-# inital values
+# initial values
 u0 = [0.9, 0.1]
 # time domain
 tspan = (0.0, 20.0)
@@ -168,12 +168,12 @@ alloc2 = @allocated(solve(lotvol_PDS_ip, Tsit5()))
 ### Example 3: Linear advection discretized with finite differences and upwind, periodic boundary conditions #############
 # This is an example of a large conservative PDS, which requires the use of sparese matrices.
 #
-# We implent the in-place versions for the standard rhs and the PDS representation of this ODE system. In addition, we
+# We implement the in-place versions for the standard rhs and the PDS representation of this ODE system. In addition, we
 # compare the efficiency of dense and sparse matrices for the PDS version.
 
 # number of nodes
 N = 1000;
-# inital data
+# initial data
 u0 = sin.(π*LinRange(0.0,1.0,N+1))[2:end]
 # time domain
 tspan = (0.0, 1.0)

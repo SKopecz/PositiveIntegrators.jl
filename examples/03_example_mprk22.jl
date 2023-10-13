@@ -1,4 +1,4 @@
-# The familiy of MPRK22 schemes are second order schemes which are unconditionally positive
+# The family of MPRK22 schemes are second order schemes which are unconditionally positive
 # and conservative when applied to a positive and conservative PDS. Numerical experiments show that
 # that these schemes can be used to integrate stiff problems. The Patankar-weight σ used in the
 # approximation step is first order accurate and thus σ can be used to estimate the error in an adaptive
