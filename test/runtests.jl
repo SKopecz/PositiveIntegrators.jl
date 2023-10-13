@@ -12,7 +12,7 @@ using PositiveIntegrators
         @test true
 
         cmd = Base.julia_cmd()
-        examples_dir = abspath(pkgdir(PositiveIntegrators, "examples"))
+        examples_dir = abspath(joinpath(pkgdir(PositiveIntegrators), "examples"))
 
         run(`$cmd --project=$(examples_dir) $(joinpath(examples_dir, "01_example_proddest.jl"))`)
 
