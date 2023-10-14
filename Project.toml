@@ -4,7 +4,6 @@ authors = ["Stefan Kopecz, Hendrik Ranocha, and contributors"]
 version = "0.1.0"
 
 [deps]
-DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 Kwonly = "18d08c8c-0732-55ee-a446-91a51d7b4206"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -17,7 +16,6 @@ SimpleUnPack = "ce78b400-467f-4804-87d8-8f486da07d0a"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-DiffEqDevTools = "2"
 FastBroadcast = "0.2"
 julia = "1.8"
 Kwonly = "0.1"
