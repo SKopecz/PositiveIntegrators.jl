@@ -12,7 +12,6 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 BenchmarkTools = "1"
 DiffEqDevTools = "2"
-julia = "1.6"
 LinearSolve = "2"
 OrdinaryDiffEq = "6"
 Plots = "1"
