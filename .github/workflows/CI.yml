@@ -101,10 +101,11 @@ jobs:
           coverage = merge_coverage_counts(coverage)
           @show covered_lines, total_lines = get_summary(coverage)
           LCOV.writefile("./lcov.info", coverage)
-      - uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./lcov.info
+      # TODO: Activate this when the package becomes public
+      # - uses: coverallsapp/github-action@master
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     path-to-lcov: ./lcov.info
       # Upload merged coverage data as artifact for debugging
       - uses: actions/upload-artifact@v3
         with:
