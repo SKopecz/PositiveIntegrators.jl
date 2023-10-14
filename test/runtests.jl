@@ -13,12 +13,14 @@ using PositiveIntegrators
 
         cmd = Base.julia_cmd()
         examples_dir = abspath(joinpath(pkgdir(PositiveIntegrators), "examples"))
+        examples = ["01_example_proddest.jl",
+                    "02_example_mpe.jl",
+                    "03_example_mprk22.jl"]
 
-        run(`$cmd --project=$(examples_dir) $(joinpath(examples_dir, "01_example_proddest.jl"))`)
-
-        run(`$cmd --project=$(examples_dir) $(joinpath(examples_dir, "02_example_mpe.jl"))`)
-
-        run(`$cmd --project=$(examples_dir) $(joinpath(examples_dir, "03_example_mprk22.jl"))`)
+        @testset "Example $ex" for ex in examples
+            @info "Testing examples" ex
+            @time run(`$cmd --project=$(examples_dir) $(joinpath(examples_dir, ex))`)
+        end
     end
 
     @test true
