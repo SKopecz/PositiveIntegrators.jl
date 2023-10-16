@@ -1,20 +1,27 @@
-# The familiy of MPRK22 schemes are second order schemes which are unconditionally positive
+# The family of MPRK22 schemes are second order schemes which are unconditionally positive
 # and conservative when applied to a positive and conservative PDS. Numerical experiments show that
 # that these schemes can be used to integrate stiff problems. The Patankar-weight σ used in the
 # approximation step is first order accurate and thus σ can be used to estimate the error in an adaptive
-# timestepping algorithm without additional cost. 
+# timestepping algorithm without additional cost.
 #
-# Literature:  
+# Literature:
 # On order conditions for modified Patankar-Runge-Kutta schemes; S. Kopecz, A. Meister; APNUM 2018
 #
-# In this script we use the several MPRK22 schemes to solve non-stiff and stiff PDS. 
+# In this script we use the several MPRK22 schemes to solve non-stiff and stiff PDS.
 
-# load new problem type for production-destruction systems
-include("../src/proddest.jl")
-# load MPRK algorithms
-include("../src/mprk.jl")
+# Install packages
+import Pkg
+Pkg.activate(@__DIR__)
+Pkg.develop(path = dirname(@__DIR__))
+Pkg.instantiate()
+
+# load new problem type for production-destruction systems and MPRK algorithms
+using PositiveIntegrators
+
+using OrdinaryDiffEq
+
 # load utility functions
-include("../src/utilities.jl")
+include("utilities.jl")
 
 ### linear model problem ######################################################################################
 
@@ -67,7 +74,7 @@ function linmodD!(D,u,p,t)
     return nothing
 end
 PD_ip = ProdDestFunction(linmodP!,linmodD!,p_prototype=zeros(2,2), d_prototype=zeros(2,1),analytic=f_analytic)
-#BUG: linmod_ip cannot be solved if prototypes are not given. 
+#BUG: linmod_ip cannot be solved if prototypes are not given.
 linmod_ip = ProdDestODEProblem(PD_ip, u0, tspan, p)
 
 # solutions with constant equispaced time steps

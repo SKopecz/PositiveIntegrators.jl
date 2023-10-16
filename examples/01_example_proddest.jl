@@ -1,9 +1,9 @@
-# A production-destruction sytem (PDS) has the form 
+# A production-destruction system (PDS) has the form
 #   uᵢ'(t) = ∑ⱼ(pᵢⱼ(t) - dᵢⱼ(t))
-# with pᵢⱼ(t), dᵢⱼ ≥ 0. 
+# with pᵢⱼ(t), dᵢⱼ ≥ 0.
 #
-# Here, pᵢⱼ is a production term, i.e. a term with positive sign, in the ith equation with a corresponding 
-# destruction term, i.e. the same term with negative sign, in the jth equation. Positive terms of the ith equation 
+# Here, pᵢⱼ is a production term, i.e. a term with positive sign, in the ith equation with a corresponding
+# destruction term, i.e. the same term with negative sign, in the jth equation. Positive terms of the ith equation
 # without negative counterpart are gathered in pᵢᵢ. Similarly, dᵢᵢ contains the absolute values of the negative
 # terms without positive counterparts.
 #
@@ -13,19 +13,28 @@
 # Similarly, p₁₂ = 2 u₂ = d₂₁. Furthermore, we have p₁₁ = 3 u₁, d₁₁ = 0 and p₂₂ = 0, d₂₂ = 4 u₂.
 # Note that this representation is not unique!
 #
-# The PDS is conservative if dᵢⱼ == pⱼᵢ and pᵢᵢ == dᵢᵢ == 0. In this case only the matrix (pᵢⱼ) needs to be stored, 
-# because (dᵢⱼ) is the transpose of (pᵢⱼ). Furthermore, all diagonal elements of (pᵢⱼ) are zero. 
+# The PDS is conservative if dᵢⱼ == pⱼᵢ and pᵢᵢ == dᵢᵢ == 0. In this case only the matrix (pᵢⱼ) needs to be stored,
+# because (dᵢⱼ) is the transpose of (pᵢⱼ). Furthermore, all diagonal elements of (pᵢⱼ) are zero.
 # If the PDS is not conservative, we can store the additional production terms pᵢᵢ on the diagonal of (pᵢⱼ) and need to
 # store an additional vector for dᵢᵢ.
 #
 # Modified Patankar-Runge-Kutta (MPRK) schemes are based on the production-destruction representation of an ODE.
 #
-# In OrdinaryDiffEq an ODE u' = f(t,u) with t in tspan and parameters p is represented as an ODEProblem(f,u,tspan,p). To 
-# respresent f as a PDS the new problem type ProdDestODEProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ) 
+# In OrdinaryDiffEq an ODE u' = f(t,u) with t in tspan and parameters p is represented as an ODEProblem(f,u,tspan,p). To
+# represent f as a PDS the new problem type ProdDestODEProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ)
 # from above, with possibly nonzero diagonal elements. D is the vector to store dᵢᵢ.
 
+# Install packages
+import Pkg
+Pkg.activate(@__DIR__)
+Pkg.develop(path = dirname(@__DIR__))
+Pkg.instantiate()
+
 # load new problem type for production-destruction systems
-include("../src/proddest.jl") 
+using PositiveIntegrators
+
+using OrdinaryDiffEq
+using SparseArrays
 
 ### Example 1: Linear model problem ######################################################################################
 # This is an example of a conservative PDS
@@ -35,12 +44,12 @@ include("../src/proddest.jl")
 # Standard: f(t,u) = [-5 1; 5 -1]*u
 #
 # PDS: P = [0 u₂; 5 u₁ 0], D = [0; 0]
-# 
-# We implent four variantions (in-place and out-of-place for both standard and PDS) of this ODE system and check that we 
-# obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl. 
+#
+# We implement four variations (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
+# obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl.
 
 
-# inital values
+# initial values
 u0 = [0.9, 0.1]
 # time domain
 tspan = (0.0, 2.0)
@@ -87,7 +96,7 @@ sol_linmod_PDS_ip = solve(linmod_PDS_ip,Tsit5())
 @assert sol_linmod_f_op.u ≈ sol_linmod_f_ip.u ≈ sol_linmod_PDS_op.u ≈ sol_linmod_PDS_ip.u
 
 # check that we really do not use too many additional allocations for in-place implementations
-alloc1 = @allocated(solve(linmod_f_ip, Tsit5())) 
+alloc1 = @allocated(solve(linmod_f_ip, Tsit5()))
 alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
 @assert 0.95 < alloc1/alloc2 < 1.05
 
@@ -100,11 +109,11 @@ alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
 # Standard: f(t,u) = [u₁ - u₁ u₂; u₁ u₂ - u₂]
 #
 # PDS: P = [u₁ 0; u₁ u₂ 0], D = [0; u₂]
-# 
-# We implent four variantions (in-place and out-of-place for both standard and PDS) of this ODE system and check that we 
-# obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl. 
+#
+# We implement four variations (in-place and out-of-place for both standard and PDS) of this ODE system and check that we
+# obtain equivalent solutions with a standard solver of OrdinaryDiffEq.jl.
 
-# inital values
+# initial values
 u0 = [0.9, 0.1]
 # time domain
 tspan = (0.0, 20.0)
@@ -151,20 +160,20 @@ sol_lotvol_PDS_ip = solve(lotvol_PDS_ip,Tsit5())
 @assert sol_lotvol_f_op.u ≈ sol_lotvol_f_ip.u ≈ sol_lotvol_PDS_op.u ≈ sol_lotvol_PDS_ip.u
 
 # check that we really do not use too many additional allocations for in-place implementations
-alloc1 = @allocated(solve(lotvol_f_ip, Tsit5())) 
+alloc1 = @allocated(solve(lotvol_f_ip, Tsit5()))
 alloc2 = @allocated(solve(lotvol_PDS_ip, Tsit5()))
 @assert 0.95 < alloc1/alloc2 < 1.05
 
 ##########################################################################################################################
 ### Example 3: Linear advection discretized with finite differences and upwind, periodic boundary conditions #############
-# This is an example of a large conservative PDS, which requires the use of sparese matrices. 
-# 
-# We implent the in-place versions for the standard rhs and the PDS representation of this ODE system. In addition, we
-# compare the efficiency of dense and sparse matrices for the PDS version. 
+# This is an example of a large conservative PDS, which requires the use of sparese matrices.
+#
+# We implement the in-place versions for the standard rhs and the PDS representation of this ODE system. In addition, we
+# compare the efficiency of dense and sparse matrices for the PDS version.
 
 # number of nodes
 N = 1000;
-# inital data
+# initial data
 u0 = sin.(π*LinRange(0.0,1.0,N+1))[2:end]
 # time domain
 tspan = (0.0, 1.0)
