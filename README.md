@@ -17,3 +17,5 @@ different schemes. The package extends [OrdinaryDiffEq.jl](https://github.com/Sc
 by
 * adding a new problem type for production-destruction systems
 * adding the algorithms of first and second order modified Patankar-Runge-Kutta (MPRK) schemes
+
+**Note**: This repository is work in progress, nothing is stable!
