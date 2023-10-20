@@ -41,7 +41,7 @@ If you use
 for your research, please cite it using the bibtex entry
 ```bibtex
 @misc{PositiveIntegrators.jl,
-  title={{PositiveIntegrators.jl}: {A} {J}ulia library of positivity-perserving
+  title={{PositiveIntegrators.jl}: {A} {J}ulia library of positivity-preserving
          time integration methods},
   author={Kopecz, Stefan and Ranocha, Hendrik and contributors},
   year={2023},
