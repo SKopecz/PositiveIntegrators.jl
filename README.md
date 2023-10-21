@@ -3,8 +3,8 @@
 <!-- [![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://trixi-framework.github.io/Trixi.jl/stable) -->
 <!-- [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://trixi-framework.github.io/Trixi.jl/dev) -->
 [![Build Status](https://github.com/SKopecz/PositiveIntegrators.jl/workflows/CI/badge.svg)](https://github.com/SKopecz/PositiveIntegrators.jl/actions?query=workflow%3ACI)
-<!-- [![Codecov](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl) -->
-<!-- [![Coveralls](https://coveralls.io/repos/github/SKopecz/PositiveIntegrators.jl/badge.svg?branch=main)](https://coveralls.io/github/SKopecz/PositiveIntegrators.jl?branch=main) -->
+[![Codecov](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl)
+[![Coveralls](https://coveralls.io/repos/github/SKopecz/PositiveIntegrators.jl/badge.svg?branch=main)](https://coveralls.io/github/SKopecz/PositiveIntegrators.jl?branch=main)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
 <!-- [![DOI](https://zenodo.org/badge/DOI/TODO.svg)](https://doi.org/TODO) -->
