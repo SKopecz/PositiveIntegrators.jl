@@ -1,0 +1,19 @@
+{
+  "description": "A Julia library of positivity-preserving time integration methods",
+  "license": "MIT",
+  "title": "PositiveIntegrators.jl",
+  "upload_type": "software",
+  "creators": [
+      {
+          "affiliation": "Institute of Mathematics, University of Kassel, Germany",
+          "name": "Kopecz, Stefan",
+          "orcid": "0000-0003-0593-450X"
+      },
+      {
+          "affiliation": "Institute of Mathematics, Johannes Gutenberg University Mainz, Germany",
+          "name": "Ranocha, Hendrik",
+          "orcid": "0000-0002-3456-2277"
+      }
+  ],
+  "access_right": "open"
+}
