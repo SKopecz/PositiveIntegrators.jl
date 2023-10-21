@@ -18,7 +18,7 @@ open(joinpath(@__DIR__, "src", "license.md"), "w") do io
   # Write the modified contents
   println(io, "# License")
   println(io, "")
-  for line in eachline(joinpath(dirname(@__DIR__), "LICENSE.md"))
+  for line in eachline(joinpath(dirname(@__DIR__), "LICENSE"))
     line = replace(line, "[LICENSE.md](LICENSE.md)" => "[License](@ref)")
     println(io, "> ", line)
   end
