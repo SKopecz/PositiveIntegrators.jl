@@ -141,6 +141,28 @@ end
 # New problem type ProdDestODEProblem
 abstract type AbstractProdDestODEProblem end
 
+"""
+    ProdDestODEProblem(P, D, u0, tspan, p = NullParameters();
+                       p_prototype = similar(u0, (length(u0), length(u0))),
+                       d_prototype = similar(u0, (length(u0),)),)
+
+A structure describing a production-destruction ordinary differential equation.
+`P` and `D` denote the production/destruction terms in form of a matrix.
+`u0` is the vector of initial conditions and `tspan` the time span
+`(t_initial, t_final)` of the problem. The optional argument `p` can be used
+to pass additional parameters to the functions.
+
+The functions `P` and `D` can be used either in the out-of-place form with signature
+`production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
+
+## References
+
+- Hans Burchard, Eric Deleersnijder, and Andreas Meister.
+  "A high-order conservative Patankar-type discretisation for stiff systems of
+  production-destruction equations."
+  Applied Numerical Mathematics 47.1 (2003): 1-30.
+  [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
+"""
 struct ProdDestODEProblem{iip} <: AbstractProdDestODEProblem end
 
 function ProdDestODEProblem(P, D, u0, tspan, p = NullParameters();
