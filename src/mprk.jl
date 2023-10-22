@@ -1,5 +1,23 @@
 
 ### MPE #####################################################################################
+"""
+    MPE()
+
+The first-order modified Patankar-Euler algorithm for conservative production-destruction
+systems. This one-step, one-stage method is first-order accurate, unconditionally
+positivity-preserving, and linearly implicit.
+
+The modified Patankar-Euler method requires the special structure of a
+[`ProdDestODEProblem`](@ref).
+
+## References
+
+- Hans Burchard, Eric Deleersnijder, and Andreas Meister.
+  "A high-order conservative Patankar-type discretisation for stiff systems of
+  production-destruction equations."
+  Applied Numerical Mathematics 47.1 (2003): 1-30.
+  [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
+"""
 struct MPE{F,P} <: OrdinaryDiffEqAlgorithm
     linsolve::F
     precs::P
@@ -131,6 +149,39 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
 end
 
 ### MPRK #####################################################################################
+"""
+    MPRK22(α)
+
+The second-order modified Patankar-Runge-Kutta algorithm for conservative production-destruction
+systems. This one-step, two-stage method is second-order accurate, unconditionally
+positivity-preserving, and linearly implicit. The parameter `α` is described by
+Kopecz and Meister (2018) and studied by Izgin, Kopecz and Meister (2022) as well as
+Torlo, Öffner and Ranocha (2022).
+
+This modified Patankar-Runge-Kutta method requires the special structure of a
+[`ProdDestODEProblem`](@ref).
+
+## References
+
+- Hans Burchard, Eric Deleersnijder, and Andreas Meister.
+  "A high-order conservative Patankar-type discretisation for stiff systems of
+  production-destruction equations."
+  Applied Numerical Mathematics 47.1 (2003): 1-30.
+  [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
+- Stefan Kopecz and Andreas Meister.
+  "On order conditions for modified Patankar-Runge-Kutta schemes."
+  Applied Numerical Mathematics 123 (2018): 159-179.
+  [DOI: 10.1016/j.apnum.2017.09.004](https://doi.org/10.1016/j.apnum.2017.09.004)
+- Thomas Izgin, Stefan Kopecz, and Andreas Meister.
+  "On Lyapunov stability of positive and conservative time integrators and application
+  to second order modified Patankar-Runge-Kutta schemes."
+  ESAIM: Mathematical Modelling and Numerical Analysis 56.3 (2022): 1053-1080.
+  [DOI: 10.1051/m2an/2022031](https://doi.org/10.1051/m2an/2022031)
+- Davide Torlo, Philipp Öffner, and Hendrik Ranocha.
+  "Issues with positivity-preserving Patankar-type schemes."
+  Applied Numerical Mathematics 182 (2022): 117-147.
+  [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
+"""
 struct MPRK22{T,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     thread::Thread
