@@ -37,6 +37,7 @@ import OrdinaryDiffEq: @cache,
 
 # 2. Export functionality defining the public API
 export ProdDestFunction, ProdDestODEProblem
+export ConsProdDestFunction, ConsProdDestODEProblem
 
 export MPE, MPRK22
 

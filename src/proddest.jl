@@ -137,6 +137,59 @@ function (PD::ProdDestFunction)(du, u, p, t)
     return nothing
 end
 
+# New ODE function ConsProdDestFunction
+struct ConsProdDestFunction{iip,specialize,P,PrototypeP,TMP} <: AbstractODEFunction{iip}
+    p::P
+    p_prototype::PrototypeP
+    tmp::TMP
+end
+
+function ConsProdDestFunction{iip,FullSpecialize}(P; p_prototype=nothing, tmp=nothing) where {iip}
+    ConsProdDestFunction{iip,FullSpecialize,typeof(P),typeof(p_prototype),typeof(tmp)}(P, p_prototype, tmp)
+end
+
+function ConsProdDestFunction{iip}(P; kwargs...) where {iip}
+    ConsProdDestFunction{iip,FullSpecialize}(P; kwargs...)
+end
+
+ConsProdDestFunction(P; kwargs...) = ConsProdDestFunction{isinplace(P, 4)}(P; kwargs...)
+
+#=
+#Do we really need this????
+@add_kwonly function ConsProdDestFunction(P, p_prototype, tmp)
+    P = ODEFunction(P)
+
+    ConsProdDestFunction{isinplace(P, 4),FullSpecialize,typeof(P), typeof(p_prototype),typeof(tmp)}
+    (P, D, mass_matrix, cache, analytic, tgrad, jac, jvp, vjp,
+        jac_prototype, sparsity, Wfact, Wfact_t, paramjac, syms,
+        indepsym,
+        paramsyms, observed, colorvec, sys)
+end
+=#
+
+(PD::ConsProdDestFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
+
+function (PD::ConsProdDestFunction)(du, u, p, t)
+    PD.p(PD.p_prototype, u, p, t)
+
+    if PD.p_prototype isa AbstractSparseMatrix
+        # Same result but more efficient - at least currently for SparseMatrixCSC
+        fill!(PD.tmp, one(eltype(PD.tmp)))
+        mul!(vec(du), PD.p_prototype, PD.tmp)
+        sum!(PD.tmp', PD.p_prototype)
+        vec(du) .-= tmp
+    else
+        # This implementation does not need any auxiliary vectors
+        for i = 1:length(u)
+            du[i] = zero(eltype(du))
+            for j = 1:length(u)
+                du[i] += PD.p_prototype[i,j] - PD.p_prototype[j,i]
+            end
+        end
+    end
+    return nothing
+end
+
 
 # New problem type ProdDestODEProblem
 abstract type AbstractProdDestODEProblem end
@@ -188,4 +241,50 @@ function ProdDestODEProblem{iip}(PD::ProdDestFunction, u0, tspan, p = NullParame
     #end
     ODEProblem(PD, u0, tspan, p, ProdDestODEProblem{iip}(); kwargs...)
 end
+
+# New problem type ConsProdDestODEProblem
+"""
+    ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
+                            p_prototype = similar(u0, (length(u0), length(u0))))
+
+A structure describing a conservative ordinary differential equation in form of a production-destruction system.
+`P` denotes the production terms in form of a matrix.
+`u0` is the vector of initial conditions and `tspan` the time span
+`(t_initial, t_final)` of the problem. The optional argument `p` can be used
+to pass additional parameters to the functions.
+
+The function `P` can be used either in the out-of-place form with signature
+`production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
+
+## References
+
+- Hans Burchard, Eric Deleersnijder, and Andreas Meister.
+  "A high-order conservative Patankar-type discretisation for stiff systems of
+  production-destruction equations."
+  Applied Numerical Mathematics 47.1 (2003): 1-30.
+  [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
+"""
+struct ConsProdDestODEProblem{iip} <: AbstractProdDestODEProblem end
+
+function ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
+                            p_prototype = similar(u0, (length(u0), length(u0))), kwargs...)
+    p_prototype .= zero(eltype(p_prototype))
+
+    if p_prototype isa AbstractSparseMatrix
+        tmp = zeros(eltype(p_prototype), (length(u0),))
+    else
+        tmp = nothing
+    end
+    PD = ConsProdDestFunction(P; p_prototype, tmp)
+    ConsProdDestODEProblem(PD, u0, tspan, p; kwargs...)
+end
+
+function ConsProdDestODEProblem(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...)
+    ConsProdDestODEProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
+end
+
+function ConsProdDestODEProblem{iip}(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...) where {iip}
+    ODEProblem(PD, u0, tspan, p, ProdDestODEProblem{iip}(); kwargs...)
+end
+
 

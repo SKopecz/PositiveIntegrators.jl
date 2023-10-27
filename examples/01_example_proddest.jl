@@ -71,6 +71,7 @@ linmod_f_ip = ODEProblem(linmod!, u0, tspan)
 linmodP(u,p,t) = [0.0 u[2]; 5.0*u[1] 0.0]
 linmodD(u,p,t) = [0.0; 0.0]
 linmod_PDS_op = ProdDestODEProblem(linmodP, linmodD, u0, tspan)
+linmod_ConsPDS_op = ConsProdDestODEProblem(linmodP, u0, tspan)
 
 # in-place sytanx for PDS
 function linmodP!(P,u,p,t)
@@ -84,12 +85,15 @@ function linmodD!(D,u,p,t)
     return nothing
 end
 linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
+linmod_ConsPDS_ip = ConsProdDestODEProblem(linmodP!, u0, tspan)
 
 # solutions
 sol_linmod_f_op = solve(linmod_f_op, Tsit5())
 sol_linmod_f_ip = solve(linmod_f_ip,Tsit5())
 sol_linmod_PDS_op = solve(linmod_PDS_op, Tsit5())
 sol_linmod_PDS_ip = solve(linmod_PDS_ip,Tsit5())
+sol_linmod_ConsPDS_op = solve(linmod_ConsPDS_op, Euler(),dt = 0.1)
+sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip,Tsit5())
 
 # check equality of solutions
 @assert sol_linmod_f_op.t ≈ sol_linmod_f_ip.t ≈ sol_linmod_PDS_op.t ≈ sol_linmod_PDS_ip.t
