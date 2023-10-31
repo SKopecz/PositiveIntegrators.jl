@@ -31,7 +31,6 @@ p = [5.0, 1.0]
 
 # linear model problem - out-of-place
 linmodP(u,p,t) = [0.0 p[2]*u[2]; p[1]*u[1] 0.0]
-linmodD(u,p,t) = [0.0; 0.0]
 # analytic solution
 function f_analytic(u0,p,t)
     u₁⁰, u₂⁰ = u0
@@ -51,14 +50,12 @@ sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false);
 # plot solutions
 using Plots
 p1 = myplot(sol_MPE_op,"MPE",true)
-p2 = myplot(sol_MPE_cons_op,"MPE",true)
-p3 = myplot(sol_IE_op,"IE",true)
-plot(p1,p2,p3,plot_title="out-of-place")
+p2 = myplot(sol_IE_op,"IE",true)
+plot(p1,p2,plot_title="out-of-place")
 
 # check convergence order
 using DiffEqDevTools, PrettyTables
 convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()])
-convergence_tab_plot(prob_cons_op, [MPE(); ImplicitEuler()])
 
 
 # linear model problem - in-place
@@ -68,14 +65,7 @@ function linmodP!(P,u,p,t)
     P[2, 1] = 5.0*u[1]
     return nothing
 end
-function linmodD!(D,u,p,t)
-    D .= 0
-    return nothing
-end
-PD_ip = ProdDestFunction(linmodP!,linmodD!, p_prototype=zeros(2,2), d_prototype=zeros(2,1),
-            analytic=f_analytic)
-#BUG: prob_ip cannot be solved if prototypes are not given.
-prob_ip = ProdDestODEProblem(PD_ip, u0, tspan, p)
+prob_ip = ConsProdDestODEProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
 
 #solutions
 sol_MPE_ip = solve(prob_ip, MPE(), dt=0.25)
