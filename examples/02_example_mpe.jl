@@ -39,13 +39,11 @@ function f_analytic(u0,p,t)
     c = a+b
     return ((u₁⁰+u₂⁰)*[b; a] + exp(-c*t)*(a*u₁⁰-b*u₂⁰)*[1;-1])/c
 end
-PD_op = ProdDestFunction(linmodP, linmodD; analytic=f_analytic)
-prob_op = ProdDestODEProblem(PD_op, u0, tspan, p)
-
+prob_op = ConsProdDestODEProblem(linmodP, u0, tspan, p; analytic=f_analytic)
 
 # solution
-sol_MPE_op = solve(prob_op, MPE(), dt=0.25)
-sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false)
+sol_MPE_op = solve(prob_op, MPE(), dt=0.25);
+sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false);
 
 # check that MPE and IE solutions are equivalent
 @assert sol_MPE_op.u ≈ sol_IE_op.u
@@ -53,12 +51,14 @@ sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false)
 # plot solutions
 using Plots
 p1 = myplot(sol_MPE_op,"MPE",true)
-p2 = myplot(sol_IE_op,"IE",true)
-plot(p1,p2,plot_title="out-of-place")
+p2 = myplot(sol_MPE_cons_op,"MPE",true)
+p3 = myplot(sol_IE_op,"IE",true)
+plot(p1,p2,p3,plot_title="out-of-place")
 
 # check convergence order
 using DiffEqDevTools, PrettyTables
 convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()])
+convergence_tab_plot(prob_cons_op, [MPE(); ImplicitEuler()])
 
 
 # linear model problem - in-place

@@ -138,21 +138,41 @@ function (PD::ProdDestFunction)(du, u, p, t)
 end
 
 # New ODE function ConsProdDestFunction
-struct ConsProdDestFunction{iip,specialize,P,PrototypeP,TMP} <: AbstractODEFunction{iip}
-    p::P
-    p_prototype::PrototypeP
+struct ConsProdDestFunction{iip,specialize,P,PrototypeP,TMP,Ta} <: AbstractODEFunction{iip}
+    p::P                   
+    p_prototype::PrototypeP   
     tmp::TMP
+    analytic::Ta 
 end
 
-function ConsProdDestFunction{iip,FullSpecialize}(P; p_prototype=nothing, tmp=nothing) where {iip}
-    ConsProdDestFunction{iip,FullSpecialize,typeof(P),typeof(p_prototype),typeof(tmp)}(P, p_prototype, tmp)
+function Base.getproperty(obj::ConsProdDestFunction, sym::Symbol)
+    if sym === :mass_matrix
+        return I
+    elseif sym === :jac_prototype
+        return nothing
+    elseif sym === :colorvec
+        return nothing
+    elseif sym === :sparsity
+        return nothing
+    else # fallback to getfield
+        return getfield(obj, sym)
+    end
 end
 
-function ConsProdDestFunction{iip}(P; kwargs...) where {iip}
-    ConsProdDestFunction{iip,FullSpecialize}(P; kwargs...)
+function ConsProdDestFunction{iip,FullSpecialize}(P; p_prototype=nothing, analytic=nothing) where {iip}
+    if p_prototype isa AbstractSparseMatrix
+        tmp = zeros(eltype(p_prototype), (size(p_prototype,1),))
+    else
+        tmp = nothing
+    end
+    ConsProdDestFunction{iip,FullSpecialize,typeof(P),typeof(p_prototype),typeof(tmp),typeof(analytic)}(P, p_prototype, tmp, analytic)
 end
 
-ConsProdDestFunction(P; kwargs...) = ConsProdDestFunction{isinplace(P, 4)}(P; kwargs...)
+#function ConsProdDestFunction{iip}(P; kwargs...) where {iip}
+#    ConsProdDestFunction{iip,FullSpecialize}(P; kwargs...)
+#end
+
+ConsProdDestFunction(P; kwargs...) = ConsProdDestFunction{isinplace(P, 4),FullSpecialize}(P; kwargs...)
 
 #=
 #Do we really need this????
@@ -167,8 +187,10 @@ ConsProdDestFunction(P; kwargs...) = ConsProdDestFunction{isinplace(P, 4)}(P; kw
 end
 =#
 
+# Evaluation of a ConsProdDestFuntion (out-of-place)
 (PD::ConsProdDestFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
 
+# Evaluation of a ConsProdDestFunction (in-place)
 function (PD::ConsProdDestFunction)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
@@ -177,7 +199,7 @@ function (PD::ConsProdDestFunction)(du, u, p, t)
         fill!(PD.tmp, one(eltype(PD.tmp)))
         mul!(vec(du), PD.p_prototype, PD.tmp)
         sum!(PD.tmp', PD.p_prototype)
-        vec(du) .-= tmp
+        vec(du) .-= PD.tmp
     else
         # This implementation does not need any auxiliary vectors
         for i = 1:length(u)
@@ -245,16 +267,24 @@ end
 # New problem type ConsProdDestODEProblem
 """
     ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
-                            p_prototype = similar(u0, (length(u0), length(u0))))
+                            p_prototype = similar(u0, (length(u0), length(u0))), analytic=nothing)
 
-A structure describing a conservative ordinary differential equation in form of a production-destruction system.
-`P` denotes the production terms in form of a matrix.
+A structure describing a conservative ordinary differential equation in form of a production-destruction system (PDS).
+`P` denotes the production matrix.
 `u0` is the vector of initial conditions and `tspan` the time span
 `(t_initial, t_final)` of the problem. The optional argument `p` can be used
 to pass additional parameters to the functions.
 
-The function `P` can be used either in the out-of-place form with signature
+The function `P` can be given either in the out-of-place form with signature
 `production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
+
+### Keyword arguments: ###
+
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`. 
+    If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
+  set to `zeros(eltype(u0), (length(u0), length(u0)))`. 
+- `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`. 
+    Specifing the analytic solution can be useful for plotting and convergence tests.
 
 ## References
 
@@ -266,25 +296,25 @@ The function `P` can be used either in the out-of-place form with signature
 """
 struct ConsProdDestODEProblem{iip} <: AbstractProdDestODEProblem end
 
-function ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
-                            p_prototype = similar(u0, (length(u0), length(u0))), kwargs...)
-    p_prototype .= zero(eltype(p_prototype))
+# Standard constructor for ConsProdDestODEProblems
+function ConsProdDestODEProblem(P, u0, tspan, p = NullParameters(); 
+    p_prototype = nothing, analytic = nothing, kwargs...)
 
-    if p_prototype isa AbstractSparseMatrix
-        tmp = zeros(eltype(p_prototype), (length(u0),))
-    else
-        tmp = nothing
+    # p_prototype is used to store evaluations of P, if P is in-place.
+    if isinplace(P,4) && isnothing(p_prototype)
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
-    PD = ConsProdDestFunction(P; p_prototype, tmp)
+    
+    PD = ConsProdDestFunction(P; p_prototype=p_prototype, analytic=analytic)
     ConsProdDestODEProblem(PD, u0, tspan, p; kwargs...)
 end
 
+# Construct ConsProdDestODEProblem from ConsProdDestFunction
 function ConsProdDestODEProblem(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...)
     ConsProdDestODEProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
 end
-
 function ConsProdDestODEProblem{iip}(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...) where {iip}
-    ODEProblem(PD, u0, tspan, p, ProdDestODEProblem{iip}(); kwargs...)
+    ODEProblem(PD, u0, tspan, p, ConsProdDestODEProblem{iip}(); kwargs...)
 end
 
 
