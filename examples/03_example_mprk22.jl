@@ -40,9 +40,7 @@ end
 
 # out-of-place implementation
 linmodP(u,p,t) = [0.0 p[2]u[2]; p[1]*u[1] 0.0]
-linmodD(u,p,t) = [0.0; 0.0]
-linmodPD = ProdDestFunction(linmodP,linmodD; analytic=f_analytic)
-linmod_op = ProdDestODEProblem(linmodPD, u0, tspan, p)
+linmod_op = ConsProdDestODEProblem(linmodP, u0, tspan, p; analytic=f_analytic)
 
 # solutions with constant equispaced time steps
 dt0 = 0.25
@@ -69,19 +67,13 @@ function linmodP!(P,u,p,t)
     P[2, 1] = 5.0*u[1]
     return nothing
 end
-function linmodD!(D,u,p,t)
-    D .= 0
-    return nothing
-end
-PD_ip = ProdDestFunction(linmodP!,linmodD!,p_prototype=zeros(2,2), d_prototype=zeros(2,1),analytic=f_analytic)
-#BUG: linmod_ip cannot be solved if prototypes are not given.
-linmod_ip = ProdDestODEProblem(PD_ip, u0, tspan, p)
+linmod_ip = ConsProdDestODEProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
 
 # solutions with constant equispaced time steps
 dt0 = 0.25
-sol_linmod_ip_MPE = solve(linmod_ip, MPE(), dt=dt0)
-sol_linmod_ip_MPRK22_1 = solve(linmod_ip, MPRK22(1.0), dt=dt0, adaptive=false)
-sol_linmod_ip_MPRK22_½ = solve(linmod_ip, MPRK22(0.5), dt=dt0, adaptive=false)
+sol_linmod_ip_MPE = solve(linmod_ip, MPE(), dt=dt0);
+sol_linmod_ip_MPRK22_1 = solve(linmod_ip, MPRK22(1.0), dt=dt0, adaptive=false);
+sol_linmod_ip_MPRK22_½ = solve(linmod_ip, MPRK22(0.5), dt=dt0, adaptive=false);
 
 # plots
 using Plots
@@ -104,14 +96,13 @@ tspan = (0.0, 30.0)
 
 # out-of-place implementation
 nonlinmodP(u,p,t) = [0.0 0.0 0.0; u[2]*u[1]/(u[1]+1.0) 0.0 0.0; 0.0 0.3*u[2] 0.0]
-nonlinmodD(u,p,t) = [0.0; 0.0; 0.0]
-nonlinmod_op = ProdDestODEProblem(nonlinmodP, nonlinmodD, u0, tspan, p)
+nonlinmod_op = ConsProdDestODEProblem(nonlinmodP, u0, tspan, p)
 
 # solutions with constant equispaced time steps
 dt0 = 1.0
-sol_nonlinmod_op_Tsit5 = solve(nonlinmod_op, Tsit5(), dt=dt0, abstol=1e-2, reltol=1e-3)
-sol_nonlinmod_op_MPRK22_1 = solve(nonlinmod_op, MPRK22(1.0), dt=dt0, abstol=1e-2, reltol=1e-3)
-sol_nonlinmod_op_MPRK22_½ = solve(nonlinmod_op, MPRK22(0.5), dt=dt0, abstol=1e-2, reltol=1e-3)
+sol_nonlinmod_op_Tsit5 = solve(nonlinmod_op, Tsit5(), dt=dt0, abstol=1e-2, reltol=1e-3);
+sol_nonlinmod_op_MPRK22_1 = solve(nonlinmod_op, MPRK22(1.0), dt=dt0, abstol=1e-2, reltol=1e-3);
+sol_nonlinmod_op_MPRK22_½ = solve(nonlinmod_op, MPRK22(0.5), dt=dt0, abstol=1e-2, reltol=1e-3);
 
 # plots
 using Plots
@@ -127,17 +118,13 @@ function nonlinmodP!(P,u,p,t)
     P[3, 2] = 0.3*u[2]
     return nothing
 end
-function nonlinmodD!(D,u,p,t)
-    D .= 0
-    return nothing
-end
-nonlinmod_ip = ProdDestODEProblem(nonlinmodP!, nonlinmodD!, u0, tspan, p)
+nonlinmod_ip = ConsProdDestODEProblem(nonlinmodP!, u0, tspan, p)
 
 # solutions with constant equispaced time steps
 dt0 = 1.0
-sol_nonlinmod_ip_Tsit5 = solve(nonlinmod_ip, Tsit5(), dt=dt0, abstol=1e-2, reltol=1e-3)
-sol_nonlinmod_ip_MPRK22_1 = solve(nonlinmod_ip, MPRK22(1.0), dt=dt0, abstol=1e-2, reltol=1e-3)
-sol_nonlinmod_ip_MPRK22_½ = solve(nonlinmod_ip, MPRK22(0.5), dt=dt0, abstol=1e-2, reltol=1e-3)
+sol_nonlinmod_ip_Tsit5 = solve(nonlinmod_ip, Tsit5(), dt=dt0, abstol=1e-2, reltol=1e-3);
+sol_nonlinmod_ip_MPRK22_1 = solve(nonlinmod_ip, MPRK22(1.0), dt=dt0, abstol=1e-2, reltol=1e-3);
+sol_nonlinmod_ip_MPRK22_½ = solve(nonlinmod_ip, MPRK22(0.5), dt=dt0, abstol=1e-2, reltol=1e-3);
 
 # plots
 using Plots
@@ -157,12 +144,11 @@ p = [1e4,4e-2, 3e7]
 
 # out-of-place
 robertsonP(u,p,t) = [0.0 1e4*u[2]*u[3] 0.0; 4e-2*u[1] 0.0 0.0; 0.0 3e7*u[2]^2 0.0]
-robertsonD(u,p,t) = [0.0; 0.0; 0.0]
-robertson_op = ProdDestODEProblem(robertsonP, robertsonD, u0, tspan, p)
+robertson_op = ConsProdDestODEProblem(robertsonP, u0, tspan, p)
 
 # Test constant time step size
-sol_robertson_op_RB23 = solve(robertson_op, Rosenbrock23(), abstol=1e-3, reltol=1e-2)
-sol_robertson_op_MPRK22_1 = solve(robertson_op, MPRK22(1.1), abstol=1e-3, reltol=1e-2)
+sol_robertson_op_RB23 = solve(robertson_op, Rosenbrock23(), abstol=1e-3, reltol=1e-2);
+sol_robertson_op_MPRK22_1 = solve(robertson_op, MPRK22(1.1), abstol=1e-3, reltol=1e-2);
 
 # plot solution
 p1 = plot(sol_robertson_op_RB23[2:end],idxs = [(0, 1), ((x,y)-> (x,1e4.*y) , 0, 2), (0, 3)], color=palette(:default)[1:3]',legend=:right, xaxis=:log)
@@ -181,15 +167,11 @@ function robertsonP!(P,u,p,t)
     P[3, 2] = 3e7*u[2]^2
     return nothing
 end
-function robertsonD!(D,u,p,t)
-    D .= 0
-    return nothing
-end
-robertson_ip = ProdDestODEProblem(robertsonP!, robertsonD!, u0, tspan, p)
+robertson_ip = ConsProdDestODEProblem(robertsonP!, u0, tspan, p)
 
 # Test constant time step size
-sol_robertson_ip_RB23 = solve(robertson_ip, Rosenbrock23(autodiff=false), abstol=1e-3, reltol=1e-2)
-sol_robertson_ip_MPRK22_1 = solve(robertson_ip, MPRK22(1.1), abstol=1e-3, reltol=1e-2)
+sol_robertson_ip_RB23 = solve(robertson_ip, Rosenbrock23(autodiff=false), abstol=1e-3, reltol=1e-2);
+sol_robertson_ip_MPRK22_1 = solve(robertson_ip, MPRK22(1.1), abstol=1e-3, reltol=1e-2);
 
 # plot solution
 p1 = plot(sol_robertson_op_RB23[2:end],idxs = [(0, 1), ((x,y)-> (x,1e4.*y) , 0, 2), (0, 3)], color=palette(:default)[1:3]',legend=:right, xaxis=:log)

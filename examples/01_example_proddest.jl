@@ -89,12 +89,12 @@ linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
 linmod_ConsPDS_ip = ConsProdDestODEProblem(linmodP!, u0, tspan)
 
 # solutions
-sol_linmod_f_op = solve(linmod_f_op, Tsit5())
-sol_linmod_f_ip = solve(linmod_f_ip,Tsit5())
-sol_linmod_PDS_op = solve(linmod_PDS_op, Tsit5())
-sol_linmod_PDS_ip = solve(linmod_PDS_ip,Tsit5())
-sol_linmod_ConsPDS_op = solve(linmod_ConsPDS_op, Tsit5())
-sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip,Tsit5())
+sol_linmod_f_op = solve(linmod_f_op, Tsit5());
+sol_linmod_f_ip = solve(linmod_f_ip,Tsit5());
+sol_linmod_PDS_op = solve(linmod_PDS_op, Tsit5());
+sol_linmod_PDS_ip = solve(linmod_PDS_ip,Tsit5());
+sol_linmod_ConsPDS_op = solve(linmod_ConsPDS_op, Tsit5());
+sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip,Tsit5());
 
 # check equality of solutions
 @assert sol_linmod_f_op.t ≈ sol_linmod_f_ip.t ≈ sol_linmod_PDS_op.t ≈ sol_linmod_PDS_ip.t ≈ sol_linmod_ConsPDS_op.t ≈ sol_linmod_ConsPDS_ip.t
@@ -103,7 +103,9 @@ sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip,Tsit5())
 # check that we really do not use too many additional allocations for in-place implementations
 alloc1 = @allocated(solve(linmod_f_ip, Tsit5()))
 alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
+alloc3 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
 @assert 0.95 < alloc1/alloc2 < 1.05
+@assert 0.95 < alloc1/alloc3 < 1.05
 
 ##########################################################################################################################
 ### Example 2: Lotka-Volterra ############################################################################################
@@ -222,7 +224,7 @@ function fdupwindD!(D,u,p,t)
 end
 # problem with dense matrices
 fdupwind_PDS_dense = ProdDestODEProblem(fdupwindP!, fdupwindD!, u0, tspan);
-# proboem with sparse matrices
+# problem with sparse matrices
 p_prototype = spdiagm(-1 => ones(eltype(u0),N-1), N-1 => ones(eltype(u0),1))
 d_prototype = zero(u0)
 PD_sparse = ProdDestFunction(fdupwindP!,fdupwindD!;p_prototype = p_prototype, d_prototype = d_prototype);
