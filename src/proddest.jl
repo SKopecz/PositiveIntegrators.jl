@@ -187,7 +187,7 @@ ConservativePDSFunction(P; kwargs...) = ConservativePDSFunction{isinplace(P, 4),
 end
 =#
 
-# Evaluation of a ConsProdDestFunction (out-of-place)
+# Evaluation of a ConservativePDSFunction (out-of-place)
 (PD::ConservativePDSFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
 
 # Evaluation of a ConservativePDSFunction (in-place)
