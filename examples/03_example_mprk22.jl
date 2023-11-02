@@ -40,13 +40,13 @@ end
 
 # out-of-place implementation
 linmodP(u,p,t) = [0.0 p[2]u[2]; p[1]*u[1] 0.0]
-linmod_op = ConsProdDestODEProblem(linmodP, u0, tspan, p; analytic=f_analytic)
+linmod_op = ConservativePDSProblem(linmodP, u0, tspan, p; analytic=f_analytic)
 
 # solutions with constant equispaced time steps
 dt0 = 0.25
-sol_linmod_op_MPE = solve(linmod_op, MPE(), dt=dt0)
-sol_linmod_op_MPRK22_1 = solve(linmod_op, MPRK22(1.0), dt=dt0, adaptive=false)
-sol_linmod_op_MPRK22_½ = solve(linmod_op, MPRK22(0.5), dt=dt0, adaptive=false)
+sol_linmod_op_MPE = solve(linmod_op, MPE(), dt=dt0);
+sol_linmod_op_MPRK22_1 = solve(linmod_op, MPRK22(1.0), dt=dt0, adaptive=false);
+sol_linmod_op_MPRK22_½ = solve(linmod_op, MPRK22(0.5), dt=dt0, adaptive=false);
 
 # plots
 using Plots
@@ -67,7 +67,7 @@ function linmodP!(P,u,p,t)
     P[2, 1] = 5.0*u[1]
     return nothing
 end
-linmod_ip = ConsProdDestODEProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
+linmod_ip = ConservativePDSProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
 
 # solutions with constant equispaced time steps
 dt0 = 0.25
@@ -96,7 +96,7 @@ tspan = (0.0, 30.0)
 
 # out-of-place implementation
 nonlinmodP(u,p,t) = [0.0 0.0 0.0; u[2]*u[1]/(u[1]+1.0) 0.0 0.0; 0.0 0.3*u[2] 0.0]
-nonlinmod_op = ConsProdDestODEProblem(nonlinmodP, u0, tspan, p)
+nonlinmod_op = ConservativePDSProblem(nonlinmodP, u0, tspan, p)
 
 # solutions with constant equispaced time steps
 dt0 = 1.0
@@ -118,7 +118,7 @@ function nonlinmodP!(P,u,p,t)
     P[3, 2] = 0.3*u[2]
     return nothing
 end
-nonlinmod_ip = ConsProdDestODEProblem(nonlinmodP!, u0, tspan, p)
+nonlinmod_ip = ConservativePDSProblem(nonlinmodP!, u0, tspan, p)
 
 # solutions with constant equispaced time steps
 dt0 = 1.0
@@ -144,7 +144,7 @@ p = [1e4,4e-2, 3e7]
 
 # out-of-place
 robertsonP(u,p,t) = [0.0 1e4*u[2]*u[3] 0.0; 4e-2*u[1] 0.0 0.0; 0.0 3e7*u[2]^2 0.0]
-robertson_op = ConsProdDestODEProblem(robertsonP, u0, tspan, p)
+robertson_op = ConservativePDSProblem(robertsonP, u0, tspan, p)
 
 # Test constant time step size
 sol_robertson_op_RB23 = solve(robertson_op, Rosenbrock23(), abstol=1e-3, reltol=1e-2);
@@ -167,7 +167,7 @@ function robertsonP!(P,u,p,t)
     P[3, 2] = 3e7*u[2]^2
     return nothing
 end
-robertson_ip = ConsProdDestODEProblem(robertsonP!, u0, tspan, p)
+robertson_ip = ConservativePDSProblem(robertsonP!, u0, tspan, p)
 
 # Test constant time step size
 sol_robertson_ip_RB23 = solve(robertson_ip, Rosenbrock23(autodiff=false), abstol=1e-3, reltol=1e-2);

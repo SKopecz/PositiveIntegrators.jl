@@ -72,7 +72,7 @@ linmod_f_ip = ODEProblem(linmod!, u0, tspan)
 linmodP(u,p,t) = [0.0 u[2]; 5.0*u[1] 0.0]
 linmodD(u,p,t) = [0.0; 0.0]
 linmod_PDS_op = ProdDestODEProblem(linmodP, linmodD, u0, tspan)
-linmod_ConsPDS_op = ConsProdDestODEProblem(linmodP, u0, tspan)
+linmod_ConsPDS_op = ConservativePDSProblem(linmodP, u0, tspan)
 
 # in-place sytanx for PDS
 function linmodP!(P,u,p,t)
@@ -86,7 +86,7 @@ function linmodD!(D,u,p,t)
     return nothing
 end
 linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
-linmod_ConsPDS_ip = ConsProdDestODEProblem(linmodP!, u0, tspan)
+linmod_ConsPDS_ip = ConservativePDSProblem(linmodP!, u0, tspan)
 
 # solutions
 sol_linmod_f_op = solve(linmod_f_op, Tsit5());
@@ -157,10 +157,10 @@ end
 lotvol_PDS_ip = ProdDestODEProblem(lotvolP!, lotvolD!, u0, tspan)
 
 # solutions
-sol_lotvol_f_op = solve(lotvol_f_op, Tsit5())
-sol_lotvol_f_ip = solve(lotvol_f_ip,Tsit5())
-sol_lotvol_PDS_op = solve(lotvol_PDS_op, Tsit5())
-sol_lotvol_PDS_ip = solve(lotvol_PDS_ip,Tsit5())
+sol_lotvol_f_op = solve(lotvol_f_op, Tsit5());
+sol_lotvol_f_ip = solve(lotvol_f_ip,Tsit5());
+sol_lotvol_PDS_op = solve(lotvol_PDS_op, Tsit5());
+sol_lotvol_PDS_ip = solve(lotvol_PDS_ip,Tsit5());
 
 # check equality of solutions
 @assert sol_lotvol_f_op.t ≈ sol_lotvol_f_ip.t ≈ sol_lotvol_PDS_op.t ≈ sol_lotvol_PDS_ip.t
@@ -226,10 +226,10 @@ end
 fdupwind_PDS_dense = ProdDestODEProblem(fdupwindP!, fdupwindD!, u0, tspan);
 # problem with sparse matrices
 p_prototype = spdiagm(-1 => ones(eltype(u0),N-1), N-1 => ones(eltype(u0),1))
-d_prototype = zero(u0)
+d_prototype = zero(u0);
 PD_sparse = ProdDestFunction(fdupwindP!,fdupwindD!;p_prototype = p_prototype, d_prototype = d_prototype);
 fdupwind_PDS_sparse = ProdDestODEProblem(PD_sparse, u0, tspan);
-fdupwind_ConsPDS_sparse = ConsProdDestODEProblem(fdupwindP!, u0, tspan; p_prototype = p_prototype);
+fdupwind_ConsPDS_sparse = ConservativePDSProblem(fdupwindP!, u0, tspan; p_prototype = p_prototype);
 
 
 # solutions

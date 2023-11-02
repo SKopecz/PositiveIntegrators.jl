@@ -137,15 +137,15 @@ function (PD::ProdDestFunction)(du, u, p, t)
     return nothing
 end
 
-# New ODE function ConsProdDestFunction
-struct ConsProdDestFunction{iip,specialize,P,PrototypeP,TMP,Ta} <: AbstractODEFunction{iip}
+# New ODE function ConservativePDSFunction
+struct ConservativePDSFunction{iip,specialize,P,PrototypeP,TMP,Ta} <: AbstractODEFunction{iip}
     p::P                   
     p_prototype::PrototypeP   
     tmp::TMP
     analytic::Ta 
 end
 
-function Base.getproperty(obj::ConsProdDestFunction, sym::Symbol)
+function Base.getproperty(obj::ConservativePDSFunction, sym::Symbol)
     if sym === :mass_matrix
         return I
     elseif sym === :jac_prototype
@@ -159,27 +159,27 @@ function Base.getproperty(obj::ConsProdDestFunction, sym::Symbol)
     end
 end
 
-function ConsProdDestFunction{iip,FullSpecialize}(P; p_prototype=nothing, analytic=nothing) where {iip}
+function ConservativePDSFunction{iip,FullSpecialize}(P; p_prototype=nothing, analytic=nothing) where {iip}
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype,1),))
     else
         tmp = nothing
     end
-    ConsProdDestFunction{iip,FullSpecialize,typeof(P),typeof(p_prototype),typeof(tmp),typeof(analytic)}(P, p_prototype, tmp, analytic)
+    ConservativePDSFunction{iip,FullSpecialize,typeof(P),typeof(p_prototype),typeof(tmp),typeof(analytic)}(P, p_prototype, tmp, analytic)
 end
 
-#function ConsProdDestFunction{iip}(P; kwargs...) where {iip}
-#    ConsProdDestFunction{iip,FullSpecialize}(P; kwargs...)
+#function ConservativePDSFunction{iip}(P; kwargs...) where {iip}
+#    ConservativePDSFunction{iip,FullSpecialize}(P; kwargs...)
 #end
 
-ConsProdDestFunction(P; kwargs...) = ConsProdDestFunction{isinplace(P, 4),FullSpecialize}(P; kwargs...)
+ConservativePDSFunction(P; kwargs...) = ConservativePDSFunction{isinplace(P, 4),FullSpecialize}(P; kwargs...)
 
 #=
 #Do we really need this????
-@add_kwonly function ConsProdDestFunction(P, p_prototype, tmp)
+@add_kwonly function ConservativePDSFunction(P, p_prototype, tmp)
     P = ODEFunction(P)
 
-    ConsProdDestFunction{isinplace(P, 4),FullSpecialize,typeof(P), typeof(p_prototype),typeof(tmp)}
+    ConservativePDSFunction{isinplace(P, 4),FullSpecialize,typeof(P), typeof(p_prototype),typeof(tmp)}
     (P, D, mass_matrix, cache, analytic, tgrad, jac, jvp, vjp,
         jac_prototype, sparsity, Wfact, Wfact_t, paramjac, syms,
         indepsym,
@@ -188,10 +188,10 @@ end
 =#
 
 # Evaluation of a ConsProdDestFuntion (out-of-place)
-(PD::ConsProdDestFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
+(PD::ConservativePDSFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
 
-# Evaluation of a ConsProdDestFunction (in-place)
-function (PD::ConsProdDestFunction)(du, u, p, t)
+# Evaluation of a ConservativePDSFunction (in-place)
+function (PD::ConservativePDSFunction)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
@@ -264,9 +264,9 @@ function ProdDestODEProblem{iip}(PD::ProdDestFunction, u0, tspan, p = NullParame
     ODEProblem(PD, u0, tspan, p, ProdDestODEProblem{iip}(); kwargs...)
 end
 
-# New problem type ConsProdDestODEProblem
+# New problem type ConservativePDSProblem
 """
-    ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
+    ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                             p_prototype = similar(u0, (length(u0), length(u0))), analytic=nothing)
 
 A structure describing a conservative ordinary differential equation in form of a production-destruction system (PDS).
@@ -294,10 +294,10 @@ The function `P` can be given either in the out-of-place form with signature
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct ConsProdDestODEProblem{iip} <: AbstractProdDestODEProblem end
+struct ConservativePDSProblem{iip} <: AbstractProdDestODEProblem end
 
-# Standard constructor for ConsProdDestODEProblems
-function ConsProdDestODEProblem(P, u0, tspan, p = NullParameters(); 
+# Standard constructor for ConservativePDSProblems
+function ConservativePDSProblem(P, u0, tspan, p = NullParameters(); 
     p_prototype = nothing, analytic = nothing, kwargs...)
 
     # p_prototype is used to store evaluations of P, if P is in-place.
@@ -305,16 +305,16 @@ function ConsProdDestODEProblem(P, u0, tspan, p = NullParameters();
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
     
-    PD = ConsProdDestFunction(P; p_prototype=p_prototype, analytic=analytic)
-    ConsProdDestODEProblem(PD, u0, tspan, p; kwargs...)
+    PD = ConservativePDSFunction(P; p_prototype=p_prototype, analytic=analytic)
+    ConservativePDSProblem(PD, u0, tspan, p; kwargs...)
 end
 
-# Construct ConsProdDestODEProblem from ConsProdDestFunction
-function ConsProdDestODEProblem(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...)
-    ConsProdDestODEProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
+# Construct ConservativePDSProblem from ConservativePDSFunction
+function ConservativePDSProblem(PD::ConservativePDSFunction, u0, tspan, p = NullParameters(); kwargs...)
+    ConservativePDSProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
 end
-function ConsProdDestODEProblem{iip}(PD::ConsProdDestFunction, u0, tspan, p = NullParameters(); kwargs...) where {iip}
-    ODEProblem(PD, u0, tspan, p, ConsProdDestODEProblem{iip}(); kwargs...)
+function ConservativePDSProblem{iip}(PD::ConservativePDSFunction, u0, tspan, p = NullParameters(); kwargs...) where {iip}
+    ODEProblem(PD, u0, tspan, p, ConservativePDSProblem{iip}(); kwargs...)
 end
 
 

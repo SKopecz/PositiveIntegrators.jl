@@ -38,7 +38,7 @@ function f_analytic(u0,p,t)
     c = a+b
     return ((u₁⁰+u₂⁰)*[b; a] + exp(-c*t)*(a*u₁⁰-b*u₂⁰)*[1;-1])/c
 end
-prob_op = ConsProdDestODEProblem(linmodP, u0, tspan, p; analytic=f_analytic)
+prob_op = ConservativePDSProblem(linmodP, u0, tspan, p; analytic=f_analytic)
 
 # solution
 sol_MPE_op = solve(prob_op, MPE(), dt=0.25);
@@ -65,11 +65,11 @@ function linmodP!(P,u,p,t)
     P[2, 1] = 5.0*u[1]
     return nothing
 end
-prob_ip = ConsProdDestODEProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
+prob_ip = ConservativePDSProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
 
 #solutions
-sol_MPE_ip = solve(prob_ip, MPE(), dt=0.25)
-sol_IE_ip = solve(prob_ip,ImplicitEuler(autodiff=false), dt=0.25, adaptive=false) #autodiff does not work here
+sol_MPE_ip = solve(prob_ip, MPE(), dt=0.25);
+sol_IE_ip = solve(prob_ip,ImplicitEuler(autodiff=false), dt=0.25, adaptive=false); #autodiff does not work here
 
 # check that MPE and IE solutions are equivalent
 @assert sol_MPE_ip.u ≈ sol_IE_ip.u
@@ -84,7 +84,7 @@ convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff=false)])
 
 # try different linear solvers
 using LinearSolve
-sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt=0.25)
-sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve=RFLUFactorization()), dt=0.25)
-sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve=LUFactorization()), dt=0.25)
+sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt=0.25);
+sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve=RFLUFactorization()), dt=0.25);
+sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve=LUFactorization()), dt=0.25);
 @assert sol_MPE_ip_linsol1.u ≈ sol_MPE_ip_linsol2.u ≈ sol_MPE_ip_linsol3.u
