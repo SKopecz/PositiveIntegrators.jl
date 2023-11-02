@@ -187,7 +187,7 @@ ConservativePDSFunction(P; kwargs...) = ConservativePDSFunction{isinplace(P, 4),
 end
 =#
 
-# Evaluation of a ConsProdDestFuntion (out-of-place)
+# Evaluation of a ConsProdDestFunction (out-of-place)
 (PD::ConservativePDSFunction)(u, p, t) = vec(sum(PD.p(u, p, t),dims=2)) - vec(sum(PD.p(u,p,t),dims=1))
 
 # Evaluation of a ConservativePDSFunction (in-place)
@@ -284,7 +284,7 @@ The function `P` can be given either in the out-of-place form with signature
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`. 
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`. 
-    Specifing the analytic solution can be useful for plotting and convergence tests.
+    Specifying the analytic solution can be useful for plotting and convergence tests.
 
 ## References
 
