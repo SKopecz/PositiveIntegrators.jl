@@ -8,6 +8,8 @@ using Aqua: Aqua
 
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
+        # We do not test ambiguities since we get a lot of 
+        # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,)
     end
