@@ -13,7 +13,8 @@ using Reexport: @reexport
 
 @reexport using SciMLBase: ODEFunction, ODEProblem, init, solve
 
-using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpecialize, isinplace
+using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpecialize,
+                 isinplace
 
 # TODO: Check imports and using statements below, reduce if possible
 using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
@@ -28,19 +29,18 @@ import SciMLBase: __has_mass_matrix, __has_analytic, __has_tgrad,
                   __has_sys
 
 import OrdinaryDiffEq: @cache,
-       OrdinaryDiffEqAdaptiveAlgorithm, calculate_residuals, calculate_residuals!, False,
-       OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-       alg_cache, initialize!, perform_step!,
-       recursivefill!, _vec, DEFAULT_PRECS, wrapprecs,
-       dolinsolve
-
+                       OrdinaryDiffEqAdaptiveAlgorithm, calculate_residuals,
+                       calculate_residuals!, False,
+                       OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+                       alg_cache, initialize!, perform_step!,
+                       recursivefill!, _vec, DEFAULT_PRECS, wrapprecs,
+                       dolinsolve
 
 # 2. Export functionality defining the public API
 export ProdDestFunction, ProdDestODEProblem
 export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22
-
 
 # 3. Load source code
 
