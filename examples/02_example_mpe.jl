@@ -30,46 +30,45 @@ tspan = (0.0, 2.0)
 p = [5.0, 1.0]
 
 # linear model problem - out-of-place
-linmodP(u,p,t) = [0.0 p[2]*u[2]; p[1]*u[1] 0.0]
+linmodP(u, p, t) = [0.0 p[2]*u[2]; p[1]*u[1] 0.0]
 # analytic solution
-function f_analytic(u0,p,t)
+function f_analytic(u0, p, t)
     u₁⁰, u₂⁰ = u0
     a, b = p
-    c = a+b
-    return ((u₁⁰+u₂⁰)*[b; a] + exp(-c*t)*(a*u₁⁰-b*u₂⁰)*[1;-1])/c
+    c = a + b
+    return ((u₁⁰ + u₂⁰) * [b; a] + exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
 end
-prob_op = ConservativePDSProblem(linmodP, u0, tspan, p; analytic=f_analytic)
+prob_op = ConservativePDSProblem(linmodP, u0, tspan, p; analytic = f_analytic)
 
 # solution
-sol_MPE_op = solve(prob_op, MPE(), dt=0.25);
-sol_IE_op = solve(prob_op, ImplicitEuler(), dt=0.25, adaptive=false);
+sol_MPE_op = solve(prob_op, MPE(), dt = 0.25);
+sol_IE_op = solve(prob_op, ImplicitEuler(), dt = 0.25, adaptive = false);
 
 # check that MPE and IE solutions are equivalent
 @assert sol_MPE_op.u ≈ sol_IE_op.u
 
 # plot solutions
 using Plots
-p1 = myplot(sol_MPE_op,"MPE",true)
-p2 = myplot(sol_IE_op,"IE",true)
-plot(p1,p2,plot_title="out-of-place")
+p1 = myplot(sol_MPE_op, "MPE", true)
+p2 = myplot(sol_IE_op, "IE", true)
+plot(p1, p2, plot_title = "out-of-place")
 
 # check convergence order
 using DiffEqDevTools, PrettyTables
 convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()])
 
-
 # linear model problem - in-place
-function linmodP!(P,u,p,t)
+function linmodP!(P, u, p, t)
     P .= 0
     P[1, 2] = u[2]
-    P[2, 1] = 5.0*u[1]
+    P[2, 1] = 5.0 * u[1]
     return nothing
 end
-prob_ip = ConservativePDSProblem(linmodP!, u0, tspan, p; analytic=f_analytic)
+prob_ip = ConservativePDSProblem(linmodP!, u0, tspan, p; analytic = f_analytic)
 
 #solutions
-sol_MPE_ip = solve(prob_ip, MPE(), dt=0.25);
-sol_IE_ip = solve(prob_ip,ImplicitEuler(autodiff=false), dt=0.25, adaptive=false); #autodiff does not work here
+sol_MPE_ip = solve(prob_ip, MPE(), dt = 0.25);
+sol_IE_ip = solve(prob_ip, ImplicitEuler(autodiff = false), dt = 0.25, adaptive = false); #autodiff does not work here
 
 # check that MPE and IE solutions are equivalent
 @assert sol_MPE_ip.u ≈ sol_IE_ip.u
@@ -77,14 +76,14 @@ sol_IE_ip = solve(prob_ip,ImplicitEuler(autodiff=false), dt=0.25, adaptive=false
 # plots solutinos
 p1 = myplot(sol_MPE_ip, "MPE", true)
 p2 = myplot(sol_IE_ip, "IE", true)
-plot(p1, p2, plot_title="in-place")
+plot(p1, p2, plot_title = "in-place")
 
 # check convergence order
-convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff=false)])
+convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff = false)])
 
 # try different linear solvers
 using LinearSolve
-sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt=0.25);
-sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve=RFLUFactorization()), dt=0.25);
-sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve=LUFactorization()), dt=0.25);
+sol_MPE_ip_linsol1 = solve(prob_ip, MPE(), dt = 0.25);
+sol_MPE_ip_linsol2 = solve(prob_ip, MPE(linsolve = RFLUFactorization()), dt = 0.25);
+sol_MPE_ip_linsol3 = solve(prob_ip, MPE(linsolve = LUFactorization()), dt = 0.25);
 @assert sol_MPE_ip_linsol1.u ≈ sol_MPE_ip_linsol2.u ≈ sol_MPE_ip_linsol3.u
