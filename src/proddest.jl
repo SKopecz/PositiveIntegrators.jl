@@ -296,10 +296,10 @@ The function `P` can be given either in the out-of-place form with signature
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`. 
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
-  set to `zeros(eltype(u0), (length(u0), length(u0)))`. 
-- `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`. 
+  set to `zeros(eltype(u0), (length(u0), length(u0)))`.
+- `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
     Specifying the analytic solution can be useful for plotting and convergence tests.
 
 ## References
@@ -314,24 +314,21 @@ struct ConservativePDSProblem{iip} <: AbstractProdDestODEProblem end
 
 # General constructor for ConservativePDSProblems
 function ConservativePDSProblem(P, u0, tspan, p = NullParameters();
-                                p_prototype = nothing, analytic = nothing, kwargs...)
+                                kwargs...)
 
-    # p_prototype is used to store evaluations of P, if P is in-place.
-    if isinplace(P, 4) && isnothing(p_prototype)
-        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
-    end
-
-    PD = ConservativePDSFunction(P; p_prototype = p_prototype, analytic = analytic)
-    ConservativePDSProblem(PD, u0, tspan, p; kwargs...)
+    iip = isinplace(P, 4)
+    return ConservativePDSProblem{iip}(P, u0, tspan, p; kwargs...)
 end
 
 
-# Specialized constructor for ConservativePDSProblems with in-place P matrix.
-function ConservativePDSProblem{true}(P, u0, tspan, p = NullParameters();
-    p_prototype = nothing, analytic = nothing, kwargs...)
+# Specialized constructor for ConservativePDSProblems setting `iip` manually
+function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
+                                     p_prototype = nothing,
+                                     analytic = nothing,
+                                     kwargs...) where {iip}
 
     # p_prototype is used to store evaluations of P, if P is in-place.
-    if isnothing(p_prototype)#
+    if isnothing(p_prototype) && iip
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
 
