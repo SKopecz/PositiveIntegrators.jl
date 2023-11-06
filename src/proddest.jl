@@ -312,7 +312,7 @@ The function `P` can be given either in the out-of-place form with signature
 """
 struct ConservativePDSProblem{iip} <: AbstractProdDestODEProblem end
 
-# Standard constructor for ConservativePDSProblems
+# General constructor for ConservativePDSProblems
 function ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                                 p_prototype = nothing, analytic = nothing, kwargs...)
 
@@ -321,6 +321,21 @@ function ConservativePDSProblem(P, u0, tspan, p = NullParameters();
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
 
+    PD = ConservativePDSFunction(P; p_prototype = p_prototype, analytic = analytic)
+    ConservativePDSProblem(PD, u0, tspan, p; kwargs...)
+end
+
+
+# Specialized constructor for ConservativePDSProblems with in-place P matrix.
+function ConservativePDSProblem{true}(P, u0, tspan, p = NullParameters();
+    p_prototype = nothing, analytic = nothing, kwargs...)
+
+    # p_prototype is used to store evaluations of P, if P is in-place.
+    if isnothing(p_prototype)#
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
+    end
+
+    ### Internal isinplace must be avoided!!!
     PD = ConservativePDSFunction(P; p_prototype = p_prototype, analytic = analytic)
     ConservativePDSProblem(PD, u0, tspan, p; kwargs...)
 end
