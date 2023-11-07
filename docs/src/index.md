@@ -51,7 +51,7 @@ where ``\boldsymbol y=(y_1,\dots,y_n)^T`` is the vector of unknowns and the prod
 * ``d_{ii}`` represents the sum of all negative terms which appear in   
   equation ``i`` and don't have a positive counterpart.
 
-Please note that the above naming convention leads to ``p_{ij} = d_{ji} for i≠ j``.
+Please note that the above naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j``.
 
 To illustrate the indexing, we consider the ficticious ODE system
 ```math
