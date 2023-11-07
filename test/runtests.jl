@@ -130,7 +130,7 @@ using Aqua: Aqua
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            prob_ip = PDSProblem(linmodP!, linmodD!, u0, tspan, p; analytic=f_analytic)
+            prob_ip = PDSProblem(linmodP!, linmodD!, u0, tspan, p; analytic = f_analytic)
 
             dt = 0.25
             sol_MPE_ip = solve(prob_ip, MPE(); dt)
