@@ -69,7 +69,8 @@ linmod_f_ip = ODEProblem(linmod!, u0, tspan)
 # out-of-place syntax for PDS
 linmodP(u, p, t) = [0.0 u[2]; 5.0*u[1] 0.0]
 linmodD(u, p, t) = [0.0; 0.0]
-linmod_PDS_op = ProdDestODEProblem(linmodP, linmodD, u0, tspan)
+linmod_PDS_op = PDSProblem(linmodP, linmodD, u0, tspan)
+linmod_PDS_op_2 = PDSProblem{false}(linmodP, linmodD, u0, tspan)
 linmod_ConsPDS_op = ConservativePDSProblem(linmodP, u0, tspan)
 linmod_ConsPDS_op_2 = ConservativePDSProblem{false}(linmodP, u0, tspan)
 
@@ -84,7 +85,8 @@ function linmodD!(D, u, p, t)
     D .= 0.0
     return nothing
 end
-linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
+linmod_PDS_ip = PDSProblem(linmodP!, linmodD!, u0, tspan)
+linmod_PDS_ip_2 = PDSProblem{true}(linmodP!, linmodD!, u0, tspan)
 linmod_ConsPDS_ip = ConservativePDSProblem(linmodP!, u0, tspan)
 linmod_ConsPDS_ip_2 = ConservativePDSProblem{true}(linmodP!, u0, tspan)
 
@@ -92,28 +94,36 @@ linmod_ConsPDS_ip_2 = ConservativePDSProblem{true}(linmodP!, u0, tspan)
 sol_linmod_f_op = solve(linmod_f_op, Tsit5());
 sol_linmod_f_ip = solve(linmod_f_ip, Tsit5());
 sol_linmod_PDS_op = solve(linmod_PDS_op, Tsit5());
+sol_linmod_PDS_op_2 = solve(linmod_PDS_op_2, Tsit5());
 sol_linmod_PDS_ip = solve(linmod_PDS_ip, Tsit5());
+sol_linmod_PDS_ip_2 = solve(linmod_PDS_ip_2, Tsit5());
 sol_linmod_ConsPDS_op = solve(linmod_ConsPDS_op, Tsit5());
 sol_linmod_ConsPDS_op_2 = solve(linmod_ConsPDS_op_2, Tsit5());
 sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip, Tsit5());
 sol_linmod_ConsPDS_ip_2 = solve(linmod_ConsPDS_ip_2, Tsit5());
 
 # check equality of solutions
-@assert sol_linmod_f_op.t ≈ sol_linmod_f_ip.t ≈ sol_linmod_PDS_op.t ≈ sol_linmod_PDS_ip.t ≈
-        sol_linmod_ConsPDS_op.t ≈ sol_linmod_ConsPDS_ip.t ≈ 
+@assert sol_linmod_f_op.t ≈ sol_linmod_f_ip.t ≈
+        sol_linmod_PDS_op.t ≈ sol_linmod_PDS_ip.t ≈
+        sol_linmod_PDS_op_2.t ≈ sol_linmod_PDS_ip_2.t ≈
+        sol_linmod_ConsPDS_op.t ≈ sol_linmod_ConsPDS_ip.t ≈
         sol_linmod_ConsPDS_op_2.t ≈ sol_linmod_ConsPDS_ip_2.t
-@assert sol_linmod_f_op.u ≈ sol_linmod_f_ip.u ≈ sol_linmod_PDS_op.u ≈ sol_linmod_PDS_ip.u ≈
+@assert sol_linmod_f_op.u ≈ sol_linmod_f_ip.u ≈
+        sol_linmod_PDS_op.u ≈ sol_linmod_PDS_ip.u ≈
+        sol_linmod_PDS_op_2.u ≈ sol_linmod_PDS_ip_2.u ≈
         sol_linmod_ConsPDS_op.u ≈ sol_linmod_ConsPDS_ip.u ≈
         sol_linmod_ConsPDS_op_2.u ≈ sol_linmod_ConsPDS_ip_2.u
 
 # check that we really do not use too many additional allocations for in-place implementations
 alloc1 = @allocated(solve(linmod_f_ip, Tsit5()))
 alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
-alloc3 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
-alloc4 = @allocated(solve(linmod_ConsPDS_ip_2, Tsit5()))
+alloc3 = @allocated(solve(linmod_PDS_ip_2, Tsit5()))
+alloc4 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
+alloc5 = @allocated(solve(linmod_ConsPDS_ip_2, Tsit5()))
 @assert 0.95 < alloc1 / alloc2 < 1.05
 @assert 0.95 < alloc1 / alloc3 < 1.05
 @assert 0.95 < alloc1 / alloc4 < 1.05
+@assert 0.95 < alloc1 / alloc5 < 1.05
 
 ##########################################################################################################################
 ### Example 2: Lotka-Volterra ############################################################################################
@@ -148,7 +158,8 @@ lotvol_f_ip = ODEProblem(lotvol!, u0, tspan)
 # out-of-place syntax for PDS
 lotvolP(u, p, t) = [u[1] 0.0; u[1]*u[2] 0.0]
 lotvolD(u, p, t) = [0.0; u[2]]
-lotvol_PDS_op = ProdDestODEProblem(lotvolP, lotvolD, u0, tspan)
+lotvol_PDS_op = PDSProblem(lotvolP, lotvolD, u0, tspan)
+lotvol_PDS_op_2 = PDSProblem{false}(lotvolP, lotvolD, u0, tspan)
 
 # in-place sytanx for PDS
 function lotvolP!(P, u, p, t)
@@ -162,22 +173,31 @@ function lotvolD!(D, u, p, t)
     D[2] = u[2]
     return nothing
 end
-lotvol_PDS_ip = ProdDestODEProblem(lotvolP!, lotvolD!, u0, tspan)
+lotvol_PDS_ip = PDSProblem(lotvolP!, lotvolD!, u0, tspan)
+lotvol_PDS_ip_2 = PDSProblem{true}(lotvolP!, lotvolD!, u0, tspan)
 
 # solutions
 sol_lotvol_f_op = solve(lotvol_f_op, Tsit5());
 sol_lotvol_f_ip = solve(lotvol_f_ip, Tsit5());
 sol_lotvol_PDS_op = solve(lotvol_PDS_op, Tsit5());
+sol_lotvol_PDS_op_2 = solve(lotvol_PDS_op_2, Tsit5());
 sol_lotvol_PDS_ip = solve(lotvol_PDS_ip, Tsit5());
+sol_lotvol_PDS_ip_2 = solve(lotvol_PDS_ip_2, Tsit5());
 
 # check equality of solutions
-@assert sol_lotvol_f_op.t ≈ sol_lotvol_f_ip.t ≈ sol_lotvol_PDS_op.t ≈ sol_lotvol_PDS_ip.t
-@assert sol_lotvol_f_op.u ≈ sol_lotvol_f_ip.u ≈ sol_lotvol_PDS_op.u ≈ sol_lotvol_PDS_ip.u
+@assert sol_lotvol_f_op.t ≈ sol_lotvol_f_ip.t ≈
+        sol_lotvol_PDS_op.t ≈ sol_lotvol_PDS_op_2.t ≈
+        sol_lotvol_PDS_ip.t ≈ sol_lotvol_PDS_ip_2.t
+@assert sol_lotvol_f_op.u ≈ sol_lotvol_f_ip.u ≈
+        sol_lotvol_PDS_op.u ≈ sol_lotvol_PDS_op_2.u ≈
+        sol_lotvol_PDS_ip.u ≈ sol_lotvol_PDS_ip_2.u
 
 # check that we really do not use too many additional allocations for in-place implementations
 alloc1 = @allocated(solve(lotvol_f_ip, Tsit5()))
 alloc2 = @allocated(solve(lotvol_PDS_ip, Tsit5()))
+alloc3 = @allocated(solve(lotvol_PDS_ip_2, Tsit5()))
 @assert 0.95 < alloc1 / alloc2 < 1.05
+@assert 0.95 < alloc1 / alloc3 < 1.05
 
 ##########################################################################################################################
 ### Example 3: Linear advection discretized with finite differences and upwind, periodic boundary conditions #############
@@ -231,47 +251,55 @@ function fdupwindD!(D, u, p, t)
     return nothing
 end
 # problem with dense matrices
-fdupwind_PDS_dense = ProdDestODEProblem(fdupwindP!, fdupwindD!, u0, tspan);
+fdupwind_PDS_dense = PDSProblem(fdupwindP!, fdupwindD!, u0, tspan);
 # problem with sparse matrices
 p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1), N - 1 => ones(eltype(u0), 1))
 d_prototype = zero(u0);
-PD_sparse = ProdDestFunction(fdupwindP!, fdupwindD!; p_prototype = p_prototype,
-                             d_prototype = d_prototype);
-fdupwind_PDS_sparse = ProdDestODEProblem(PD_sparse, u0, tspan);
+fdupwind_PDS_sparse = PDSProblem(fdupwindP!, fdupwindD!, u0, tspan;
+                                 p_prototype = p_prototype, d_prototype = d_prototype);
+fdupwind_PDS_sparse_2 = PDSProblem{true}(fdupwindP!, fdupwindD!, u0, tspan;
+                                         p_prototype = p_prototype,
+                                         d_prototype = d_prototype);
 fdupwind_ConsPDS_sparse = ConservativePDSProblem(fdupwindP!, u0, tspan;
                                                  p_prototype = p_prototype);
 fdupwind_ConsPDS_sparse_2 = ConservativePDSProblem{true}(fdupwindP!, u0, tspan;
-                                                 p_prototype = p_prototype);                                                 
+                                                         p_prototype = p_prototype);
 
 # solutions
 sol_fdupwind_f = solve(fdupwind_f, Tsit5());
 sol_fdupwind_PDS_dense = solve(fdupwind_PDS_dense, Tsit5());
 sol_fdupwind_PDS_sparse = solve(fdupwind_PDS_sparse, Tsit5());
+sol_fdupwind_PDS_sparse_2 = solve(fdupwind_PDS_sparse_2, Tsit5());
 sol_fdupwind_ConsPDS_sparse = solve(fdupwind_ConsPDS_sparse, Tsit5());
 sol_fdupwind_ConsPDS_sparse_2 = solve(fdupwind_ConsPDS_sparse_2, Tsit5());
 
 # check equality of solutions
-@assert sol_fdupwind_f.t ≈ sol_fdupwind_PDS_dense.t ≈ sol_fdupwind_PDS_sparse.t ≈
+@assert sol_fdupwind_f.t ≈ sol_fdupwind_PDS_dense.t ≈
+        sol_fdupwind_PDS_sparse.t ≈ sol_fdupwind_PDS_sparse_2.t ≈
         sol_fdupwind_ConsPDS_sparse.t ≈ sol_fdupwind_ConsPDS_sparse_2.t
-@assert sol_fdupwind_f.u ≈ sol_fdupwind_PDS_dense.u ≈ sol_fdupwind_PDS_sparse.u ≈
+@assert sol_fdupwind_f.u ≈ sol_fdupwind_PDS_dense.u ≈
+        sol_fdupwind_PDS_sparse.u ≈ sol_fdupwind_PDS_sparse_2.u ≈
         sol_fdupwind_ConsPDS_sparse.u ≈ sol_fdupwind_ConsPDS_sparse_2.u
 
 # Check that we really do not use too many additional allocations
 alloc1 = @allocated(solve(fdupwind_f, Tsit5()))
 alloc2 = @allocated(solve(fdupwind_PDS_dense, Tsit5()))
 alloc3 = @allocated(solve(fdupwind_PDS_sparse, Tsit5()))
-alloc4 = @allocated(solve(fdupwind_ConsPDS_sparse, Tsit5()))
-alloc5 = @allocated(solve(fdupwind_ConsPDS_sparse_2, Tsit5()))
+alloc4 = @allocated(solve(fdupwind_PDS_sparse_2, Tsit5()))
+alloc5 = @allocated(solve(fdupwind_ConsPDS_sparse, Tsit5()))
+alloc6 = @allocated(solve(fdupwind_ConsPDS_sparse_2, Tsit5()))
 @assert 0.95 < alloc1 / alloc2 < 1.05
 @assert 0.95 < alloc1 / alloc3 < 1.05
 @assert 0.95 < alloc1 / alloc4 < 1.05
 @assert 0.95 < alloc1 / alloc5 < 1.05
+@assert 0.95 < alloc1 / alloc6 < 1.05
 
 using BenchmarkTools
 b1 = @benchmark solve(fdupwind_f, Tsit5())
 b2 = @benchmark solve(fdupwind_PDS_dense, Tsit5())
 b3 = @benchmark solve(fdupwind_PDS_sparse, Tsit5())
-b4 = @benchmark solve(fdupwind_ConsPDS_sparse, Tsit5())
-b5 = @benchmark solve(fdupwind_ConsPDS_sparse_2, Tsit5())
+b4 = @benchmark solve(fdupwind_PDS_sparse_2, Tsit5())
+b5 = @benchmark solve(fdupwind_ConsPDS_sparse, Tsit5())
+b6 = @benchmark solve(fdupwind_ConsPDS_sparse_2, Tsit5())
 
 ##########################################################################################################################

@@ -37,7 +37,7 @@ import OrdinaryDiffEq: @cache,
                        dolinsolve
 
 # 2. Export functionality defining the public API
-export ProdDestFunction, ProdDestODEProblem
+export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22
