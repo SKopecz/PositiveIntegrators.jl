@@ -14,7 +14,7 @@ using Aqua: Aqua
                       ambiguities = false,)
     end
 
-    @testset "ProdDestODEProblem" begin
+    @testset "PDSProblem" begin
         @testset "Linear model problem" begin
             # This is an example of a conservative PDS
             #
@@ -51,7 +51,7 @@ using Aqua: Aqua
             # out-of-place syntax for PDS
             linmodP(u, p, t) = [0 u[2]; 5*u[1] 0]
             linmodD(u, p, t) = [0.0; 0.0]
-            linmod_PDS_op = ProdDestODEProblem(linmodP, linmodD, u0, tspan)
+            linmod_PDS_op = PDSProblem(linmodP, linmodD, u0, tspan)
 
             # in-place sytanx for PDS
             function linmodP!(P, u, p, t)
@@ -64,7 +64,7 @@ using Aqua: Aqua
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
+            linmod_PDS_ip = PDSProblem(linmodP!, linmodD!, u0, tspan)
 
             # solutions
             sol_linmod_ODE_op = solve(linmod_ODE_op, Tsit5())
@@ -110,9 +110,7 @@ using Aqua: Aqua
             # linear model problem - out-of-place
             linmodP(u, p, t) = [0 p[2]*u[2]; p[1]*u[1] 0]
             linmodD(u, p, t) = [0.0; 0.0]
-            PD_op = ProdDestFunction(linmodP, linmodD;
-                                     analytic = f_analytic)
-            prob_op = ProdDestODEProblem(PD_op, u0, tspan, p)
+            prob_op = PDSProblem(linmodP, linmodD, u0, tspan, p; analytic = f_analytic)
 
             dt = 0.25
             sol_MPE_op = solve(prob_op, MPE(); dt)
@@ -132,11 +130,7 @@ using Aqua: Aqua
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            PD_ip = ProdDestFunction(linmodP!, linmodD!;
-                                     p_prototype = zeros(2, 2),
-                                     d_prototype = zeros(2, 1),
-                                     analytic = f_analytic)
-            prob_ip = ProdDestODEProblem(PD_ip, u0, tspan, p)
+            prob_ip = PDSProblem(linmodP!, linmodD!, u0, tspan, p; analytic=f_analytic)
 
             dt = 0.25
             sol_MPE_ip = solve(prob_ip, MPE(); dt)

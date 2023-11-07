@@ -21,7 +21,7 @@
 # Modified Patankar-Runge-Kutta (MPRK) schemes are based on the production-destruction representation of an ODE.
 #
 # In OrdinaryDiffEq an ODE u' = f(t,u) with t in tspan and parameters p is represented as an ODEProblem(f,u,tspan,p). To
-# represent f as a PDS the new problem type ProdDestODEProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ)
+# represent f as a PDS the new problem type PDSProblem(P,D,u,tspan,p) was added. Here P is the matrix (pᵢⱼ)
 # from above, with possibly nonzero diagonal elements. D is the vector to store dᵢᵢ.
 
 # Install packages

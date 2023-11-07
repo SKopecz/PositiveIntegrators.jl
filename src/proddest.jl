@@ -1,5 +1,5 @@
-# New problem type ProdDestODEProblem
-abstract type AbstractProdDestODEProblem end
+# New problem type PDSProblem
+abstract type AbstractPDSProblem end
 
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
@@ -38,7 +38,7 @@ set to `zeros(eltype(u0), (length(u0),))`.
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct PDSProblem{iip} <: AbstractProdDestODEProblem end
+struct PDSProblem{iip} <: AbstractPDSProblem end
 
 # New ODE function PDSFunction
 struct PDSFunction{iip, specialize, P, D, PrototypeP, PrototypeD, Ta} <:
@@ -187,7 +187,7 @@ The function `P` can be given either in the out-of-place form with signature
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct ConservativePDSProblem{iip} <: AbstractProdDestODEProblem end
+struct ConservativePDSProblem{iip} <: AbstractPDSProblem end
 
 # New ODE function ConservativePDSFunction
 struct ConservativePDSFunction{iip, specialize, P, PrototypeP, TMP, Ta} <:
