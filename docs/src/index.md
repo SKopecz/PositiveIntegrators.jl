@@ -46,12 +46,12 @@ where ``\boldsymbol y=(y_1,\dots,y_n)^T`` is the vector of unknowns and the prod
   appear in equation ``i`` with a positive sign and in equation ``j`` with a negative sign.
 * ``d_{ij}`` with ``i\ne j`` represents the sum of all positive terms which 
   appear in equation ``i`` with a negative sign and in equation ``j`` with a positive sign.
-* ``p_{ii}`` represents the sum of all positive terms with positive sign 
-  which appear in   
-  equation ``i`` and don't have a negative counterpart
-* ``d_{ii}`` represents the sum of all positive terms with negative sign 
-  which appear in   
-  equation ``i`` and don't have a negative counterpart
+* ``p_{ii}`` represents the sum of all positive terms  which appear in   
+  equation ``i`` and don't have a negative counterpart.
+* ``d_{ii}`` represents the sum of all negative terms which appear in   
+  equation ``i`` and don't have a positive counterpart.
+
+Please note that the above naming convention leads to ``p_{ij} = d_{ji} for i≠ j``.
 
 To illustrate the indexing, we consider the ficticious ODE system
 ```math
@@ -94,13 +94,11 @@ A PDS with
   p_{ii}(t,\boldsymbol y)=d_{ii}(t,\boldsymbol y)=0
 ``` 
 for ``i=1,\dots,N`` is called conservative. In this case we have
+
 ```math
-  p_{ij}(t,\boldsymbol y)=d_{ji}(t,\boldsymbol y)
+\frac{d}{dt}\sum_{i=1}^N y_i=\sum_{i=1}^N y_i' = \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr)= \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - p_{ji}(t,\boldsymbol y)\bigr) = 0.
 ```
-for all ``i\ne j`` and hence,
-```math
-\frac{d}{dt}\sum_{i=1}^N y_i=\sum_{i=1}^N y_i' = \sum_{i,j=1}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr)= \sum_{i,j=1}^N \bigl(p_{ij}(t,\boldsymbol y) - p_{ji}(t,\boldsymbol y)\bigr) = 0.
-```
+
 As a consequence the sum of state variables remains constant over time, i.e.
 ```math 
 \sum_{i=1}^N y_i(t) = \sum_{i=1}^N y_i(0) 
