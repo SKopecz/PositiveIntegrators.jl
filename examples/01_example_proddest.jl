@@ -71,6 +71,7 @@ linmodP(u, p, t) = [0.0 u[2]; 5.0*u[1] 0.0]
 linmodD(u, p, t) = [0.0; 0.0]
 linmod_PDS_op = ProdDestODEProblem(linmodP, linmodD, u0, tspan)
 linmod_ConsPDS_op = ConservativePDSProblem(linmodP, u0, tspan)
+linmod_ConsPDS_op_2 = ConservativePDSProblem{false}(linmodP, u0, tspan)
 
 # in-place sytanx for PDS
 function linmodP!(P, u, p, t)
@@ -85,6 +86,7 @@ function linmodD!(D, u, p, t)
 end
 linmod_PDS_ip = ProdDestODEProblem(linmodP!, linmodD!, u0, tspan)
 linmod_ConsPDS_ip = ConservativePDSProblem(linmodP!, u0, tspan)
+linmod_ConsPDS_ip_2 = ConservativePDSProblem{true}(linmodP!, u0, tspan)
 
 # solutions
 sol_linmod_f_op = solve(linmod_f_op, Tsit5());
@@ -92,20 +94,26 @@ sol_linmod_f_ip = solve(linmod_f_ip, Tsit5());
 sol_linmod_PDS_op = solve(linmod_PDS_op, Tsit5());
 sol_linmod_PDS_ip = solve(linmod_PDS_ip, Tsit5());
 sol_linmod_ConsPDS_op = solve(linmod_ConsPDS_op, Tsit5());
+sol_linmod_ConsPDS_op_2 = solve(linmod_ConsPDS_op_2, Tsit5());
 sol_linmod_ConsPDS_ip = solve(linmod_ConsPDS_ip, Tsit5());
+sol_linmod_ConsPDS_ip_2 = solve(linmod_ConsPDS_ip_2, Tsit5());
 
 # check equality of solutions
 @assert sol_linmod_f_op.t ≈ sol_linmod_f_ip.t ≈ sol_linmod_PDS_op.t ≈ sol_linmod_PDS_ip.t ≈
-        sol_linmod_ConsPDS_op.t ≈ sol_linmod_ConsPDS_ip.t
+        sol_linmod_ConsPDS_op.t ≈ sol_linmod_ConsPDS_ip.t ≈ 
+        sol_linmod_ConsPDS_op_2.t ≈ sol_linmod_ConsPDS_ip_2.t
 @assert sol_linmod_f_op.u ≈ sol_linmod_f_ip.u ≈ sol_linmod_PDS_op.u ≈ sol_linmod_PDS_ip.u ≈
-        sol_linmod_ConsPDS_op.u ≈ sol_linmod_ConsPDS_ip.u
+        sol_linmod_ConsPDS_op.u ≈ sol_linmod_ConsPDS_ip.u ≈
+        sol_linmod_ConsPDS_op_2.u ≈ sol_linmod_ConsPDS_ip_2.u
 
 # check that we really do not use too many additional allocations for in-place implementations
 alloc1 = @allocated(solve(linmod_f_ip, Tsit5()))
 alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
 alloc3 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
+alloc4 = @allocated(solve(linmod_ConsPDS_ip_2, Tsit5()))
 @assert 0.95 < alloc1 / alloc2 < 1.05
 @assert 0.95 < alloc1 / alloc3 < 1.05
+@assert 0.95 < alloc1 / alloc4 < 1.05
 
 ##########################################################################################################################
 ### Example 2: Lotka-Volterra ############################################################################################
@@ -232,32 +240,38 @@ PD_sparse = ProdDestFunction(fdupwindP!, fdupwindD!; p_prototype = p_prototype,
 fdupwind_PDS_sparse = ProdDestODEProblem(PD_sparse, u0, tspan);
 fdupwind_ConsPDS_sparse = ConservativePDSProblem(fdupwindP!, u0, tspan;
                                                  p_prototype = p_prototype);
+fdupwind_ConsPDS_sparse_2 = ConservativePDSProblem{true}(fdupwindP!, u0, tspan;
+                                                 p_prototype = p_prototype);                                                 
 
 # solutions
 sol_fdupwind_f = solve(fdupwind_f, Tsit5());
 sol_fdupwind_PDS_dense = solve(fdupwind_PDS_dense, Tsit5());
 sol_fdupwind_PDS_sparse = solve(fdupwind_PDS_sparse, Tsit5());
 sol_fdupwind_ConsPDS_sparse = solve(fdupwind_ConsPDS_sparse, Tsit5());
+sol_fdupwind_ConsPDS_sparse_2 = solve(fdupwind_ConsPDS_sparse_2, Tsit5());
 
 # check equality of solutions
 @assert sol_fdupwind_f.t ≈ sol_fdupwind_PDS_dense.t ≈ sol_fdupwind_PDS_sparse.t ≈
-        sol_fdupwind_ConsPDS_sparse.t
+        sol_fdupwind_ConsPDS_sparse.t ≈ sol_fdupwind_ConsPDS_sparse_2.t
 @assert sol_fdupwind_f.u ≈ sol_fdupwind_PDS_dense.u ≈ sol_fdupwind_PDS_sparse.u ≈
-        sol_fdupwind_ConsPDS_sparse.u
+        sol_fdupwind_ConsPDS_sparse.u ≈ sol_fdupwind_ConsPDS_sparse_2.u
 
 # Check that we really do not use too many additional allocations
 alloc1 = @allocated(solve(fdupwind_f, Tsit5()))
 alloc2 = @allocated(solve(fdupwind_PDS_dense, Tsit5()))
 alloc3 = @allocated(solve(fdupwind_PDS_sparse, Tsit5()))
 alloc4 = @allocated(solve(fdupwind_ConsPDS_sparse, Tsit5()))
+alloc5 = @allocated(solve(fdupwind_ConsPDS_sparse_2, Tsit5()))
 @assert 0.95 < alloc1 / alloc2 < 1.05
 @assert 0.95 < alloc1 / alloc3 < 1.05
 @assert 0.95 < alloc1 / alloc4 < 1.05
+@assert 0.95 < alloc1 / alloc5 < 1.05
 
 using BenchmarkTools
 b1 = @benchmark solve(fdupwind_f, Tsit5())
 b2 = @benchmark solve(fdupwind_PDS_dense, Tsit5())
 b3 = @benchmark solve(fdupwind_PDS_sparse, Tsit5())
 b4 = @benchmark solve(fdupwind_ConsPDS_sparse, Tsit5())
+b5 = @benchmark solve(fdupwind_ConsPDS_sparse_2, Tsit5())
 
 ##########################################################################################################################

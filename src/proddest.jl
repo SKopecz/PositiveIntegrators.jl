@@ -146,87 +146,6 @@ function (PD::ProdDestFunction)(du, u, p, t)
     return nothing
 end
 
-# New ODE function ConservativePDSFunction
-struct ConservativePDSFunction{iip, specialize, P, PrototypeP, TMP, Ta} <:
-       AbstractODEFunction{iip}
-    p::P
-    p_prototype::PrototypeP
-    tmp::TMP
-    analytic::Ta
-end
-
-function Base.getproperty(obj::ConservativePDSFunction, sym::Symbol)
-    if sym === :mass_matrix
-        return I
-    elseif sym === :jac_prototype
-        return nothing
-    elseif sym === :colorvec
-        return nothing
-    elseif sym === :sparsity
-        return nothing
-    else # fallback to getfield
-        return getfield(obj, sym)
-    end
-end
-
-function ConservativePDSFunction{iip, FullSpecialize}(P; p_prototype = nothing,
-                                                      analytic = nothing) where {iip}
-    if p_prototype isa AbstractSparseMatrix
-        tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
-    else
-        tmp = nothing
-    end
-    ConservativePDSFunction{iip, FullSpecialize, typeof(P), typeof(p_prototype),
-                            typeof(tmp), typeof(analytic)}(P, p_prototype, tmp, analytic)
-end
-
-#function ConservativePDSFunction{iip}(P; kwargs...) where {iip}
-#    ConservativePDSFunction{iip,FullSpecialize}(P; kwargs...)
-#end
-
-function ConservativePDSFunction(P; kwargs...)
-    ConservativePDSFunction{isinplace(P, 4), FullSpecialize}(P; kwargs...)
-end
-
-#=
-#Do we really need this????
-@add_kwonly function ConservativePDSFunction(P, p_prototype, tmp)
-    P = ODEFunction(P)
-
-    ConservativePDSFunction{isinplace(P, 4),FullSpecialize,typeof(P), typeof(p_prototype),typeof(tmp)}
-    (P, D, mass_matrix, cache, analytic, tgrad, jac, jvp, vjp,
-        jac_prototype, sparsity, Wfact, Wfact_t, paramjac, syms,
-        indepsym,
-        paramsyms, observed, colorvec, sys)
-end
-=#
-
-# Evaluation of a ConservativePDSFunction (out-of-place)
-function (PD::ConservativePDSFunction)(u, p, t)
-    vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
-end
-
-# Evaluation of a ConservativePDSFunction (in-place)
-function (PD::ConservativePDSFunction)(du, u, p, t)
-    PD.p(PD.p_prototype, u, p, t)
-
-    if PD.p_prototype isa AbstractSparseMatrix
-        # Same result but more efficient - at least currently for SparseMatrixCSC
-        fill!(PD.tmp, one(eltype(PD.tmp)))
-        mul!(vec(du), PD.p_prototype, PD.tmp)
-        sum!(PD.tmp', PD.p_prototype)
-        vec(du) .-= PD.tmp
-    else
-        # This implementation does not need any auxiliary vectors
-        for i in 1:length(u)
-            du[i] = zero(eltype(du))
-            for j in 1:length(u)
-                du[i] += PD.p_prototype[i, j] - PD.p_prototype[j, i]
-            end
-        end
-    end
-    return nothing
-end
 
 # New problem type ProdDestODEProblem
 abstract type AbstractProdDestODEProblem end
@@ -312,7 +231,30 @@ The function `P` can be given either in the out-of-place form with signature
 """
 struct ConservativePDSProblem{iip} <: AbstractProdDestODEProblem end
 
-# General constructor for ConservativePDSProblems
+# New ODE function ConservativePDSFunction
+struct ConservativePDSFunction{iip, specialize, P, PrototypeP, TMP, Ta} <: AbstractODEFunction{iip}
+    p::P
+    p_prototype::PrototypeP
+    tmp::TMP
+    analytic::Ta
+end
+
+# define behavior of ConservativePDSFunction for non-existing fields
+function Base.getproperty(obj::ConservativePDSFunction, sym::Symbol)
+    if sym === :mass_matrix
+        return I
+    elseif sym === :jac_prototype
+        return nothing
+    elseif sym === :colorvec
+        return nothing
+    elseif sym === :sparsity
+        return nothing
+    else # fallback to getfield
+        return getfield(obj, sym)
+    end
+   end
+
+# Most general constructor for ConservativePDSProblems
 function ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                                 kwargs...)
 
@@ -322,6 +264,7 @@ end
 
 
 # Specialized constructor for ConservativePDSProblems setting `iip` manually
+# (arbitrary function)
 function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
                                      p_prototype = nothing,
                                      analytic = nothing,
@@ -332,17 +275,57 @@ function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
 
-    ### Internal isinplace must be avoided!!!
-    PD = ConservativePDSFunction(P; p_prototype = p_prototype, analytic = analytic)
-    ConservativePDSProblem(PD, u0, tspan, p; kwargs...)
+    PD = ConservativePDSFunction{iip}(P; p_prototype = p_prototype, analytic = analytic)
+    ConservativePDSProblem{iip}(PD, u0, tspan, p; kwargs...)
 end
 
-# Construct ConservativePDSProblem from ConservativePDSFunction
-function ConservativePDSProblem(PD::ConservativePDSFunction, u0, tspan,
-                                p = NullParameters(); kwargs...)
-    ConservativePDSProblem{isinplace(PD)}(PD, u0, tspan, p; kwargs...)
-end
+# Specialized constructor for ConservativePDSProblems setting `iip` manually
+# (ConservativePDSFunction)
 function ConservativePDSProblem{iip}(PD::ConservativePDSFunction, u0, tspan,
                                      p = NullParameters(); kwargs...) where {iip}
     ODEProblem(PD, u0, tspan, p, ConservativePDSProblem{iip}(); kwargs...)
+end
+
+# Specialized constructor for ConservativePDSFunction setting `iip` manually
+function ConservativePDSFunction{iip}(P; kwargs...) where {iip}
+    ConservativePDSFunction{iip,FullSpecialize}(P; kwargs...)
+end
+
+# Most specific constructor for ConservativePDSFunction
+function ConservativePDSFunction{iip, FullSpecialize}(P; p_prototype = nothing,
+                                                   analytic = nothing) where {iip}
+ if p_prototype isa AbstractSparseMatrix
+     tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
+ else
+     tmp = nothing
+ end
+ ConservativePDSFunction{iip, FullSpecialize, typeof(P), typeof(p_prototype),
+                         typeof(tmp), typeof(analytic)}(P, p_prototype, tmp, analytic)
+end
+
+# Evaluation of a ConservativePDSFunction (out-of-place)
+function (PD::ConservativePDSFunction)(u, p, t)
+ vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
+end
+
+# Evaluation of a ConservativePDSFunction (in-place)
+function (PD::ConservativePDSFunction)(du, u, p, t)
+ PD.p(PD.p_prototype, u, p, t)
+
+ if PD.p_prototype isa AbstractSparseMatrix
+     # Same result but more efficient - at least currently for SparseMatrixCSC
+     fill!(PD.tmp, one(eltype(PD.tmp)))
+     mul!(vec(du), PD.p_prototype, PD.tmp)
+     sum!(PD.tmp', PD.p_prototype)
+     vec(du) .-= PD.tmp
+ else
+     # This implementation does not need any auxiliary vectors
+     for i in 1:length(u)
+         du[i] = zero(eltype(du))
+         for j in 1:length(u)
+             du[i] += PD.p_prototype[i, j] - PD.p_prototype[j, i]
+         end
+     end
+ end
+ return nothing
 end
