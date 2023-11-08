@@ -8,7 +8,7 @@ systems. This one-step, one-stage method is first-order accurate, unconditionall
 positivity-preserving, and linearly implicit.
 
 The modified Patankar-Euler method requires the special structure of a
-[`ProdDestODEProblem`](@ref).
+[`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
 
 ## References
 
@@ -153,7 +153,7 @@ Kopecz and Meister (2018) and studied by Izgin, Kopecz and Meister (2022) as wel
 Torlo, Öffner and Ranocha (2022).
 
 This modified Patankar-Runge-Kutta method requires the special structure of a
-[`ProdDestODEProblem`](@ref).
+[`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
 
 ## References
 
