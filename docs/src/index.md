@@ -53,7 +53,7 @@ where ``\boldsymbol y=(y_1,\dots,y_n)^T`` is the vector of unknowns and the prod
 
 Please note that the above naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j``.
 
-To illustrate the indexing, we consider the ficticious ODE system
+To illustrate the indexing, we consider the fictitious ODE system
 ```math
 \begin{aligned}
 y_1' &= y_1y_3^2 + 1-e^{-y_3} - y_1 y_2 - y_1, \\
