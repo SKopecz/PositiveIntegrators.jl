@@ -88,6 +88,8 @@ using Aqua: Aqua
         end
 
         @testset "PDSProblem error handling" begin
+            P(u, p, t) = 0.0
+            D(du, u, p, t) = 0.0
             @test_throws "in-place and out-of-place" PDSProblem(P, D, 0.0, (0.0, 1.0))
         end
     end
