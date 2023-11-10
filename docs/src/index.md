@@ -89,17 +89,17 @@ In terms of implementation, a PDS is completely described by the square matrix `
 
 #### Conservative production-destruction systems
 
-A PDS with 
+A PDS with the additional property
 ```math
   p_{ii}(t,\boldsymbol y)=d_{ii}(t,\boldsymbol y)=0
 ``` 
 for ``i=1,\dots,N`` is called conservative. In this case we have
 
 ```math
-\frac{d}{dt}\sum_{i=1}^N y_i=\sum_{i=1}^N y_i' = \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr)= \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - p_{ji}(t,\boldsymbol y)\bigr) = 0.
+\frac{d}{dt}\sum_{i=1}^N y_i=\sum_{i=1}^N y_i' = \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr)= \sum_{\mathclap{i,j=1,\, i≠ j}}^N \bigl(p_{ij}(t,\boldsymbol y) - p_{ji}(t,\boldsymbol y)\bigr) = 0
 ```
 
-As a consequence the sum of state variables remains constant over time, i.e.
+and consequently the sum of state variables remains constant over time, i.e.
 ```math 
 \sum_{i=1}^N y_i(t) = \sum_{i=1}^N y_i(0) 
 ```
@@ -109,13 +109,57 @@ A specific example of a conservative PDS is the SIR model
 ```math
 S' = -\frac{β S I}{N},\quad I'= \frac{β S I}{N} - γ I,\quad R'=γ I,
 ```
-with
+with ``N=S+I+R`` and ``\beta,\gamma>0``. Assuming ``S,I,R>0`` the production and destruction terms are given by
 ```math
 p_{21}(S,I,R) = d_{12}(S,I,R) = \frac{β S I}{N},\quad p_{32}(S,I,R) = d_{23}(S,I,R) = γ I
 ```
-and ``S,I,R>0``, ``N=S+I+R`` and ``\beta,\gamma>0``.
+and all missing production and destruction terms are zero.
 
-In terms of implementation, a conservative PDS is completely described by the square matrix ``(p_{ij})_{i,j=1,\dots,N}``. There is no need for an additional vector to store destruction terms since we have ``d_{ij} = p_{ji}``. 
+In terms of implementation, a conservative PDS is completely described by the square matrix ``P=(p_{ij})_{i,j=1,\dots,N}``. There is no need for an additional vector to store the destruction terms since ``d_{ij} = p_{ji}`` for all ``i,j=1,\dots,N``. 
+
+The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)``.
+
+```@example SIR
+using PositiveIntegrators
+
+# Out-of-place implementation of the P matrix for the SIR model
+function P(u, p, t)
+  S, I, R = u
+
+  β = 0.4
+  γ = 0.04
+  N = 1000.0
+
+  P = zeros(3,3)
+  P[2,1] = β*S*I/N
+  P[3,2] = γ*I
+  return P
+end
+
+u0 = [997.0; 3.0; 0.0]; # initial values
+tspan = (0.0, 100.0); # time span
+
+# Create SIR problem
+SIRproblem = ConservativePDSProblem(P, u0, tspan)
+nothing # hide
+```
+`ConservativePDSProblem` is implemented as an `OrdinaryDiffEq.ODEProblem` and hence all solvers of [OrdinaryDiffEq](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used to solve a `ConservativePDSProblem`. For instance, the SIR model from above can be solved with the method `Tsit5()` as follows.
+
+```@example SIR
+using OrdinaryDiffEq 
+
+SIRsol = solve(SIRproblem,Tsit5())
+nothing # hide
+```
+Finally, we can plot the numerical solution.
+```@example SIR
+using Plots
+
+plot(SIRsol,legend=:right)
+savefig("SIRplot.svg"); nothing # hide
+```
+![](SIRplot.svg)
+
 
 ## Referencing
 
