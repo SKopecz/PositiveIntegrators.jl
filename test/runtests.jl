@@ -86,6 +86,10 @@ using Aqua: Aqua
             alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
             @test 0.95 < alloc1 / alloc2 < 1.05
         end
+
+        @testset "PDSProblem error handling" begin
+            @test_throws "in-place and out-of-place" PDSProblem(P, D, 0.0, (0.0, 1.0))
+        end
     end
 
     @testset "MPE" begin
