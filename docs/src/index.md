@@ -120,7 +120,7 @@ In terms of implementation, a conservative PDS is completely described by the sq
 The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)``.
 
 ```@setup SIR
-import Pkg; Pkg.add("OrdinaryDiffEq")
+import Pkg; Pkg.add("OrdinaryDiffEq"); Pkg.add("Plots")
 ```
 
 ```@example SIR
