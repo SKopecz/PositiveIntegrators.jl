@@ -33,15 +33,15 @@ julia> using Pkg; Pkg.update()
 
 ### Modified Patankar-Runge-Kutta schemes
 
-Modified Patankar-Runge-Kutta (MPRK) schemes are unconditionally positive and conservative time integration schemes for the solution of positive and conservative ODE systems. The formulation of these methods is based on the representation of the ODE system as a so-called production-destruction system (PDS).
+Modified Patankar-Runge-Kutta (MPRK) schemes are unconditionally positive and conservative time integration schemes for the solution of positive and conservative ODE systems. The application of these methods is based on the representation of the ODE system as a so-called production-destruction system (PDS).
 
 #### Production-destruction systems (PDS)
 
-The formulation of MPRK schemes requires the ODE system to be represented as a production-destruction system (PDS). A PDS takes the general form
+The application of MPRK schemes requires the ODE system to be represented as a production-destruction system (PDS). A PDS takes the general form
 ```math
-    y_i'(t) = \sum_{j=1}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr),\quad i=1,\dots,N,
+    u_i'(t) = \sum_{j=1}^N \bigl(p_{ij}(t,\boldsymbol u) - d_{ij}(t,\boldsymbol u)\bigr),\quad i=1,\dots,N,
 ```
-where ``\boldsymbol y=(y_1,\dots,y_n)^T`` is the vector of unknowns and the production terms ``p_{ij}(t,\boldsymbol y)`` as well as the destruction terms ``d_{ij}(t,\boldsymbol y)`` must be positive for all ``i,j=1,\dots,N``. The meaning behind ``p_{ij}`` and ``d_{ij}`` is as follows:
+where ``\boldsymbol u=(u_1,\dots,u_n)^T`` is the vector of unknowns and both production terms ``p_{ij}(t,\boldsymbol u)`` and destruction terms ``d_{ij}(t,\boldsymbol u)`` must be positive for all ``i,j=1,\dots,N``. The meaning behind ``p_{ij}`` and ``d_{ij}`` is as follows:
 * ``p_{ij}`` with ``i\ne j`` represents the sum of all positive terms which 
   appear in equation ``i`` with a positive sign and in equation ``j`` with a negative sign.
 * ``d_{ij}`` with ``i\ne j`` represents the sum of all positive terms which 
@@ -51,26 +51,26 @@ where ``\boldsymbol y=(y_1,\dots,y_n)^T`` is the vector of unknowns and the prod
 * ``d_{ii}`` represents the sum of all negative terms which appear in   
   equation ``i`` and don't have a positive counterpart.
 
-Please note that the above naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j``.
+Please note that the above naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j``. Hence, a PDS is completely described by the production matrix ``\mathbf{P}=(p_{ij})_{i,j=1,\dots,N}`` and the destruction vector ``\mathbf{d}=(d_{ii})_{i=1,\dots,N}``. 
 
 To illustrate the indexing, we consider the fictitious ODE system
 ```math
 \begin{aligned}
-y_1' &= y_1y_3^2 + 1-e^{-y_3} - y_1 y_2 - y_1, \\
-y_2' &= y_1y_2 + y_2 + y_1^2,\\
-y_3'&=-y_1y_3^2-(1-e^{-y_3}).
+u_1' &= u_1u_3^2 + 1-e^{-y_3} - u_1 u_2 - u_1, \\
+u_2' &= u_1u_2 + u_2 + u_1^2,\\
+u_3'&=-u_1u_3^2-(1-e^{-u_3}).
 \end{aligned}
 ```
-Under the assumptions ``y_1,y_2,y_3>0``, the above naming scheme results in
+Under the assumptions ``u_1,u_2,u_3>0``, the above naming scheme results in
 ```math
 \begin{aligned}
-p_{13}(t,\boldsymbol y) &= d_{31}(t,\boldsymbol y) = y_1y_3^2 + 1-e^{-y_3},\\
-p_{21}(t,\boldsymbol y) &= d_{21}(t,\boldsymbol y) = y_1 y_2,\\
-d_{11}(t,\boldsymbol y) &= y_1,\\
-p_{22}(t,\boldsymbol y) &= y_2 + y_1^2,
+p_{13}(t,\boldsymbol u) &= d_{31}(t,\boldsymbol u) = u_1u_3^2 + 1-e^{-u_3},\\
+p_{21}(t,\boldsymbol u) &= d_{21}(t,\boldsymbol u) = u_1 u_2,\\
+d_{11}(t,\boldsymbol u) &= u_1,\\
+p_{22}(t,\boldsymbol u) &= u_2 + u_1^2,
 \end{aligned}
 ```
-where the missing production and destruction terms are set to zero.
+where the missing production and destruction terms are set to zero. 
 
 One specific example of a PDS are the Lotka–Volterra equations
 ```math
@@ -84,8 +84,61 @@ p_{21}(x,y) = d_{12}(x, y) = β x y,\quad
 d_{22}(x,y) = γ y,
 ```
 where we assume ``x,y>0`` as well as ``\alpha,\beta,\gamma>0``.
+The corresponding production matrix ``\mathbf{P}`` and destruction vector ``\mathbf{d}`` are
+```math
+\mathbf{P}(x,y)=\begin{pmatrix}α x & 0\\β x y & 0\end{pmatrix},\quad \mathbf{d}(x,y)=\begin{pmatrix}0 \\γ y\end{pmatrix}.
+```
+The following example shows how to implement the Lotka-Volterra equations with ``α =2``, ``\beta=\frac{1}{2}`` and ``\gamma=1``.
+```@setup LotkaVolterra
+import Pkg; Pkg.add("OrdinaryDiffEq"); Pkg.add("Plots")
+```
 
-In terms of implementation, a PDS is completely described by the square matrix ``(p_{ij})_{i,j=1,\dots,N}`` and the vector ``(d_{ii})_{i=1,\dots,N}``. 
+```@example LotkaVolterra
+using PositiveIntegrators
+
+# Out-of-place implementation of the matrix P for the Lotka-Volterra equations
+function P(u, p, t)
+  x, y = u
+  α, β, γ = p
+
+  P = zeros(2,2)
+  P[1,1] = α*x
+  P[2,1] = β*x*y
+  return P
+end
+
+# Out-of-place implementation of the vector d for the Lotka-Volterra equations
+function d(u, p, t)
+  x, y = u
+  α, β, γ = p
+
+  d = zeros(2,1)
+  d[1] = 0
+  d[2] = γ*y
+  return d
+end
+
+u0 = [10.0; 1.0]; # initial values
+tspan = (0.0, 20.0); # time span
+p = [2.0; 0.5; 1.0]; # α, β, γ
+
+# Create Lotka-Volterra problem
+LotkaVolterraProblem = PDSProblem(P, d, u0, tspan, p)
+nothing # hide
+```
+All solvers of [OrdinaryDiffEq](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used to solve the `PDSProblem`.
+```@example LotkaVolterra
+using OrdinaryDiffEq 
+LotkaVolterraSol = solve(LotkaVolterraProblem, Tsit5(), reltol=1e-8, abstol=1e-8)
+nothing # hide
+```
+Finally, we can plot the numerical solution.
+```@example LotkaVolterra
+using Plots
+plot(LotkaVolterraSol)
+savefig("LotkaVolterraPlot.svg"); nothing # hide
+```
+![](LotkaVolterraPlot.svg)
 
 #### Conservative production-destruction systems
 
@@ -144,7 +197,7 @@ u0 = [997.0; 3.0; 0.0]; # initial values
 tspan = (0.0, 100.0); # time span
 
 # Create SIR problem
-SIRproblem = ConservativePDSProblem(P, u0, tspan)
+SIRProblem = ConservativePDSProblem(P, u0, tspan)
 nothing # hide
 ```
 `ConservativePDSProblem` is implemented as an `OrdinaryDiffEq.ODEProblem` and hence all solvers of [OrdinaryDiffEq](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used to solve a `ConservativePDSProblem`. For instance, the SIR model from above can be solved with the method `Tsit5()` as follows.
@@ -152,18 +205,17 @@ nothing # hide
 ```@example SIR
 using OrdinaryDiffEq 
 
-SIRsol = solve(SIRproblem,Tsit5())
+SIRSol = solve(SIRProblem,Tsit5())
 nothing # hide
 ```
 Finally, we can plot the numerical solution.
 ```@example SIR
 using Plots
 
-plot(SIRsol,legend=:right)
+plot(SIRSol,legend=:right)
 savefig("SIRplot.svg"); nothing # hide
 ```
 ![](SIRplot.svg)
-
 
 ## Referencing
 
