@@ -262,7 +262,17 @@ end
 
 # Evaluation of a ConservativePDSFunction (out-of-place)
 function (PD::ConservativePDSFunction)(u, p, t)
-    vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
+    #vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
+    @fastmath P = PD.p(u, p, t)
+
+    f = zero(u)
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if !iszero(P[I])      
+            f[I[1]] += P[I]
+            f[I[2]] -= P[I]
+        end
+    end
+    return f
 end
 
 # Evaluation of a ConservativePDSFunction (in-place)

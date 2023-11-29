@@ -1,3 +1,52 @@
+function build_mprk_matrix(P, sigma, dt)
+    #=
+    M = zero(P)
+    d = zero(sigma)
+
+    for I in CartesianIndices(P)
+        if !iszero(P[I])
+            dtP = dt*P[I]      
+            M[I] = -dtP / sigma[I[2]]
+            d[I[2]] += dtP
+        end
+    end
+    for i in eachindex(d)        
+        M[i,i] = 1.0 + d[i]/sigma[i]
+    end
+    return M
+    =#
+
+    # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
+    # M[i,j] = -dt*P[i,j]/sigma[j]
+    M = similar(P)
+    zeroM = zero(eltype(M))
+
+    # Set sigma on diagonal
+    @inbounds for i in eachindex(sigma)        
+        M[i,i] = sigma[i]
+    end
+
+    # Run through P and fill M accordingly.
+    # If P[i,j] ≠ 0 set M[i,j] = -dt*P[i,j] and add dt*P[i,j] to M[j,j].
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if I[1] != I[2]
+            if !iszero(P[I])
+                dtP = dt * P[I]
+                M[I] = -dtP / sigma[I[2]]
+                M[I[2], I[2]] += dtP
+            else
+                M[I] = zeroM
+            end
+        end
+    end
+
+    # Divide diagonal elements by Patankar weights denominators
+    @fastmath @inbounds @simd for i in eachindex(sigma)        
+        M[i,i] /= sigma[i]
+    end
+
+    return M
+end
 
 ### MPE #####################################################################################
 """
@@ -23,7 +72,7 @@ struct MPE{F, P} <: OrdinaryDiffEqAlgorithm
     precs::P
 end
 
-function MPE(; linsolve = nothing, precs = DEFAULT_PRECS)
+function MPE(; linsolve = nothing, precs = (I, I))
     MPE(linsolve, precs)
 end
 
@@ -75,7 +124,7 @@ function initialize!(integrator, cache::MPEConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    integrator.stats.nf += 1    
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -84,16 +133,19 @@ function initialize!(integrator, cache::MPEConstantCache)
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, f, p = integrator
+    @unpack alg, t, dt, uprev, f, p = integrator
 
-    # Attention: Implementation assumes that the pds is positive and conservative,
+    # Attention: Implementation assumes that the pds is conservative,
     # i.e. f.p[i,i] == 0 for all i
 
-    P = f.p(uprev, p, t) # evaluate production terms
-    D = vec(sum(P, dims = 1)) # compute sum of destruction terms from P
-    M = -dt * P ./ reshape(uprev, 1, :) # divide production terms by Patankar-weights
-    M[diagind(M)] .+= 1.0 .+ dt * D ./ uprev # add destruction terms on diagonal
-    u = M \ uprev
+    @fastmath P = f.p(uprev, p, t) # evaluate production matrix
+    M = build_mprk_matrix(P, uprev, dt)
+
+    #u = M \ uprev
+    linprob = LinearProblem(M, uprev)
+    #linsol = init(linprob; alias_A = true, alias_b = true, assumptions = LinearSolve.OperatorAssumptions(true))
+    sol = solve(linprob, alg.linsolve, Pl = alg.precs[1], Pr = alg.precs[2], alias_A = true, alias_b = true, assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
