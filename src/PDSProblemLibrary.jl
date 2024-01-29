@@ -9,7 +9,8 @@ function f_linmod_analytic(u0, p, t)
     return ((u₁⁰ + u₂⁰) * [b; a] + exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
 end
 u0_linmod = @SVector [0.9, 0.1]
-prob_pds_linmod = ConservativePDSProblem(P_linmod, u0_linmod, (0.0, 2.0), analytic = f_linmod_analytic)
+prob_pds_linmod = ConservativePDSProblem(P_linmod, u0_linmod, (0.0, 2.0),
+                                         analytic = f_linmod_analytic)
 
 # nonlinear model problem
 function P_nonlinmod(u, p, t)
@@ -120,7 +121,7 @@ function P_stratreac(u, p, t)
 end
 function d_stratreac(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
-    
+
     k2 = 8.018e-17
     k11 = 1.0e-8
 

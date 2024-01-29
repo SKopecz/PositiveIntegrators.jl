@@ -1,6 +1,7 @@
-add_small_constant(v, small_constant) = v .+ small_constant    
-add_small_constant(v::SVector{N,T}, small_constant::T) where {N,T} = v + SVector{N,T}(ntuple(i -> small_constant, N))
-
+add_small_constant(v, small_constant) = v .+ small_constant
+function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
+    v + SVector{N, T}(ntuple(i -> small_constant, N))
+end
 
 function build_mprk_matrix(P, sigma, dt)
     #=
@@ -148,7 +149,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
              linsolve_tmp, linsolve, weight)
 end
 
-struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache 
+struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
     small_constant::T
 end
 
@@ -191,7 +192,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     sol = solve(linprob, alg.linsolve, Pl = alg.precs[1], Pr = alg.precs[2],
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
-    u = sol.u    
+    u = sol.u
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1

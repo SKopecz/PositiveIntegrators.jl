@@ -2,7 +2,8 @@ using Plots
 using DiffEqDevTools: test_convergence, analyticless_test_convergence
 using PrettyTables: pretty_table
 
-function convergence_tab_plot(prob, algs, test_setup = nothing; dts = 0.5 .^ (1:10), order_plot = false, analytic = false)
+function convergence_tab_plot(prob, algs, test_setup = nothing; dts = 0.5 .^ (1:10),
+                              order_plot = false, analytic = false)
     sims = Array{Any}(undef, length(algs))
     for i in eachindex(algs)
         #convergence order
@@ -50,7 +51,7 @@ function _myplot(plotf, sol, name = "", analytic = false)
     N = length(sol.u[1])
     if analytic == true
         plotf(sol, color = palette(:default)[1:(2 * N)]', legend = :right,
-             plot_analytic = true)
+              plot_analytic = true)
     else
         plotf(sol, color = palette(:default)[1:N]', legend = :right, plot_analytic = false)
     end

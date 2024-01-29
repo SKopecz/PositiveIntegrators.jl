@@ -60,8 +60,10 @@ function Base.getproperty(obj::PDSFunction, sym::Symbol)
         return nothing
     elseif sym === :sparsity
         return nothing
-    elseif sym === :sys 
-        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing, nothing, nothing)        
+    elseif sym === :sys
+        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing,
+                                                                                nothing,
+                                                                                nothing)
     else # fallback to getfield
         return getfield(obj, sym)
     end
@@ -210,8 +212,10 @@ function Base.getproperty(obj::ConservativePDSFunction, sym::Symbol)
         return nothing
     elseif sym === :sparsity
         return nothing
-    elseif sym === :sys 
-        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing, nothing, nothing)
+    elseif sym === :sys
+        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing,
+                                                                                nothing,
+                                                                                nothing)
     else # fallback to getfield
         return getfield(obj, sym)
     end

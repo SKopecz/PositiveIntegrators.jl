@@ -18,9 +18,9 @@ include("utilities.jl")
 f2(t, x, y) = (t, x + y)
 f3(t, x, y, z) = (t, x + y + z)
 f4(t, u1, u2, u3, u4) = (t, u1 + u2 + u3 + u4)
-f_npzd(t, u1, u2, u3, u4) = (t, 0.66*(u1 + u2 + u3 + u4))
+f_npzd(t, u1, u2, u3, u4) = (t, 0.66 * (u1 + u2 + u3 + u4))
 f6(t, u1, u2, u3, u4, u5, u6) = (t, u1 + u2 + u3 + u4 + u5 + u6)
-f_brusselator(t, u1, u2, u3, u4, u5, u6) = (t, 0.55*(u1 + u2 + u3 + u4 + u5 + u6))
+f_brusselator(t, u1, u2, u3, u4, u5, u6) = (t, 0.55 * (u1 + u2 + u3 + u4 + u5 + u6))
 
 ## linear model ##########################################################
 sol_linmod_MPE = solve(prob_pds_linmod, MPE(), dt = 0.2);
@@ -31,11 +31,13 @@ plot!(sol_linmod_MPE, idxs = (f2, 0, 1, 2))
 
 # convergence order
 # error based on analytic solution
-convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()]; dts = 0.5 .^ (3:18), analytic = true, order_plot = true)
+convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()]; dts = 0.5 .^ (3:18),
+                     analytic = true, order_plot = true)
 savefig("figs/error_linmod_analytic.svg")
 # error based on reference solution
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14);
-convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:18), order_plot = true)
+convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:18),
+                     order_plot = true)
 savefig("figs/error_linmod_reference.svg")
 
 ## nonlinear model ########################################################
@@ -49,7 +51,8 @@ plot!(sol_nonlinmod_MPE, idxs = (f3, 0, 1, 2, 3))
 
 # convergence order 
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:17), order_plot = true)
+convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:17),
+                     order_plot = true)
 
 ## robertson problem ######################################################
 sol_robertson = solve(prob_pds_robertson, Rosenbrock23());
@@ -68,11 +71,13 @@ sol_brusselator_MPE = solve(prob_pds_brusselator, MPE(), dt = 0.25);
 # plot
 plot(sol_brusselator, legend = :outerright)
 myplot!(sol_brusselator_MPE, "MPE")
-plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6), label="f_brusselator")
+plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6),
+      label = "f_brusselator")
 
 # convergence order 
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17), order_plot = true)
+convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17),
+                     order_plot = true)
 
 ## SIR model ##############################################################
 sol_sir = solve(prob_pds_sir, Tsit5());
@@ -86,11 +91,12 @@ plot!(sol_sir_MPE, idxs = (f3, 0, 1, 2, 3), label = "f3")
 p2 = plot(sol_sir)
 myplot!(sol_sir_Euler, "Euler")
 plot!(sol_sir_Euler, idxs = (f3, 0, 1, 2, 3), label = "f3")
-plot(p1,p2)
+plot(p1, p2)
 
 # convergence order 
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15), order_plot = true)
+convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15),
+                     order_plot = true)
 
 ## bertolazzi problem #####################################################
 sol_bertolazzi = solve(prob_pds_bertolazzi, TRBDF2());
@@ -98,13 +104,14 @@ sol_bertolazzi_MPE = solve(prob_pds_bertolazzi, MPE(), dt = 0.01);
 
 # plot 
 plot(sol_bertolazzi, legend = :right)
-myplot!(sol_bertolazzi_MPE,"MPE")
+myplot!(sol_bertolazzi_MPE, "MPE")
 ylims!((-0.5, 3.5))
 plot!(sol_bertolazzi_MPE, idxs = (f3, 0, 1, 2, 3))
 
 # convergence order 
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-8, :abstol => 1e-8)
-convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup; dts = 0.5 .^ (10:15), order_plot = true)
+convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup;
+                     dts = 0.5 .^ (10:15), order_plot = true)
 
 ### npzd problem ##########################################################
 sol_npzd = solve(prob_pds_npzd, Rosenbrock23());
@@ -112,15 +119,15 @@ sol_npzd_MPE = solve(prob_pds_npzd, MPE(), dt = 0.1);
 
 # plot
 plot(sol_npzd)
-myplot!(sol_npzd_MPE,"MPE")
+myplot!(sol_npzd_MPE, "MPE")
 plot!(sol_npzd_MPE, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
-plot!(legend=:bottomright)
+plot!(legend = :bottomright)
 
 # convergence order 
 # error should take all time steps into account, not only the final time! 
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-14, :abstol => 1e-14)
-convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup; dts = 0.5 .^ (5:17), order_plot = true)
-
+convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup;
+                     dts = 0.5 .^ (5:17), order_plot = true)
 
 ### strat reac problem ####################################################
 sol_stratreac = solve(prob_pds_stratreac, TRBDF2(autodiff = false));
@@ -162,12 +169,13 @@ p6 = plot(sol_stratreac, idxs = (0, 6), xticks = [tspan[1], tspan[2]], legend = 
 #plot!(sol_stratreac_MPE.t, tmp[6, :])
 ylims!((1.08e9, 1.1e9))
 
-p7 = plot(sol_stratreac, idxs = (g1, 0, 1, 2, 3, 4, 5, 6), xticks = [tspan[1], tspan[2]], legend = :outertop)
+p7 = plot(sol_stratreac, idxs = (g1, 0, 1, 2, 3, 4, 5, 6), xticks = [tspan[1], tspan[2]],
+          legend = :outertop)
 #plot!(sol_stratreac_MPE.t,
 #      vec(mapslices((x) -> abs(x[1] + x[2] + 3 * x[3] + 2 * x[4] + x[5] + 2 * x[6] - linear_invariant_1) /
 #                           linear_invariant_1, tmp, dims = 1)))
 p8 = plot(sol_stratreac, idxs = (g2, 0, 1, 2, 3, 4, 5, 6),
-                 xticks = [tspan[1], tspan[2]], legend = :outertop)
+          xticks = [tspan[1], tspan[2]], legend = :outertop)
 #plot!(sol_stratreac_MPE.t,
 #      vec(mapslices((x) -> abs(x[5] + x[6] - linear_invariant_2) / linear_invariant_2, tmp,
 #                    dims = 1)))
