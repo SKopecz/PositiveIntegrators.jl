@@ -60,6 +60,8 @@ function Base.getproperty(obj::PDSFunction, sym::Symbol)
         return nothing
     elseif sym === :sparsity
         return nothing
+    elseif sym === :sys 
+        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing, nothing, nothing)        
     else # fallback to getfield
         return getfield(obj, sym)
     end
@@ -208,6 +210,8 @@ function Base.getproperty(obj::ConservativePDSFunction, sym::Symbol)
         return nothing
     elseif sym === :sparsity
         return nothing
+    elseif sym === :sys 
+        return SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}(nothing, nothing, nothing)
     else # fallback to getfield
         return getfield(obj, sym)
     end
@@ -263,16 +267,35 @@ end
 # Evaluation of a ConservativePDSFunction (out-of-place)
 function (PD::ConservativePDSFunction)(u, p, t)
     #vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
-    @fastmath P = PD.p(u, p, t)
+    P = PD.p(u, p, t)
 
     f = zero(u)
     @fastmath @inbounds @simd for I in CartesianIndices(P)
-        if !iszero(P[I])      
+        if !iszero(P[I])
             f[I[1]] += P[I]
             f[I[2]] -= P[I]
         end
     end
     return f
+end
+
+function (PD::ConservativePDSFunction)(u::SVector, p, t)
+    P = PD.p(u, p, t)
+
+    f = similar(u) #constructs MVector
+    zeroT = zero(eltype(u))
+    for i in eachindex(f)
+        f[i] = zeroT
+    end
+
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if !iszero(P[I])
+            f[I[1]] += P[I]
+            f[I[2]] -= P[I]
+        end
+    end
+
+    return SVector(f)
 end
 
 # Evaluation of a ConservativePDSFunction (in-place)

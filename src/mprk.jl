@@ -1,3 +1,7 @@
+add_small_constant(v, small_constant) = v .+ small_constant    
+add_small_constant(v::SVector{N,T}, small_constant::T) where {N,T} = v + SVector{N,T}(ntuple(i -> small_constant, N))
+
+
 function build_mprk_matrix(P, sigma, dt)
     #=
     M = zero(P)
@@ -22,8 +26,8 @@ function build_mprk_matrix(P, sigma, dt)
     zeroM = zero(eltype(M))
 
     # Set sigma on diagonal
-    @inbounds for i in eachindex(sigma)        
-        M[i,i] = sigma[i]
+    @inbounds for i in eachindex(sigma)
+        M[i, i] = sigma[i]
     end
 
     # Run through P and fill M accordingly.
@@ -41,11 +45,44 @@ function build_mprk_matrix(P, sigma, dt)
     end
 
     # Divide diagonal elements by Patankar weights denominators
-    @fastmath @inbounds @simd for i in eachindex(sigma)        
-        M[i,i] /= sigma[i]
+    @fastmath @inbounds @simd for i in eachindex(sigma)
+        M[i, i] /= sigma[i]
     end
 
     return M
+end
+
+function build_mprk_matrix(P::StaticArray, sigma, dt)
+    # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
+    # M[i,j] = -dt*P[i,j]/sigma[j]
+    M = similar(P)
+    zeroM = zero(eltype(M))
+
+    # Set sigma on diagonal
+    @inbounds for i in eachindex(sigma)
+        M[i, i] = sigma[i]
+    end
+
+    # Run through P and fill M accordingly.
+    # If P[i,j] ≠ 0 set M[i,j] = -dt*P[i,j] and add dt*P[i,j] to M[j,j].
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if I[1] != I[2]
+            if !iszero(P[I])
+                dtP = dt * P[I]
+                M[I] = -dtP / sigma[I[2]]
+                M[I[2], I[2]] += dtP
+            else
+                M[I] = zeroM
+            end
+        end
+    end
+
+    # Divide diagonal elements by Patankar weights denominators
+    @fastmath @inbounds @simd for i in eachindex(sigma)
+        M[i, i] /= sigma[i]
+    end
+
+    return SMatrix(M)
 end
 
 ### MPE #####################################################################################
@@ -111,20 +148,22 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
              linsolve_tmp, linsolve, weight)
 end
 
-struct MPEConstantCache <: OrdinaryDiffEqConstantCache end
+struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache 
+    small_constant::T
+end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    MPEConstantCache()
+    MPEConstantCache(floatmin(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1    
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -134,18 +173,25 @@ end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack small_constant = cache
 
     # Attention: Implementation assumes that the pds is conservative,
     # i.e. f.p[i,i] == 0 for all i
 
-    @fastmath P = f.p(uprev, p, t) # evaluate production matrix
-    M = build_mprk_matrix(P, uprev, dt)
+    P = f.p(uprev, p, t) # evaluate production matrix
 
-    #u = M \ uprev
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix
+    M = build_mprk_matrix(P, σ, dt)
+
+    # solve linear system
     linprob = LinearProblem(M, uprev)
-    #linsol = init(linprob; alias_A = true, alias_b = true, assumptions = LinearSolve.OperatorAssumptions(true))
-    sol = solve(linprob, alg.linsolve, Pl = alg.precs[1], Pr = alg.precs[2], alias_A = true, alias_b = true, assumptions = LinearSolve.OperatorAssumptions(true))
-    u = sol.u
+    sol = solve(linprob, alg.linsolve, Pl = alg.precs[1], Pr = alg.precs[2],
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u    
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
@@ -274,7 +320,7 @@ struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
     b1::T
     b2::T
     c2::T
-    smallconst::T
+    small_constant::T
 end
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -357,9 +403,9 @@ end
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, atmp, P, P2, D, D2, M, σ, thread = cache
-    @unpack a21, b1, b2, c2, smallconst = cache.tab
+    @unpack a21, b1, b2, c2, small_constant = cache.tab
 
-    uprev .= uprev .+ smallconst
+    uprev .= uprev .+ small_constant
 
     f.p(P, uprev, p, t) #evaluate production terms
     sum!(D', P) # sum destruction terms
@@ -375,9 +421,9 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     tmp = M \ uprev #TODO: needs to be implemented without allocations.
     u .= tmp
 
-    u .= u .+ smallconst
+    u .= u .+ small_constant
 
-    σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ smallconst
+    σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ small_constant
 
     f.p(P2, u, p, t + a21 * dt) #evaluate production terms
     sum!(D2', P2) # sum destruction terms
