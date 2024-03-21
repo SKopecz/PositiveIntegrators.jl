@@ -8,7 +8,7 @@ using Aqua: Aqua
 
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
-        # We do not test ambiguities since we get a lot of 
+        # We do not test ambiguities since we get a lot of
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,)
@@ -169,8 +169,9 @@ using Aqua: Aqua
         cmd = Base.julia_cmd()
         examples_dir = abspath(joinpath(pkgdir(PositiveIntegrators), "examples"))
         examples = ["01_example_proddest.jl",
-            "02_example_mpe.jl",
-            "03_example_mprk22.jl"]
+                    "02_example_mpe.jl",
+                    "03_example_mprk22.jl",
+                    "04_example_problemlibrary.jl"]
 
         @testset "Example $ex" for ex in examples
             @info "Testing examples" ex
