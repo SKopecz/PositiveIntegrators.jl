@@ -19,7 +19,7 @@ end
 u0_nonlinmod = @SVector [9.98; 0.01; 0.01]
 prob_pds_nonlinmod = ConservativePDSProblem(P_nonlinmod, u0_nonlinmod, (0.0, 30.0))
 
-# robertson problem 
+# robertson problem
 function P_robertson(u, p, t)
     @SMatrix [0.0 1e4*u[2]*u[3] 0.0; 4e-2*u[1] 0.0 0.0; 0.0 3e7*u[2]^2 0.0]
 end
@@ -40,7 +40,7 @@ end;
 u0_brusselator = @SVector [10.0, 10.0, 0.0, 0.0, 0.1, 0.1]
 prob_pds_brusselator = ConservativePDSProblem(P_brusselator, u0_brusselator, (0.0, 10.0))
 
-# SIR problem 
+# SIR problem
 P_sir(u, p, t) = @SMatrix [0.0 0.0 0.0; 2*u[1]*u[2] 0.0 0.0; 0.0 u[2] 0.0]
 u0_sir = @SVector [0.99, 0.005, 0.005]
 prob_pds_sir = ConservativePDSProblem(P_sir, u0_sir, (0.0, 20.0))
@@ -72,7 +72,7 @@ end
 u0_npzd = @SVector [8.0, 2.0, 1.0, 4.0]
 prob_pds_npzd = ConservativePDSProblem(P_npzd, u0_npzd, (0.0, 10.0))
 
-#strat reac problem
+# stratospheric reaction problem
 function P_stratreac(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
 
