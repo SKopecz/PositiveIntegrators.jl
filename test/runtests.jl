@@ -169,9 +169,9 @@ using Aqua: Aqua
         cmd = Base.julia_cmd()
         examples_dir = abspath(joinpath(pkgdir(PositiveIntegrators), "examples"))
         examples = ["01_example_proddest.jl",
-                    "02_example_mpe.jl",
-                    "03_example_mprk22.jl",
-                    "04_example_problemlibrary.jl"]
+            "02_example_mpe.jl",
+            "03_example_mprk22.jl",
+            "04_example_problemlibrary.jl"]
 
         @testset "Example $ex" for ex in examples
             @info "Testing examples" ex
