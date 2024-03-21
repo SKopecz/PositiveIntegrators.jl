@@ -49,7 +49,7 @@ plot(sol_nonlinmod, legend = :right)
 myplot!(sol_nonlinmod_MPE, "MPE")
 plot!(sol_nonlinmod_MPE, idxs = (f3, 0, 1, 2, 3))
 
-# convergence order 
+# convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:17),
                      order_plot = true)
@@ -74,7 +74,7 @@ myplot!(sol_brusselator_MPE, "MPE")
 plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6),
       label = "f_brusselator")
 
-# convergence order 
+# convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17),
                      order_plot = true)
@@ -93,7 +93,7 @@ myplot!(sol_sir_Euler, "Euler")
 plot!(sol_sir_Euler, idxs = (f3, 0, 1, 2, 3), label = "f3")
 plot(p1, p2)
 
-# convergence order 
+# convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15),
                      order_plot = true)
@@ -102,13 +102,13 @@ convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1
 sol_bertolazzi = solve(prob_pds_bertolazzi, TRBDF2());
 sol_bertolazzi_MPE = solve(prob_pds_bertolazzi, MPE(), dt = 0.01);
 
-# plot 
+# plot
 plot(sol_bertolazzi, legend = :right)
 myplot!(sol_bertolazzi_MPE, "MPE")
 ylims!((-0.5, 3.5))
 plot!(sol_bertolazzi_MPE, idxs = (f3, 0, 1, 2, 3))
 
-# convergence order 
+# convergence order
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-8, :abstol => 1e-8)
 convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup;
                      dts = 0.5 .^ (10:15), order_plot = true)
@@ -123,13 +123,13 @@ myplot!(sol_npzd_MPE, "MPE")
 plot!(sol_npzd_MPE, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
 plot!(legend = :bottomright)
 
-# convergence order 
-# error should take all time steps into account, not only the final time! 
+# convergence order
+# error should take all time steps into account, not only the final time!
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-14, :abstol => 1e-14)
 convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup;
                      dts = 0.5 .^ (5:17), order_plot = true)
 
-### strat reac problem ####################################################
+### stratospheric reaction problem ####################################################
 sol_stratreac = solve(prob_pds_stratreac, TRBDF2(autodiff = false));
 #sol_stratreac_MPE = solve(prob_pds_stratreac, MPE(), dt = 25920.0);
 #tmp = reduce(hcat, sol_stratreac_MPE.u)
