@@ -37,7 +37,7 @@ function build_mprk_matrix(P, sigma, dt)
         return SMatrix(M)
     else
         return M
-    end    
+    end
 end
 
 ### MPE #####################################################################################
