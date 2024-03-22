@@ -4,23 +4,6 @@ function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
 end
 
 function build_mprk_matrix(P, sigma, dt)
-    #=
-    M = zero(P)
-    d = zero(sigma)
-
-    for I in CartesianIndices(P)
-        if !iszero(P[I])
-            dtP = dt*P[I]
-            M[I] = -dtP / sigma[I[2]]
-            d[I[2]] += dtP
-        end
-    end
-    for i in eachindex(d)
-        M[i,i] = 1.0 + d[i]/sigma[i]
-    end
-    return M
-    =#
-
     # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
     # M[i,j] = -dt*P[i,j]/sigma[j]
     M = similar(P)
@@ -50,40 +33,11 @@ function build_mprk_matrix(P, sigma, dt)
         M[i, i] /= sigma[i]
     end
 
-    return M
-end
-
-function build_mprk_matrix(P::StaticArray, sigma, dt)
-    # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
-    # M[i,j] = -dt*P[i,j]/sigma[j]
-    M = similar(P)
-    zeroM = zero(eltype(M))
-
-    # Set sigma on diagonal
-    @inbounds for i in eachindex(sigma)
-        M[i, i] = sigma[i]
-    end
-
-    # Run through P and fill M accordingly.
-    # If P[i,j] ≠ 0 set M[i,j] = -dt*P[i,j] and add dt*P[i,j] to M[j,j].
-    @fastmath @inbounds @simd for I in CartesianIndices(P)
-        if I[1] != I[2]
-            if !iszero(P[I])
-                dtP = dt * P[I]
-                M[I] = -dtP / sigma[I[2]]
-                M[I[2], I[2]] += dtP
-            else
-                M[I] = zeroM
-            end
-        end
-    end
-
-    # Divide diagonal elements by Patankar weights denominators
-    @fastmath @inbounds @simd for i in eachindex(sigma)
-        M[i, i] /= sigma[i]
-    end
-
-    return SMatrix(M)
+    if P isa StaticArray
+        return SMatrix(M)
+    else
+        return M
+    end    
 end
 
 ### MPE #####################################################################################
