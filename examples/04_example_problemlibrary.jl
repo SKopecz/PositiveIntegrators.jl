@@ -31,13 +31,15 @@ plot!(sol_linmod_MPE, idxs = (f2, 0, 1, 2))
 
 # convergence order
 # error based on analytic solution
-sims = convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()]; dts = 0.5 .^ (3:18), analytic = true, order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()]; dts = 0.5 .^ (3:18),
+                            analytic = true, order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 #savefig("figs/error_linmod_analytic.svg")
 # error based on reference solution
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14);
-sims = convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:18), order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()], test_setup;
+                            dts = 0.5 .^ (3:18), order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 #savefig("figs/error_linmod_reference.svg")
 
 ## nonlinear model ########################################################
@@ -51,8 +53,9 @@ plot!(sol_nonlinmod_MPE, idxs = (f3, 0, 1, 2, 3))
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-sims = convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup; dts = 0.5 .^ (3:17), order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup;
+                            dts = 0.5 .^ (3:17), order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 
 ## robertson problem ######################################################
 sol_robertson = solve(prob_pds_robertson, Rosenbrock23());
@@ -71,12 +74,14 @@ sol_brusselator_MPE = solve(prob_pds_brusselator, MPE(), dt = 0.25);
 # plot
 plot(sol_brusselator, legend = :outerright)
 myplot!(sol_brusselator_MPE, "MPE")
-plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6), label="f_brusselator")
+plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6),
+      label = "f_brusselator")
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-sims = convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17), order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17),
+                            order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 
 ## SIR model ##############################################################
 sol_sir = solve(prob_pds_sir, Tsit5());
@@ -90,12 +95,13 @@ plot!(sol_sir_MPE, idxs = (f3, 0, 1, 2, 3), label = "f3")
 p2 = plot(sol_sir)
 myplot!(sol_sir_Euler, "Euler")
 plot!(sol_sir_Euler, idxs = (f3, 0, 1, 2, 3), label = "f3")
-plot(p1,p2)
+plot(p1, p2)
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-sims = convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15), order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15),
+                            order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 
 ## bertolazzi problem #####################################################
 sol_bertolazzi = solve(prob_pds_bertolazzi, TRBDF2());
@@ -103,13 +109,14 @@ sol_bertolazzi_MPE = solve(prob_pds_bertolazzi, MPE(), dt = 0.01);
 
 # plot
 plot(sol_bertolazzi, legend = :right)
-myplot!(sol_bertolazzi_MPE,"MPE")
+myplot!(sol_bertolazzi_MPE, "MPE")
 ylims!((-0.5, 3.5))
 plot!(sol_bertolazzi_MPE, idxs = (f3, 0, 1, 2, 3))
 
 # convergence order
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-8, :abstol => 1e-8)
-convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup; dts = 0.5 .^ (10:15), order_plot = true)
+convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup;
+                     dts = 0.5 .^ (10:15), order_plot = true)
 
 ### npzd problem ##########################################################
 sol_npzd = solve(prob_pds_npzd, Rosenbrock23());
@@ -117,15 +124,16 @@ sol_npzd_MPE = solve(prob_pds_npzd, MPE(), dt = 0.1);
 
 # plot
 plot(sol_npzd)
-myplot!(sol_npzd_MPE,"MPE")
+myplot!(sol_npzd_MPE, "MPE")
 plot!(sol_npzd_MPE, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
-plot!(legend=:bottomright)
+plot!(legend = :bottomright)
 
 # convergence order
 # error should take all time steps into account, not only the final time!
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-14, :abstol => 1e-14)
-sims = convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup; dts = 0.5 .^ (5:17), order_plot = true);
-@assert sims[1].𝒪est[:l∞]>0.9
+sims = convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup;
+                            dts = 0.5 .^ (5:17), order_plot = true);
+@assert sims[1].𝒪est[:l∞] > 0.9
 
 ### stratospheric reaction problem ####################################################
 sol_stratreac = solve(prob_pds_stratreac, TRBDF2(autodiff = false));
@@ -166,8 +174,9 @@ p6 = plot(sol_stratreac, idxs = (0, 6), xticks = [tspan[1], tspan[2]], legend = 
 #plot!(sol_stratreac_MPE.t, tmp[6, :])
 ylims!((1.08e9, 1.1e9))
 
-p7 = plot(sol_stratreac, idxs = (g1, 0, 1, 2, 3, 4, 5, 6), xticks = [tspan[1], tspan[2]], legend = :outertop)
+p7 = plot(sol_stratreac, idxs = (g1, 0, 1, 2, 3, 4, 5, 6), xticks = [tspan[1], tspan[2]],
+          legend = :outertop)
 p8 = plot(sol_stratreac, idxs = (g2, 0, 1, 2, 3, 4, 5, 6),
-                 xticks = [tspan[1], tspan[2]], legend = :outertop)
-                 
+          xticks = [tspan[1], tspan[2]], legend = :outertop)
+
 plot(p1, p2, p3, p4, p5, p6, p7, p8)
