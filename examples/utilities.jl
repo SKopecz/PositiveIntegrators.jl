@@ -17,6 +17,10 @@ function convergence_tab_plot(prob, algs, test_setup = nothing; dts = 0.5 .^ (1:
         p = -log2.(err[2:end] ./ err[1:(end - 1)])
         #table
         algname = string(Base.typename(typeof(algs[i])).wrapper)
+        if algname == "MPRK22"
+            my_matches = match(r"(?<= alpha = )([0-9][.][0-9]*)", string(algs[i]))
+            algname = algname .* "_" .* my_matches.match
+        end
         #algname = string(algs[i])
         pretty_table([dts err [NaN; p]]; header = (["dt", "err", "p"]),
                      title = string("\n\n", string(algs[i])), title_alignment = :c,
@@ -56,7 +60,7 @@ function _myplot(plotf, sol, name = "", analytic = false)
         plotf(sol, color = palette(:default)[1:N]', legend = :right, plot_analytic = false)
     end
     p = plot!(sol, color = palette(:default)[1:N]', denseplot = false,
-              markershape = :circle, markerstrokecolor = palette(:default)[1:N]',
+              markershape = :circle, #markerstrokecolor = palette(:default)[1:N]',
               linecolor = invisible(), label = "")
     title!(name)
     return p

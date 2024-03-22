@@ -237,13 +237,14 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
   Applied Numerical Mathematics 182 (2022): 117-147.
   [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
 """
-struct MPRK22{T, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK22{T, Thread, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     thread::Thread
+    linsolve::F
 end
 
-function MPRK22(alpha; thread = False())
-    MPRK22{typeof(alpha), typeof(thread)}(alpha, thread)
+function MPRK22(alpha; thread = False(), linsolve = nothing)
+    MPRK22{typeof(alpha), typeof(thread), typeof(linsolve)}(alpha, thread, linsolve)
 end
 
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
@@ -310,37 +311,58 @@ function initialize!(integrator, cache::MPRK22ConstantCache)
 end
 
 function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, f, p = integrator
-    @unpack a21, b1, b2, c2 = cache
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack a21, b1, b2, small_constant = cache
 
-    safeguard = floatmin(eltype(uprev))
+    # Attention: Implementation assumes that the pds is conservative,
+    # i.e. f.p[i,i] == 0 for all i
 
-    uprev .= uprev .+ safeguard
+    P = f.p(uprev, p, t) # evaluate production matrix
+    Ptmp = a21 * P
 
-    P = f.p(uprev, p, t) # evaluate production terms
-    D = vec(sum(P, dims = 1)) # sum destruction terms
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(uprev, small_constant)
 
-    M = -dt * a21 * P ./ reshape(uprev, 1, :) # divide production terms by Patankar-weights
-    M[diagind(M)] .+= 1.0 .+ dt * a21 * D ./ uprev
-    u = M \ uprev
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
 
-    u .= u .+ safeguard
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
-    σ = uprev .* (u ./ uprev) .^ (1 / a21) .+ safeguard
+    # compute Patankar weight denominator
+    if a21 == 1.0
+        σ = u
+    else
+        # σ = σ .* (u ./ σ) .^ (1 / a21) # generated Infs when solving brusselator
+        σ = σ .^ (1 - 1 / a21) .* u .^ (1 / a21)
+    end
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(σ, small_constant)
 
     P2 = f.p(u, p, t + a21 * dt)
-    D2 = vec(sum(P2, dims = 1))
-    M .= -dt * (b1 * P + b2 * P2) ./ reshape(σ, 1, :)
-    M[diagind(M)] .+= 1.0 .+ dt * (b1 * D + b2 * D2) ./ σ
-    u = M \ uprev
+    Ptmp = b1 * P + b2 * P2
 
-    u .= u .+ safeguard
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
     integrator.fsallast = k
 
-    #copied from perform_step for HeunConstantCache
+    # copied from perform_step for HeunConstantCache
+    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
+    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
