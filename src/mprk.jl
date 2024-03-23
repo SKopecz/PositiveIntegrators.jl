@@ -10,12 +10,12 @@ function build_mprk_matrix(P, sigma, dt)
 
     for I in CartesianIndices(P)
         if !iszero(P[I])
-            dtP = dt*P[I]      
+            dtP = dt*P[I]
             M[I] = -dtP / sigma[I[2]]
             d[I[2]] += dtP
         end
     end
-    for i in eachindex(d)        
+    for i in eachindex(d)
         M[i,i] = 1.0 + d[i]/sigma[i]
     end
     return M
@@ -105,13 +105,23 @@ The modified Patankar-Euler method requires the special structure of a
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct MPE{F, P} <: OrdinaryDiffEqAlgorithm
+struct MPE{F} <: OrdinaryDiffEqAlgorithm
     linsolve::F
-    precs::P
 end
 
-function MPE(; linsolve = nothing, precs = (I, I))
-    MPE(linsolve, precs)
+function MPE(; linsolve = nothing)
+    MPE(linsolve)
+end
+
+# TODO: Think about adding preconditioners to the MPE algorithm
+# This hack is currently required to make OrdinaryDiffEq.jl happy...
+function Base.getproperty(mpe::MPE, f::Symbol)
+    # preconditioners
+    if f === :precs
+        return Returns((nothing, nothing))
+    else
+        return getfield(mpe, f)
+    end
 end
 
 #@cache
@@ -140,10 +150,8 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(weight, false)
 
     linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(alg.precs(P, nothing, u, p, t, nothing, nothing, nothing,
-                                 nothing)..., weight, tmp)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr, assumptions = LinearSolve.OperatorAssumptions(true))
+                    assumptions = LinearSolve.OperatorAssumptions(true))
 
     MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u),
              linsolve_tmp, linsolve, weight)
@@ -189,7 +197,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
 
     # solve linear system
     linprob = LinearProblem(M, uprev)
-    sol = solve(linprob, alg.linsolve, Pl = alg.precs[1], Pr = alg.precs[2],
+    sol = solve(linprob, alg.linsolve,
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
     u = sol.u
