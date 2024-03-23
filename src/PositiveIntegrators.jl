@@ -3,6 +3,7 @@ module PositiveIntegrators
 # 1. Load dependencies
 using LinearAlgebra: LinearAlgebra, I, diag, diagind, mul!
 using SparseArrays: SparseArrays, AbstractSparseMatrix
+using StaticArrays: SVector, MVector, SMatrix, StaticArray, @SVector, @SMatrix
 
 using FastBroadcast: @..
 using Kwonly: @add_kwonly
@@ -18,6 +19,8 @@ using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpeciali
 
 # TODO: Check imports and using statements below, reduce if possible
 using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
+
+using SymbolicIndexingInterface
 
 using LinearSolve: LinearSolve, LinearProblem
 
@@ -42,6 +45,9 @@ export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22
 
+export prob_pds_linmod, prob_pds_nonlinmod, prob_pds_robertson, prob_pds_brusselator,
+       prob_pds_sir, prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac
+
 # 3. Load source code
 
 # production-destruction systems
@@ -49,5 +55,8 @@ include("proddest.jl")
 
 # modified Patankar-Runge-Kutta (MPRK) methods
 include("mprk.jl")
+
+# predefined PDS problems
+include("PDSProblemLibrary.jl")
 
 end # module

@@ -1,7 +1,7 @@
 # PositiveIntegrators.jl
 
 The [Julia]() library
-[PositiveIntegrators.jl](https://github.com/ranocha/PositiveIntegrators.jl)
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
 provides several time integration methods developed to preserve the positivity
 of numerical solutions.
 

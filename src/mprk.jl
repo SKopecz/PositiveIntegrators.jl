@@ -1,3 +1,44 @@
+add_small_constant(v, small_constant) = v .+ small_constant
+function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
+    v + SVector{N, T}(ntuple(i -> small_constant, N))
+end
+
+function build_mprk_matrix(P, sigma, dt)
+    # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
+    # M[i,j] = -dt*P[i,j]/sigma[j]
+    M = similar(P)
+    zeroM = zero(eltype(M))
+
+    # Set sigma on diagonal
+    @inbounds for i in eachindex(sigma)
+        M[i, i] = sigma[i]
+    end
+
+    # Run through P and fill M accordingly.
+    # If P[i,j] ≠ 0 set M[i,j] = -dt*P[i,j] and add dt*P[i,j] to M[j,j].
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if I[1] != I[2]
+            if !iszero(P[I])
+                dtP = dt * P[I]
+                M[I] = -dtP / sigma[I[2]]
+                M[I[2], I[2]] += dtP
+            else
+                M[I] = zeroM
+            end
+        end
+    end
+
+    # Divide diagonal elements by Patankar weights denominators
+    @fastmath @inbounds @simd for i in eachindex(sigma)
+        M[i, i] /= sigma[i]
+    end
+
+    if P isa StaticArray
+        return SMatrix(M)
+    else
+        return M
+    end
+end
 
 ### MPE #####################################################################################
 """
@@ -18,13 +59,23 @@ The modified Patankar-Euler method requires the special structure of a
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct MPE{F, P} <: OrdinaryDiffEqAlgorithm
+struct MPE{F} <: OrdinaryDiffEqAlgorithm
     linsolve::F
-    precs::P
 end
 
-function MPE(; linsolve = nothing, precs = DEFAULT_PRECS)
-    MPE(linsolve, precs)
+function MPE(; linsolve = nothing)
+    MPE(linsolve)
+end
+
+# TODO: Think about adding preconditioners to the MPE algorithm
+# This hack is currently required to make OrdinaryDiffEq.jl happy...
+function Base.getproperty(mpe::MPE, f::Symbol)
+    # preconditioners
+    if f === :precs
+        return Returns((nothing, nothing))
+    else
+        return getfield(mpe, f)
+    end
 end
 
 #@cache
@@ -53,22 +104,22 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(weight, false)
 
     linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(alg.precs(P, nothing, u, p, t, nothing, nothing, nothing,
-                                 nothing)..., weight, tmp)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr, assumptions = LinearSolve.OperatorAssumptions(true))
+                    assumptions = LinearSolve.OperatorAssumptions(true))
 
     MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u),
              linsolve_tmp, linsolve, weight)
 end
 
-struct MPEConstantCache <: OrdinaryDiffEqConstantCache end
+struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
+    small_constant::T
+end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    MPEConstantCache()
+    MPEConstantCache(floatmin(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
@@ -84,16 +135,26 @@ function initialize!(integrator, cache::MPEConstantCache)
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, f, p = integrator
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack small_constant = cache
 
-    # Attention: Implementation assumes that the pds is positive and conservative,
+    # Attention: Implementation assumes that the pds is conservative,
     # i.e. f.p[i,i] == 0 for all i
 
-    P = f.p(uprev, p, t) # evaluate production terms
-    D = vec(sum(P, dims = 1)) # compute sum of destruction terms from P
-    M = -dt * P ./ reshape(uprev, 1, :) # divide production terms by Patankar-weights
-    M[diagind(M)] .+= 1.0 .+ dt * D ./ uprev # add destruction terms on diagonal
-    u = M \ uprev
+    P = f.p(uprev, p, t) # evaluate production matrix
+
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix
+    M = build_mprk_matrix(P, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
@@ -176,13 +237,14 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
   Applied Numerical Mathematics 182 (2022): 117-147.
   [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
 """
-struct MPRK22{T, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK22{T, Thread, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     thread::Thread
+    linsolve::F
 end
 
-function MPRK22(alpha; thread = False())
-    MPRK22{typeof(alpha), typeof(thread)}(alpha, thread)
+function MPRK22(alpha; thread = False(), linsolve = nothing)
+    MPRK22{typeof(alpha), typeof(thread), typeof(linsolve)}(alpha, thread, linsolve)
 end
 
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
@@ -222,7 +284,7 @@ struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
     b1::T
     b2::T
     c2::T
-    smallconst::T
+    small_constant::T
 end
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -249,37 +311,58 @@ function initialize!(integrator, cache::MPRK22ConstantCache)
 end
 
 function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, f, p = integrator
-    @unpack a21, b1, b2, c2 = cache
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack a21, b1, b2, small_constant = cache
 
-    safeguard = floatmin(eltype(uprev))
+    # Attention: Implementation assumes that the pds is conservative,
+    # i.e. f.p[i,i] == 0 for all i
 
-    uprev .= uprev .+ safeguard
+    P = f.p(uprev, p, t) # evaluate production matrix
+    Ptmp = a21 * P
 
-    P = f.p(uprev, p, t) # evaluate production terms
-    D = vec(sum(P, dims = 1)) # sum destruction terms
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(uprev, small_constant)
 
-    M = -dt * a21 * P ./ reshape(uprev, 1, :) # divide production terms by Patankar-weights
-    M[diagind(M)] .+= 1.0 .+ dt * a21 * D ./ uprev
-    u = M \ uprev
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
 
-    u .= u .+ safeguard
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
-    σ = uprev .* (u ./ uprev) .^ (1 / a21) .+ safeguard
+    # compute Patankar weight denominator
+    if a21 == 1.0
+        σ = u
+    else
+        # σ = σ .* (u ./ σ) .^ (1 / a21) # generated Infs when solving brusselator
+        σ = σ .^ (1 - 1 / a21) .* u .^ (1 / a21)
+    end
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(σ, small_constant)
 
     P2 = f.p(u, p, t + a21 * dt)
-    D2 = vec(sum(P2, dims = 1))
-    M .= -dt * (b1 * P + b2 * P2) ./ reshape(σ, 1, :)
-    M[diagind(M)] .+= 1.0 .+ dt * (b1 * D + b2 * D2) ./ σ
-    u = M \ uprev
+    Ptmp = b1 * P + b2 * P2
 
-    u .= u .+ safeguard
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
 
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
     integrator.fsallast = k
 
-    #copied from perform_step for HeunConstantCache
+    # copied from perform_step for HeunConstantCache
+    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
+    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -305,9 +388,9 @@ end
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, atmp, P, P2, D, D2, M, σ, thread = cache
-    @unpack a21, b1, b2, c2, smallconst = cache.tab
+    @unpack a21, b1, b2, c2, small_constant = cache.tab
 
-    uprev .= uprev .+ smallconst
+    uprev .= uprev .+ small_constant
 
     f.p(P, uprev, p, t) #evaluate production terms
     sum!(D', P) # sum destruction terms
@@ -323,9 +406,9 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     tmp = M \ uprev #TODO: needs to be implemented without allocations.
     u .= tmp
 
-    u .= u .+ smallconst
+    u .= u .+ small_constant
 
-    σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ smallconst
+    σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ small_constant
 
     f.p(P2, u, p, t + a21 * dt) #evaluate production terms
     sum!(D2', P2) # sum destruction terms
