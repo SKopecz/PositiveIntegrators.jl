@@ -20,7 +20,7 @@ using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpeciali
 # TODO: Check imports and using statements below, reduce if possible
 using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
 
-using SymbolicIndexingInterface
+using SymbolicIndexingInterface: SymbolicIndexingInterface
 
 using LinearSolve: LinearSolve, LinearProblem
 
