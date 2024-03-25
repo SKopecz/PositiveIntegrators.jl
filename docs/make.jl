@@ -32,6 +32,23 @@ open(joinpath(@__DIR__, "src", "license.md"), "w") do io
     end
 end
 
+open(joinpath(@__DIR__, "src", "code_of_conduct.md"), "w") do io
+  # Point to source license file
+  println(io,
+          """
+          ```@meta
+          EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CODE_OF_CONDUCT.md"
+          ```
+          """)
+  # Write the modified contents
+  println(io, "# [Code of Conduct](@id code-of-conduct)")
+  println(io, "")
+  for line in eachline(joinpath(dirname(@__DIR__), "CODE_OF_CONDUCT.md"))
+    line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
+    println(io, "> ", line)
+  end
+end
+
 open(joinpath(@__DIR__, "src", "contributing.md"), "w") do io
     # Point to source license file
     println(io, """
@@ -58,6 +75,7 @@ makedocs(modules = [PositiveIntegrators],
              "Home" => "index.md",
              "API reference" => "api_reference.md",
              "Contributing" => "contributing.md",
+             "Code of conduct" => "code_of_conduct.md",
              "License" => "license.md",
          ])
 
