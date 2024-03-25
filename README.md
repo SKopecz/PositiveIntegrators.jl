@@ -38,7 +38,7 @@ for your research, please cite it using the bibtex entry
 
 ## License and contributing
 
-This project is licensed under the MIT license (see [License](@ref)).
+This project is licensed under the MIT license (see [License](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE)).
 Since it is an open-source project, we are very happy to accept contributions
-from the community. Please refer to the section [Contributing](@ref) for more
+from the community. Please refer to the section [Contributing](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md) for more
 details.
