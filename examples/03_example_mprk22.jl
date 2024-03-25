@@ -85,7 +85,7 @@ plot(p1, p2, p3, plot_title = "in-place")
 # convergence order
 using DiffEqDevTools
 using PrettyTables
-convergence_tab_plot(linmod_ip, [MPE(); MPRK22(0.5); MPRK22(1.0)])
+convergence_tab_plot(linmod_ip, [MPE(); MPRK22(0.5); MPRK22(1.0)]; analytic = true);
 
 ###############################################################################################################
 ### nonlinear model problem - non stiff

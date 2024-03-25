@@ -69,7 +69,7 @@ plot(p1, p2, p3, p4, plot_title = "out-of-place")
 
 # check convergence order
 using DiffEqDevTools, PrettyTables
-convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()])
+convergence_tab_plot(prob_op, [MPE(); ImplicitEuler()]; analytic = true);
 
 # linear model problem - in-place
 function linmodP!(P, u, p, t)
@@ -93,7 +93,7 @@ p2 = myplot(sol_IE_ip, "IE", true)
 plot(p1, p2, plot_title = "in-place")
 
 # check convergence order
-convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff = false)])
+convergence_tab_plot(prob_ip, [MPE(); ImplicitEuler(autodiff = false)]; analytic = true);
 
 # try different linear solvers
 using LinearSolve
