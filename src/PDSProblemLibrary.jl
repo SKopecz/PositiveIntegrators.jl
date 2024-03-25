@@ -179,7 +179,7 @@ There is one independent linear invariant, e.g. ``u_1+u_2+u_3 = 3.0``.
 
 ## References
 
-- Enrico Bertolazzi. 
+- Enrico Bertolazzi.
   "Positive and conservative schemes for mass action kinetics."
   Computers and Mathematics with Applications 32 (1996): 29-43.
   [DOI: 10.1016/0898-1221(96)00142-3](https://doi.org/10.1016/0898-1221(96)00142-3)
@@ -324,3 +324,75 @@ There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(
   [DOI: 10.2140/camcos.2021.16.155](https://doi.org/10.2140/camcos.2021.16.155)
 """
 prob_pds_stratreac = PDSProblem(P_stratreac, d_stratreac, u0_stratreac, (4.32e4, 3.024e5))
+
+
+# ODE based on the Chapman cycle
+# https://en.wikipedia.org/wiki/Ozone–oxygen_cycle
+#   k1, O2 --> 2 * O
+#   k2, O2 + O --> O3
+#   k3, O3 + O --> 2 * O2
+#   k4, O3 --> O2 + O
+# with paramters
+#   :k1 => 2.5030557972662704E-013,
+#   :k2 => 3.8467252266678162E-015,
+#   :k3 => 4.8955144711622880E-007,
+#   :k4 => 4.6282737683735057E-004,
+# Order of species: O, O2, O3
+function P_chapman(u, p, t)
+    O, O2, O3 = u
+    k1 = 2.5030557972662704e-13
+    k2 = 3.8467252266678162e-15
+    k3 = 4.8955144711622880e-07
+    k4 = 4.6282737683735057e-04
+    P = @SMatrix [
+        # production of O
+        0 2*k1*O2 k4*O3;
+        # production of O2
+        k3*O*O3 0 k3*O*O3+k4*O3
+        # production of O3
+        0.5*k2*O*O2 0.5*k2*O*O2 0
+    ]
+    return P
+end
+const u0_chapman = @SVector [0.0, 6.8163696312632269e17, 162294515997247.62]
+const prob_pds_chapman = ConservativePDSProblem(P_chapman, u0_chapman,
+                                                (0.0, 3600.0))
+
+#=
+using Catalyst
+
+function setup_chapman_ode()
+    rn = @reaction_network chapman begin
+        # O2 can optionally be treated as a constant species
+        # @parameters O2 [isconstantspecies = true]
+        k1, O2 --> 2 * O
+        k2, O2 + O --> O3
+        k3, O3 + O --> 2 * O2
+        k4, O3 --> O2 + O
+    end
+
+    parameters = [
+		:k1 => 2.5030557972662704e-13,
+		:k2 => 3.8467252266678162e-15,
+		:k3 => 4.8955144711622880e-07,
+		:k4 => 4.6282737683735057e-04,
+        # If O2 is treated as a constant/fixed species, we
+        # need to include it here in the list of parameters.
+        # :O2 => 6.8163696312632269e+17,
+	]
+    tspan = (0.0, 3600.0)
+    u0 = [
+        :O => 0.0,
+        # If O2 is *not* treated as a constant/fixed species, we
+        # need to include it here.
+        :O2 => 6.8163696312632269e+17,
+        :O3 => 162294515997247.62,
+    ]
+
+    return ODEProblem(rn, u0, tspan, parameters;
+                      jac = true,
+                      tgrad = true,
+                      sparse = false,
+                      simplify = false)
+end
+=#
