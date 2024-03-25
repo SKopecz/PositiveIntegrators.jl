@@ -1,8 +1,8 @@
 # Install packages
 import Pkg
 Pkg.activate(@__DIR__)
-#Pkg.develop(path = dirname(@__DIR__))
-#Pkg.instantiate()
+Pkg.develop(path = dirname(@__DIR__))
+Pkg.instantiate()
 
 # load packages
 using PositiveIntegrators
@@ -23,11 +23,18 @@ f6(t, u1, u2, u3, u4, u5, u6) = (t, u1 + u2 + u3 + u4 + u5 + u6)
 f_brusselator(t, u1, u2, u3, u4, u5, u6) = (t, 0.55 * (u1 + u2 + u3 + u4 + u5 + u6))
 
 ## linear model ##########################################################
+sol_linmod = solve(prob_pds_linmod, Tsit5());
 sol_linmod_MPE = solve(prob_pds_linmod, MPE(), dt = 0.2);
+sol_linmod_MPRK = solve(prob_pds_linmod, MPRK22(0.5), dt = 0.2);
 
 # plot
-myplot(sol_linmod_MPE, "MPE")
+p1 = plot(sol_linmod)
+myplot!(sol_linmod_MPE, "MPE")
 plot!(sol_linmod_MPE, idxs = (f2, 0, 1, 2))
+p2 = plot(sol_linmod)
+myplot!(sol_linmod_MPRK, "MPRK")
+plot!(sol_linmod_MPRK, idxs = (f2, 0, 1, 2))
+plot(p1, p2)
 
 # convergence order
 # error based on analytic solution
@@ -42,76 +49,128 @@ sims = convergence_tab_plot(prob_pds_linmod, [MPE(), Euler()], test_setup;
 @assert sims[1].𝒪est[:l∞] > 0.9
 #savefig("figs/error_linmod_reference.svg")
 
+sims = convergence_tab_plot(prob_pds_linmod,
+                            [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.5), Heun()], test_setup;
+                            dts = 0.5 .^ (5:18), order_plot = true);
+for i in 1:4
+    @assert sims[i].𝒪est[:l∞] > 1.9
+end
 ## nonlinear model ########################################################
 sol_nonlinmod = solve(prob_pds_nonlinmod, Tsit5());
 sol_nonlinmod_MPE = solve(prob_pds_nonlinmod, MPE(), dt = 0.5);
+sol_nonlinmod_MPRK = solve(prob_pds_nonlinmod, MPRK22(1.0), dt = 0.5, adaptive = false);
 
 # plot
-plot(sol_nonlinmod, legend = :right)
+p1 = plot(sol_nonlinmod, legend = :right)
 myplot!(sol_nonlinmod_MPE, "MPE")
 plot!(sol_nonlinmod_MPE, idxs = (f3, 0, 1, 2, 3))
+p2 = plot(sol_nonlinmod, legend = :right)
+myplot!(sol_nonlinmod_MPRK, "MPRK")
+plot!(sol_nonlinmod_MPRK, idxs = (f3, 0, 1, 2, 3))
+plot(p1, p2, layout = (2, 1))
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sims = convergence_tab_plot(prob_pds_nonlinmod, [MPE(), Euler()], test_setup;
-                            dts = 0.5 .^ (3:17), order_plot = true);
+                            dts = 0.5 .^ (3:12), order_plot = true);
 @assert sims[1].𝒪est[:l∞] > 0.9
 
+sims = convergence_tab_plot(prob_pds_nonlinmod,
+                            [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.5), Heun()], test_setup;
+                            dts = 0.5 .^ (3:12), order_plot = true);
+for i in 1:4
+    @assert sims[i].𝒪est[:l∞] > 1.9
+end
 ## robertson problem ######################################################
 sol_robertson = solve(prob_pds_robertson, Rosenbrock23());
 # Cannot use MPE() since adaptive time stepping is not implemented
+sol_robertson_MPRK = solve(prob_pds_robertson, MPRK22(1.0));
 
 # plot
 plot(sol_robertson[2:end],
      idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)],
      color = palette(:default)[1:3]', legend = :right, xaxis = :log)
 plot!(sol_robertson[2:end], idxs = (f3, 0, 1, 2, 3), xaxis = :log)
+plot!(sol_robertson_MPRK[2:end],
+      idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)],
+      markershape = :circle,
+      color = palette(:default)[1:3]', legend = :right, xaxis = :log)
+plot!(sol_robertson_MPRK[2:end], idxs = (f3, 0, 1, 2, 3), markershape = :circle,
+      xaxis = :log)
 
 ## brusselator problem ####################################################
 sol_brusselator = solve(prob_pds_brusselator, Tsit5());
 sol_brusselator_MPE = solve(prob_pds_brusselator, MPE(), dt = 0.25);
+sol_brusselator_MPRK = solve(prob_pds_brusselator, MPRK22(1.0), dt = 0.25, adaptive = false);
 
 # plot
-plot(sol_brusselator, legend = :outerright)
+p1 = plot(sol_brusselator, legend = :outerright)
 myplot!(sol_brusselator_MPE, "MPE")
 plot!(sol_brusselator_MPE, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6),
       label = "f_brusselator")
+p2 = plot(sol_brusselator, legend = :outerright)
+myplot!(sol_brusselator_MPRK, "MPRK")
+plot!(sol_brusselator_MPRK, idxs = (f_brusselator, 0, 1, 2, 3, 4, 5, 6),
+      label = "f_brusselator")
+plot(p1, p2, layout = (2, 1))
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
-sims = convergence_tab_plot(prob_pds_brusselator, [MPE()], test_setup; dts = 0.5 .^ (3:17),
+sims = convergence_tab_plot(prob_pds_brusselator, [MPE(), Euler()], test_setup;
+                            dts = 0.5 .^ (3:15),
                             order_plot = true);
 @assert sims[1].𝒪est[:l∞] > 0.9
-
+sims = convergence_tab_plot(prob_pds_brusselator,
+                            [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.5), Heun()],
+                            test_setup; dts = 0.5 .^ (5:15),
+                            order_plot = true);
+for i in 1:4
+    @assert sims[i].𝒪est[:l∞] > 1.9
+end
 ## SIR model ##############################################################
 sol_sir = solve(prob_pds_sir, Tsit5());
 sol_sir_Euler = solve(prob_pds_sir, Euler(), dt = 0.5);
 sol_sir_MPE = solve(prob_pds_sir, MPE(), dt = 0.5);
+sol_sir_MPRK = solve(prob_pds_sir, MPRK22(1.0), dt = 0.5, adaptive = false);
 
 # plot
 p1 = plot(sol_sir)
-myplot!(sol_sir_MPE, "MPE")
-plot!(sol_sir_MPE, idxs = (f3, 0, 1, 2, 3), label = "f3")
-p2 = plot(sol_sir)
 myplot!(sol_sir_Euler, "Euler")
 plot!(sol_sir_Euler, idxs = (f3, 0, 1, 2, 3), label = "f3")
-plot(p1, p2)
+p2 = plot(sol_sir)
+myplot!(sol_sir_MPE, "MPE")
+plot!(sol_sir_MPE, idxs = (f3, 0, 1, 2, 3), label = "f3")
+p3 = plot(sol_sir)
+myplot!(sol_sir_MPRK, "MPRK")
+plot!(sol_sir_MPRK, idxs = (f3, 0, 1, 2, 3), label = "f3")
+plot(p1, p2, p3, layout = (2, 2))
 
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sims = convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15),
                             order_plot = true);
 @assert sims[1].𝒪est[:l∞] > 0.9
-
+sims = convergence_tab_plot(prob_pds_sir, [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.5), Heun()],
+                            test_setup; dts = 0.5 .^ (5:15),
+                            order_plot = true);
+for i in 1:4
+    @assert sims[i].𝒪est[:l∞] > 1.9
+end
 ## bertolazzi problem #####################################################
 sol_bertolazzi = solve(prob_pds_bertolazzi, TRBDF2());
 sol_bertolazzi_MPE = solve(prob_pds_bertolazzi, MPE(), dt = 0.01);
+sol_bertolazzi_MPRK = solve(prob_pds_bertolazzi, MPRK22(1.0), dt = 0.01);
 
 # plot
-plot(sol_bertolazzi, legend = :right)
+p1 = plot(sol_bertolazzi, legend = :right)
 myplot!(sol_bertolazzi_MPE, "MPE")
 ylims!((-0.5, 3.5))
 plot!(sol_bertolazzi_MPE, idxs = (f3, 0, 1, 2, 3))
+p2 = plot(sol_bertolazzi, legend = :right)
+myplot!(sol_bertolazzi_MPRK, "MPRK")
+ylims!((-0.5, 3.5))
+plot!(sol_bertolazzi_MPRK, idxs = (f3, 0, 1, 2, 3))
+plot(p1, p2, layout = (2, 1))
 
 # convergence order
 test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-8, :abstol => 1e-8)
@@ -121,12 +180,18 @@ convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup;
 ### npzd problem ##########################################################
 sol_npzd = solve(prob_pds_npzd, Rosenbrock23());
 sol_npzd_MPE = solve(prob_pds_npzd, MPE(), dt = 0.1);
+sol_npzd_MPRK = solve(prob_pds_npzd, MPRK22(1.0), dt = 0.1, adaptive = false);
 
 # plot
-plot(sol_npzd)
+p1 = plot(sol_npzd)
 myplot!(sol_npzd_MPE, "MPE")
 plot!(sol_npzd_MPE, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
 plot!(legend = :bottomright)
+p2 = plot(sol_npzd)
+myplot!(sol_npzd_MPRK, "MPRK")
+plot!(sol_npzd_MPRK, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
+plot!(legend = :bottomright)
+plot(p1, p2, layout = (2, 1))
 
 # convergence order
 # error should take all time steps into account, not only the final time!
@@ -134,7 +199,12 @@ test_setup = Dict(:alg => Rosenbrock23(), :reltol => 1e-14, :abstol => 1e-14)
 sims = convergence_tab_plot(prob_pds_npzd, [MPE(), ImplicitEuler()], test_setup;
                             dts = 0.5 .^ (5:17), order_plot = true);
 @assert sims[1].𝒪est[:l∞] > 0.9
-
+sims = convergence_tab_plot(prob_pds_npzd,
+                            [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.5), Heun()], test_setup;
+                            dts = 0.5 .^ (10:17), order_plot = true);
+for i in 1:4
+    @assert sims[i].𝒪est[:l∞] > 1.9
+end
 ### stratospheric reaction problem ####################################################
 sol_stratreac = solve(prob_pds_stratreac, TRBDF2(autodiff = false));
 # currently no solver for non-conservative PDS implemented
