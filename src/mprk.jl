@@ -267,16 +267,27 @@ struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMut
     thread::Thread
 end
 
+p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
+p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
+
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
                               alg.alpha, floatmin(uEltypeNoUnits))
-    MPRK22Cache(u, uprev, zero(u), zero(u), zero(rate_prototype), zero(rate_prototype),
-                zeros(eltype(u), length(u), length(u)),
-                zeros(eltype(u), length(u), length(u)), zero(u), zero(u),
-                zeros(eltype(u), length(u), length(u)), zero(u), tab, alg.thread)
+    MPRK22Cache(u, uprev,
+                zero(u), # tmp
+                zero(u), # atmp
+                zero(rate_prototype), # k
+                zero(rate_prototype), #fsalfirst
+                p_prototype(u, f), # P
+                p_prototype(u, f), # P2
+                zero(u), # D
+                zero(u), # D2
+                p_prototype(u, f), # M
+                zero(u), # σ
+                tab, alg.thread)
 end
 
 struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
