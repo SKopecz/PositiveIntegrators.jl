@@ -1,8 +1,7 @@
 # Security Policy
 
-The Trixi.jl development team takes security issues seriously. We appreciate
-all efforts to responsibly disclose any security issues and will make every
-effort to acknowledge contributions.
+We take security issues seriously and appreciate all efforts to responsibly
+disclose any security issues. We will make every effort to acknowledge contributions.
 
 
 ## Supported Versions
