@@ -1,4 +1,5 @@
 using Test
+using LinearAlgebra
 using OrdinaryDiffEq
 using PositiveIntegrators
 
@@ -12,6 +13,59 @@ using Aqua: Aqua
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,)
+    end
+
+    @testset "ConservativePDSFunction" begin
+        prod_1! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u)-1)
+                P[i, i + 1] = i * u[i]
+            end
+            return nothing
+        end
+        prod_2! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u)-1)
+                P[i + 1, i] = i * u[i + 1]
+            end
+            return nothing
+        end
+        prod_3! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u)-1)
+                P[i, i + 1] = i * u[i]
+                P[i + 1, i] = i * u[i + 1]
+            end
+            return nothing
+        end
+
+        n = 10
+        P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
+        P_dense = Matrix(P_tridiagonal)
+        P_sparse = sparse(P_tridiagonal)
+        u0 = rand(n)
+        tspan = (0.0, 1.0)
+
+        du_tridiagonal = similar(u0)
+        du_dense = similar(u0)
+        du_sparse = similar(u0)
+
+        for prod! in (prod_1!, prod_2!, prod_3!)
+            prob_tridiagonal = ConservativePDSProblem(prod!, u0, tspan;
+                                                      p_prototype = P_tridiagonal)
+            prob_dense = ConservativePDSProblem(prod!, u0, tspan;
+                                                p_prototype = P_dense)
+            prob_sparse = ConservativePDSProblem(prod!, u0, tspan;
+                                                 p_prototype = P_sparse)
+
+            prob_tridiagonal.f(du_tridiagonal, u0, nothing, 0.0)
+            prob_dense.f(du_dense, u0, nothing, 0.0)
+            prob_sparse.f(du_sparse, u0, nothing, 0.0)
+
+            @test du_tridiagonal ≈ du_dense
+            @test du_tridiagonal ≈ du_sparse
+            @test du_dense ≈ du_sparse
+        end
     end
 
     @testset "PDSProblem" begin
