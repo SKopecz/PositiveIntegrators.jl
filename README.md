@@ -1,6 +1,6 @@
 # PositiveIntegrators.jl
 
-<!-- [![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://SKopecz.github.io/PositiveIntegrators.jl/stable) -->
+[![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://SKopecz.github.io/PositiveIntegrators.jl/stable)
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://SKopecz.github.io/PositiveIntegrators.jl/dev)
 [![Build Status](https://github.com/SKopecz/PositiveIntegrators.jl/workflows/CI/badge.svg)](https://github.com/SKopecz/PositiveIntegrators.jl/actions?query=workflow%3ACI)
 [![Codecov](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl)
@@ -17,6 +17,20 @@ different schemes. The package extends [OrdinaryDiffEq.jl](https://github.com/Sc
 by
 * adding a new problem type for production-destruction systems
 * adding the algorithms of first and second order modified Patankar-Runge-Kutta (MPRK) schemes
+
+
+## Installation
+
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+is a registered Julia package. Thus, you can install it from the Julia REPL via
+```julia
+julia> using Pkg; Pkg.add("PositiveIntegrators")
+```
+
+If you want to update PositiveIntegrators.jl, you can use
+```julia
+julia> using Pkg; Pkg.update("PositiveIntegrators")
+```
 
 
 ## Referencing
