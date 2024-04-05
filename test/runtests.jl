@@ -240,11 +240,13 @@ using Aqua: Aqua
                 return nothing
             end
 
-            n = 10
-            P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
             P_dense = Matrix(P_tridiagonal)
             P_sparse = sparse(P_tridiagonal)
-            u0 = rand(n)
+            u0 = [1.0, 1.5, 2.0, 2.5]
             tspan = (0.0, 1.0)
             dt = 0.25
 
@@ -322,11 +324,13 @@ using Aqua: Aqua
                 return nothing
             end
 
-            n = 10
-            P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
             P_dense = Matrix(P_tridiagonal)
             P_sparse = sparse(P_tridiagonal)
-            u0 = rand(n)
+            u0 = [1.0, 1.5, 2.0, 2.5]
             tspan = (0.0, 1.0)
             dt = 0.25
 
