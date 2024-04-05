@@ -403,8 +403,8 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     uprev .= uprev .+ small_constant
 
-    f.p(P, uprev, p, t) #evaluate production terms
-    sum!(D', P) # sum destruction terms
+    f.p(P, uprev, p, t) # evaluate production terms
+    sum_destruction_terms!(D, P) # store destruction terms in D
     for j in 1:length(u)
         for i in 1:length(u)
             if i == j
@@ -421,8 +421,8 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ small_constant
 
-    f.p(P2, u, p, t + a21 * dt) #evaluate production terms
-    sum!(D2', P2) # sum destruction terms
+    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
+    sum_destruction_terms!(D2, P2) # store destruction terms in D2
     for j in 1:length(u)
         for i in 1:length(u)
             if i == j
@@ -443,4 +443,24 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
+end
+
+# Generic fallback (for dense arrays)
+sum_destruction_terms!(D, P) = sum!(D', P)
+
+function sum_destruction_terms!(D, P::Tridiagonal)
+    Base.require_one_based_indexing(D, P.dl, P.d, P.du)
+    @assert length(D) == length(P.dl) + 1 == length(P.d) == length(P.du) + 1
+
+    let i = 1
+        D[i] = P.d[i] + P.dl[i]
+    end
+    for i in 2:(length(D) - 1)
+        D[i] = P.du[i - 1] + P.d[i] + P.dl[i]
+    end
+    let i = lastindex(D)
+        D[i] = P.du[i - 1] + P.d[i]
+    end
+
+    return D
 end
