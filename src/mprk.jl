@@ -5,6 +5,9 @@ function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
     v + SVector{N, T}(ntuple(i -> small_constant, N))
 end
 
+#####################################################################
+p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
+p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -218,7 +221,7 @@ struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutabl
     fsalfirst::rateType
     P::PType
     D::uType
-    linsolve_tmp::uType  #stores rhs of linear system
+    linsolve_tmp::uType  # stores rhs of linear system
     linsolve::F
     weight::uNoUnitsType
 end
@@ -238,7 +241,11 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u),
+    MPECache(u, uprev, tmp,
+             zero(rate_prototype), # k
+             zero(rate_prototype), # fsalfirst
+             P,
+             zero(u), # D
              linsolve_tmp, linsolve, weight)
 end
 
@@ -389,9 +396,6 @@ struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMut
     tab::tabType
     thread::Thread
 end
-
-p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
-p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
