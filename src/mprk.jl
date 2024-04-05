@@ -54,7 +54,8 @@ function build_mprk_matrix!(M, a, P, D, sigma, dt)
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
     Base.require_one_based_indexing(M, P, D, sigma)
-    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(D) == length(sigma)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(D) ==
+            length(sigma)
 
     for j in 1:length(sigma)
         for i in 1:length(sigma)
@@ -74,7 +75,8 @@ function build_mprk_matrix!(M, b1, P1, D1, b2, P2, D2, sigma, dt)
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
     Base.require_one_based_indexing(M, P1, D1, P2, D2, sigma)
-    @assert size(M, 1) == size(M, 2) == size(P1, 1) == size(P1, 2) == length(D1) == size(P2, 1) == size(P2, 2) == length(D1) == length(sigma)
+    @assert size(M, 1) == size(M, 2) == size(P1, 1) == size(P1, 2) == length(D1) ==
+            size(P2, 1) == size(P2, 2) == length(D1) == length(sigma)
 
     for j in 1:length(sigma)
         for i in 1:length(sigma)
