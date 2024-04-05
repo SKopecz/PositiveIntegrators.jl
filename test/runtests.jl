@@ -267,30 +267,106 @@ using Aqua: Aqua
                 prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                         p_prototype = P_sparse)
 
-                sol_MPE_tridiagonal_ip = solve(prob_tridiagonal_ip, MPE();
-                                               dt, adaptive = false)
-                sol_MPE_tridiagonal_op = solve(prob_tridiagonal_op, MPE();
-                                               dt, adaptive = false)
-                sol_MPE_dense_ip = solve(prob_dense_ip, MPE();
-                                         dt, adaptive = false)
-                sol_MPE_dense_op = solve(prob_dense_op, MPE();
-                                         dt, adaptive = false)
-                sol_MPE_sparse_ip = solve(prob_sparse_ip, MPE();
-                                          dt, adaptive = false)
-                sol_MPE_sparse_op = solve(prob_sparse_op, MPE();
-                                          dt, adaptive = false)
+                sol_tridiagonal_ip = solve(prob_tridiagonal_ip, MPE();
+                                           dt, adaptive = false)
+                sol_tridiagonal_op = solve(prob_tridiagonal_op, MPE();
+                                           dt, adaptive = false)
+                sol_dense_ip = solve(prob_dense_ip, MPE();
+                                     dt, adaptive = false)
+                sol_dense_op = solve(prob_dense_op, MPE();
+                                     dt, adaptive = false)
+                sol_sparse_ip = solve(prob_sparse_ip, MPE();
+                                      dt, adaptive = false)
+                sol_sparse_op = solve(prob_sparse_op, MPE();
+                                      dt, adaptive = false)
 
-                @test sol_MPE_tridiagonal_ip.t ≈ sol_MPE_tridiagonal_op.t
-                @test sol_MPE_dense_ip.t ≈ sol_MPE_dense_op.t
-                @test sol_MPE_sparse_ip.t ≈ sol_MPE_sparse_op.t
-                @test sol_MPE_tridiagonal_ip.t ≈ sol_MPE_dense_ip.t
-                @test sol_MPE_tridiagonal_ip.t ≈ sol_MPE_sparse_ip.t
+                @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
+                @test sol_dense_ip.t ≈ sol_dense_op.t
+                @test sol_sparse_ip.t ≈ sol_sparse_op.t
+                @test sol_tridiagonal_ip.t ≈ sol_dense_ip.t
+                @test sol_tridiagonal_ip.t ≈ sol_sparse_ip.t
 
-                @test sol_MPE_tridiagonal_ip.u ≈ sol_MPE_tridiagonal_op.u
-                @test sol_MPE_dense_ip.u ≈ sol_MPE_dense_op.u
-                @test sol_MPE_sparse_ip.u ≈ sol_MPE_sparse_op.u
-                @test sol_MPE_tridiagonal_ip.u ≈ sol_MPE_dense_ip.u
-                @test sol_MPE_tridiagonal_ip.u ≈ sol_MPE_sparse_ip.u
+                @test sol_tridiagonal_ip.u ≈ sol_tridiagonal_op.u
+                @test sol_dense_ip.u ≈ sol_dense_op.u
+                @test sol_sparse_ip.u ≈ sol_sparse_op.u
+                @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
+                @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
+            end
+        end
+    end
+
+    @testset "MPRK22" begin
+        @testset "Different matrix types" begin
+            prod_1! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                return nothing
+            end
+
+            prod_2! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            prod_3! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            n = 10
+            P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            u0 = rand(n)
+            tspan = (0.0, 1.0)
+            dt = 0.25
+
+            for prod! in (prod_1!, prod_2!, prod_3!)
+                prod = (u, p, t) -> begin
+                    P = similar(u, (length(u), length(u)))
+                    prod!(P, u, p, t)
+                    return P
+                end
+                prob_tridiagonal_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                             p_prototype = P_tridiagonal)
+                prob_tridiagonal_op = ConservativePDSProblem(prod, u0, tspan;
+                                                             p_prototype = P_tridiagonal)
+                prob_dense_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                       p_prototype = P_dense)
+                prob_dense_op = ConservativePDSProblem(prod, u0, tspan;
+                                                       p_prototype = P_dense)
+                prob_sparse_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                        p_prototype = P_sparse)
+                prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
+                                                        p_prototype = P_sparse)
+
+                sol_tridiagonal_ip = solve(prob_tridiagonal_ip, MPRK22(1.0); dt, adaptive = false)
+                sol_tridiagonal_op = solve(prob_tridiagonal_op, MPRK22(1.0); dt, adaptive = false)
+                sol_dense_ip = solve(prob_dense_ip, MPRK22(1.0); dt, adaptive = false)
+                sol_dense_op = solve(prob_dense_op, MPRK22(1.0); dt, adaptive = false)
+                sol_sparse_ip = solve(prob_sparse_ip, MPRK22(1.0); dt, adaptive = false)
+                sol_sparse_op = solve(prob_sparse_op, MPRK22(1.0); dt, adaptive = false)
+
+                @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
+                @test sol_dense_ip.t ≈ sol_dense_op.t
+                @test sol_sparse_ip.t ≈ sol_sparse_op.t
+                @test sol_tridiagonal_ip.t ≈ sol_dense_ip.t
+                @test sol_tridiagonal_ip.t ≈ sol_sparse_ip.t
+
+                @test sol_tridiagonal_ip.u ≈ sol_tridiagonal_op.u
+                @test sol_dense_ip.u ≈ sol_dense_op.u
+                @test sol_sparse_ip.u ≈ sol_sparse_op.u
+                @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
+                @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
             end
         end
     end
