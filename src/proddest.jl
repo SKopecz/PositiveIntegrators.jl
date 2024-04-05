@@ -163,8 +163,8 @@ end
 # New problem type ConservativePDSProblem
 """
     ConservativePDSProblem(P, u0, tspan, p = NullParameters();
-                            p_prototype = nothing, 
-                            analytic=nothing)
+                           p_prototype = nothing,
+                           analytic = nothing)
 
 A structure describing a conservative system of ordinary differential equation in form of a production-destruction system (PDS).
 `P` denotes the production matrix.
@@ -257,7 +257,8 @@ function ConservativePDSFunction{iip}(P; kwargs...) where {iip}
 end
 
 # Most specific constructor for ConservativePDSFunction
-function ConservativePDSFunction{iip, FullSpecialize}(P; p_prototype = nothing,
+function ConservativePDSFunction{iip, FullSpecialize}(P;
+                                                      p_prototype = nothing,
                                                       analytic = nothing) where {iip}
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
@@ -305,21 +306,49 @@ end
 # Evaluation of a ConservativePDSFunction (in-place)
 function (PD::ConservativePDSFunction)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
+    sum_terms!(du, PD.tmp, PD.p_prototype)
+    return nothing
+end
 
-    if PD.p_prototype isa AbstractSparseMatrix
-        # Same result but more efficient - at least currently for SparseMatrixCSC
-        fill!(PD.tmp, one(eltype(PD.tmp)))
-        mul!(vec(du), PD.p_prototype, PD.tmp)
-        sum!(PD.tmp', PD.p_prototype)
-        vec(du) .-= PD.tmp
-    else
-        # This implementation does not need any auxiliary vectors
-        for i in 1:length(u)
-            du[i] = zero(eltype(du))
-            for j in 1:length(u)
-                du[i] += PD.p_prototype[i, j] - PD.p_prototype[j, i]
-            end
+# Generic fallback (for dense arrays)
+# This implementation does not need any auxiliary vectors
+@inline function sum_terms!(du, tmp, P)
+    for i in 1:length(du)
+        du[i] = zero(eltype(du))
+        for j in 1:length(du)
+            du[i] += P[i, j] - P[j, i]
         end
+    end
+    return nothing
+end
+
+# Same result but more efficient - at least currently for SparseMatrixCSC
+@inline function sum_terms!(du, tmp, P::AbstractSparseMatrix)
+    fill!(tmp, one(eltype(tmp)))
+    mul!(vec(du), P, tmp)
+    sum!(tmp', P)
+    vec(du) .-= tmp
+    return nothing
+end
+
+@inline function sum_terms!(du, tmp, P::Tridiagonal)
+    Base.require_one_based_indexing(du, P.dl, P.du)
+    @assert length(du) == length(P.dl) + 1 == length(P.du) + 1
+
+    let i = 1
+        Pij = P.du[i]
+        Pji = P.dl[i]
+        du[i] = Pij - Pji
+    end
+    for i in 2:(length(du) - 1)
+        Pij = P.dl[i - 1] + P.du[i]
+        Pji = P.du[i - 1] + P.dl[i]
+        du[i] = Pij - Pji
+    end
+    let i = lastindex(du)
+        Pij = P.dl[i - 1]
+        Pji = P.du[i - 1]
+        du[i] = Pij - Pji
     end
     return nothing
 end

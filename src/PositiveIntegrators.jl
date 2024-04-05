@@ -1,7 +1,7 @@
 module PositiveIntegrators
 
 # 1. Load dependencies
-using LinearAlgebra: LinearAlgebra, I, diag, diagind, mul!
+using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, diagind, mul!
 using SparseArrays: SparseArrays, AbstractSparseMatrix
 using StaticArrays: SVector, MVector, SMatrix, StaticArray, @SVector, @SMatrix
 
