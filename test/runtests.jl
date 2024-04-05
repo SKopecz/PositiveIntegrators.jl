@@ -349,8 +349,10 @@ using Aqua: Aqua
                 prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                         p_prototype = P_sparse)
 
-                sol_tridiagonal_ip = solve(prob_tridiagonal_ip, MPRK22(1.0); dt, adaptive = false)
-                sol_tridiagonal_op = solve(prob_tridiagonal_op, MPRK22(1.0); dt, adaptive = false)
+                sol_tridiagonal_ip = solve(prob_tridiagonal_ip, MPRK22(1.0); dt,
+                                           adaptive = false)
+                sol_tridiagonal_op = solve(prob_tridiagonal_op, MPRK22(1.0); dt,
+                                           adaptive = false)
                 sol_dense_ip = solve(prob_dense_ip, MPRK22(1.0); dt, adaptive = false)
                 sol_dense_op = solve(prob_dense_op, MPRK22(1.0); dt, adaptive = false)
                 sol_sparse_ip = solve(prob_sparse_ip, MPRK22(1.0); dt, adaptive = false)
