@@ -1,8 +1,13 @@
+# Helper functions
 add_small_constant(v, small_constant) = v .+ small_constant
+
 function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
     v + SVector{N, T}(ntuple(i -> small_constant, N))
 end
 
+
+#####################################################################
+# out-of-place for dense and static arrays
 function build_mprk_matrix(P, sigma, dt)
     # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
     # M[i,j] = -dt*P[i,j]/sigma[j]
@@ -38,6 +43,30 @@ function build_mprk_matrix(P, sigma, dt)
     else
         return M
     end
+end
+
+# in-place for dense arrays
+# TODO
+
+#####################################################################
+# Generic fallback (for dense arrays)
+sum_destruction_terms!(D, P) = sum!(D', P)
+
+function sum_destruction_terms!(D, P::Tridiagonal)
+    Base.require_one_based_indexing(D, P.dl, P.d, P.du)
+    @assert length(D) == length(P.dl) + 1 == length(P.d) == length(P.du) + 1
+
+    let i = 1
+        D[i] = P.d[i] + P.dl[i]
+    end
+    for i in 2:(length(D) - 1)
+        D[i] = P.du[i - 1] + P.d[i] + P.dl[i]
+    end
+    let i = lastindex(D)
+        D[i] = P.du[i - 1] + P.d[i]
+    end
+
+    return D
 end
 
 ### MPE #####################################################################################
@@ -182,8 +211,8 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     #@muladd @.. broadcast=false u=0*uprev + 123.0# + dt * integrator.fsalfirst
 
     P .= 0.0
-    f.p(P, uprev, p, t) #evaluate production terms
-    sum!(D', P) # sum destruction terms
+    f.p(P, uprev, p, t) # evaluate production terms
+    sum_destruction_terms!(D, P) # store destruction terms in D
     for j in 1:length(u)
         for i in 1:length(u)
             if i == j
@@ -193,7 +222,7 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
             end
         end
     end
-    #linres = P\uprev #needs to be implemented without allocations
+    #linres = P\uprev # TODO: needs to be implemented without allocations
     linres = dolinsolve(integrator, cache.linsolve; A = P, b = _vec(uprev),
                         du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight)
 
@@ -405,6 +434,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
+    # build_mprk_matrix!(M, P, D, a21, dt, uprev, σ)
     for j in 1:length(u)
         for i in 1:length(u)
             if i == j
@@ -443,24 +473,4 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
-end
-
-# Generic fallback (for dense arrays)
-sum_destruction_terms!(D, P) = sum!(D', P)
-
-function sum_destruction_terms!(D, P::Tridiagonal)
-    Base.require_one_based_indexing(D, P.dl, P.d, P.du)
-    @assert length(D) == length(P.dl) + 1 == length(P.d) == length(P.du) + 1
-
-    let i = 1
-        D[i] = P.d[i] + P.dl[i]
-    end
-    for i in 2:(length(D) - 1)
-        D[i] = P.du[i - 1] + P.d[i] + P.dl[i]
-    end
-    let i = lastindex(D)
-        D[i] = P.du[i - 1] + P.d[i]
-    end
-
-    return D
 end
