@@ -1,5 +1,7 @@
 using Test
 using LinearAlgebra
+using SparseArrays
+
 using OrdinaryDiffEq
 using PositiveIntegrators
 
