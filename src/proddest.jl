@@ -341,13 +341,13 @@ end
         du[i] = Pij - Pji
     end
     for i in 2:(length(du) - 1)
-        Pij = P.dl[i-1] + P.du[i]
-        Pji = P.du[i-1] + P.dl[i]
+        Pij = P.dl[i - 1] + P.du[i]
+        Pji = P.du[i - 1] + P.dl[i]
         du[i] = Pij - Pji
     end
     let i = lastindex(du)
-        Pij = P.dl[i-1]
-        Pji = P.du[i-1]
+        Pij = P.dl[i - 1]
+        Pji = P.du[i - 1]
         du[i] = Pij - Pji
     end
     return nothing

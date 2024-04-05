@@ -20,21 +20,21 @@ using Aqua: Aqua
     @testset "ConservativePDSFunction" begin
         prod_1! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
-            for i in 1:(length(u)-1)
+            for i in 1:(length(u) - 1)
                 P[i, i + 1] = i * u[i]
             end
             return nothing
         end
         prod_2! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
-            for i in 1:(length(u)-1)
+            for i in 1:(length(u) - 1)
                 P[i + 1, i] = i * u[i + 1]
             end
             return nothing
         end
         prod_3! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
-            for i in 1:(length(u)-1)
+            for i in 1:(length(u) - 1)
                 P[i, i + 1] = i * u[i]
                 P[i + 1, i] = i * u[i + 1]
             end
