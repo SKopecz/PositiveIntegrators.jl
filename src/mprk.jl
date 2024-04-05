@@ -233,7 +233,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
-    P = zeros(eltype(u), length(u), length(u))
+    P = p_prototype(u, f)
     linsolve_tmp = zero(u)
 
     weight = similar(u, uEltypeNoUnits)
