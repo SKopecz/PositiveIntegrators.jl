@@ -5,6 +5,9 @@ function add_small_constant(v::SVector{N, T}, small_constant::T) where {N, T}
     v + SVector{N, T}(ntuple(i -> small_constant, N))
 end
 
+#####################################################################
+p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
+p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -218,7 +221,7 @@ struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutabl
     fsalfirst::rateType
     P::PType
     D::uType
-    linsolve_tmp::uType  #stores rhs of linear system
+    linsolve_tmp::uType  # stores rhs of linear system
     linsolve::F
     weight::uNoUnitsType
 end
@@ -228,7 +231,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
-    P = zeros(eltype(u), length(u), length(u))
+    P = zero(rate_prototype)
     linsolve_tmp = zero(u)
 
     weight = similar(u, uEltypeNoUnits)
@@ -238,7 +241,12 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
-    MPECache(u, uprev, tmp, zero(rate_prototype), zero(rate_prototype), P, zero(u),
+    MPECache(u, uprev,
+             tmp,
+             zero(rate_prototype), # k
+             zero(rate_prototype), # fsalfirst
+             P,
+             zero(u), # D
              linsolve_tmp, linsolve, weight)
 end
 
@@ -370,10 +378,21 @@ function MPRK22(alpha; thread = False(), linsolve = nothing)
     MPRK22{typeof(alpha), typeof(thread), typeof(linsolve)}(alpha, thread, linsolve)
 end
 
+# TODO: Think about adding preconditioners to the MPRK22 algorithm
+# This hack is currently required to make OrdinaryDiffEq.jl happy...
+function Base.getproperty(mprk::MPRK22, f::Symbol)
+    # preconditioners
+    if f === :precs
+        return Returns((nothing, nothing))
+    else
+        return getfield(mprk, f)
+    end
+end
+
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
 
 #@cache
-struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMutableCache
+struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -388,10 +407,10 @@ struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMut
     σ::uType
     tab::tabType
     thread::Thread
+    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
 end
-
-p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
-p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -399,18 +418,31 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
                               alg.alpha, floatmin(uEltypeNoUnits))
+
+    tmp = zero(u)
+    M = p_prototype(u, f)
+
+    linsolve_tmp = zero(u)
+    linprob = LinearProblem(M, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+
     MPRK22Cache(u, uprev,
-                zero(u), # tmp
+                tmp,
                 zero(u), # atmp
                 zero(rate_prototype), # k
-                zero(rate_prototype), #fsalfirst
+                zero(rate_prototype), # fsalfirst
                 p_prototype(u, f), # P
                 p_prototype(u, f), # P2
                 zero(u), # D
                 zero(u), # D2
-                p_prototype(u, f), # M
+                M, # M
                 zero(u), # σ
-                tab, alg.thread)
+                tab, alg.thread,
+                linsolve_tmp, linsolve, weight)
 end
 
 struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
@@ -521,7 +553,7 @@ end
 
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread = cache
+    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread, weight = cache
     @unpack a21, b1, b2, c2, small_constant = cache.tab
 
     uprev .= uprev .+ small_constant
@@ -529,8 +561,11 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
     build_mprk_matrix!(M, a21, P, D, uprev, dt)
-    tmp = M \ uprev #TODO: needs to be implemented without allocations.
-    u .= tmp
+    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    linres = dolinsolve(integrator, cache.linsolve; A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
 
     u .= u .+ small_constant
 
@@ -539,8 +574,11 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     f.p(P2, u, p, t + a21 * dt) # evaluate production terms
     sum_destruction_terms!(D2, P2) # store destruction terms in D2
     build_mprk_matrix!(M, b1, P, D, b2, P2, D2, σ, dt)
-    tmp = M \ uprev #TODO: needs to be implemented without allocations.
-    u .= tmp
+    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    linres = dolinsolve(integrator, cache.linsolve; A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
 
     tmp .= u .- σ
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
