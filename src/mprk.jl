@@ -178,14 +178,19 @@ end
 
 ### MPE #####################################################################################
 """
-    MPE()
+    MPE([linsolve = ...])
 
-The first-order modified Patankar-Euler algorithm for conservative production-destruction
-systems. This one-step, one-stage method is first-order accurate, unconditionally
-positivity-preserving, and linearly implicit.
+The first-order modified Patankar-Euler algorithm for (conservative)
+production-destruction systems. This one-step, one-stage method is
+first-order accurate, unconditionally positivity-preserving, and
+linearly implicit.
 
 The modified Patankar-Euler method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
+
+You can optionally choose the linear solver to be used by passing an
+algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
+as keyword argument `linsolve`.
 
 ## References
 
@@ -199,22 +204,25 @@ struct MPE{F} <: OrdinaryDiffEqAlgorithm
     linsolve::F
 end
 
-function MPE(; linsolve = nothing)
+function MPE(; linsolve = LUFactorization())
     MPE(linsolve)
 end
 
+# TODO: Consider switching to the interface of LinearSolve.jl directly,
+#       avoiding `dolinesolve` from OrdinaryDiffEq.jl.
 # TODO: Think about adding preconditioners to the MPE algorithm
 # This hack is currently required to make OrdinaryDiffEq.jl happy...
-function Base.getproperty(mpe::MPE, f::Symbol)
+function Base.getproperty(alg::MPE, f::Symbol)
     # preconditioners
     if f === :precs
         return Returns((nothing, nothing))
     else
-        return getfield(mpe, f)
+        return getfield(alg, f)
     end
 end
 
-#@cache
+OrdinaryDiffEq.alg_order(alg::MPE) = 1
+
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -229,8 +237,8 @@ struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutabl
 end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     P = p_prototype(u, f)
@@ -256,8 +264,8 @@ struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MPEConstantCache(floatmin(uEltypeNoUnits))
 end
@@ -325,9 +333,11 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
     build_mprk_matrix!(P, 1, P, D, uprev, dt)
-    #linres = P\uprev # TODO: needs to be implemented without allocations
-    linres = dolinsolve(integrator, cache.linsolve; A = P, b = _vec(uprev),
-                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight)
+    # linres = P\uprev # TODO: needs to be implemented without allocations
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
 
     u .= linres
 
@@ -337,16 +347,21 @@ end
 
 ### MPRK #####################################################################################
 """
-    MPRK22(α)
+    MPRK22(α; [linsolve = ...])
 
-The second-order modified Patankar-Runge-Kutta algorithm for conservative production-destruction
-systems. This one-step, two-stage method is second-order accurate, unconditionally
-positivity-preserving, and linearly implicit. The parameter `α` is described by
-Kopecz and Meister (2018) and studied by Izgin, Kopecz and Meister (2022) as well as
+The second-order modified Patankar-Runge-Kutta algorithm for (conservative)
+production-destruction systems. This one-step, two-stage method is
+second-order accurate, unconditionally positivity-preserving, and linearly
+implicit. The parameter `α` is described by Kopecz and Meister (2018) and
+studied by Izgin, Kopecz and Meister (2022) as well as
 Torlo, Öffner and Ranocha (2022).
 
 This modified Patankar-Runge-Kutta method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
+
+You can optionally choose the linear solver to be used by passing an
+algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
+as keyword argument `linsolve`.
 
 ## References
 
@@ -375,14 +390,27 @@ struct MPRK22{T, Thread, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     linsolve::F
 end
 
-function MPRK22(alpha; thread = False(), linsolve = nothing)
+function MPRK22(alpha; thread = False(), linsolve = LUFactorization())
     MPRK22{typeof(alpha), typeof(thread), typeof(linsolve)}(alpha, thread, linsolve)
+end
+
+# TODO: Consider switching to the interface of LinearSolve.jl directly,
+#       avoiding `dolinesolve` from OrdinaryDiffEq.jl.
+# TODO: Think about adding preconditioners to the MPRK22 algorithm
+# This hack is currently required to make OrdinaryDiffEq.jl happy...
+function Base.getproperty(alg::MPRK22, f::Symbol)
+    # preconditioners
+    if f === :precs
+        return Returns((nothing, nothing))
+    else
+        return getfield(alg, f)
+    end
 end
 
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
 
-#@cache
-struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMutableCache
+struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
+       OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -397,6 +425,9 @@ struct MPRK22Cache{uType, rateType, PType, tabType, Thread} <: OrdinaryDiffEqMut
     σ::uType
     tab::tabType
     thread::Thread
+    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
 end
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -405,8 +436,19 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
                               alg.alpha, floatmin(uEltypeNoUnits))
-    MPRK22Cache(u, uprev,
-                zero(u), # tmp
+
+    tmp = zero(u)
+
+    M = p_prototype(u, f)
+    linsolve_tmp = zero(u)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+
+    linprob = LinearProblem(M, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+
+    MPRK22Cache(u, uprev, tmp,
                 zero(u), # atmp
                 zero(rate_prototype), # k
                 zero(rate_prototype), #fsalfirst
@@ -414,9 +456,10 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                 p_prototype(u, f), # P2
                 zero(u), # D
                 zero(u), # D2
-                p_prototype(u, f), # M
+                M,
                 zero(u), # σ
-                tab, alg.thread)
+                tab, alg.thread,
+                linsolve_tmp, linsolve, weight)
 end
 
 struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
@@ -428,8 +471,8 @@ struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
     #TODO: Should assert alg.alpha >= 0.5
@@ -527,7 +570,7 @@ end
 
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread = cache
+    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread, weight = cache
     @unpack a21, b1, b2, c2, small_constant = cache.tab
 
     uprev .= uprev .+ small_constant
@@ -535,8 +578,12 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
     build_mprk_matrix!(M, a21, P, D, uprev, dt)
-    tmp = M \ uprev #TODO: needs to be implemented without allocations.
-    u .= tmp
+    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
 
     u .= u .+ small_constant
 
@@ -545,8 +592,12 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     f.p(P2, u, p, t + a21 * dt) # evaluate production terms
     sum_destruction_terms!(D2, P2) # store destruction terms in D2
     build_mprk_matrix!(M, b1, P, D, b2, P2, D2, σ, dt)
-    tmp = M \ uprev #TODO: needs to be implemented without allocations.
-    u .= tmp
+    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
 
     tmp .= u .- σ
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
