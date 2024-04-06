@@ -22,7 +22,7 @@ using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
 
 using SymbolicIndexingInterface
 
-using LinearSolve: LinearSolve, LinearProblem
+using LinearSolve: LinearSolve, LinearProblem, LUFactorization
 
 import SciMLBase: __has_mass_matrix, __has_analytic, __has_tgrad,
                   __has_jac, __has_jvp, __has_vjp, __has_jac_prototype,
