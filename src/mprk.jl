@@ -409,7 +409,8 @@ end
 
 OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
 
-struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
+struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
+       OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
