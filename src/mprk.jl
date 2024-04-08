@@ -176,6 +176,49 @@ function sum_destruction_terms!(D, P::Tridiagonal)
     return D
 end
 
+#####################################################################
+# Linear interpolations
+@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{0}})
+    Θm1 = (1 - Θ)
+    @.. broadcast=false Θm1 * u0 + Θ * u1
+end
+
+@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{0}})
+    Θm1 = (1 - Θ)
+    @.. broadcast=false Θm1 * u0[idxs] + Θ * u1[idxs]
+end
+
+@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing,
+        T::Type{Val{0}})
+    Θm1 = (1 - Θ)
+    @.. broadcast=false out=Θm1 * u0 + Θ * u1
+    out
+end
+
+@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{0}})
+    Θm1 = (1 - Θ)
+    @views @.. broadcast=false out=Θm1 * u0[idxs] + Θ * u1[idxs]
+    out
+end
+
+@inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
+    @.. broadcast=false (u1 - u0) / dt
+end
+
+@inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{1}})
+    @.. broadcast=false (u1[idxs] - u0[idxs])/dt
+end
+
+@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
+    @.. broadcast=false out=(u1 - u0) / dt
+    out
+end
+
+@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{1}})
+    @views @.. broadcast=false out=(u1[idxs] - u0[idxs]) / dt
+    out
+end
+
 ### MPE #####################################################################################
 """
     MPE([linsolve = ...])
@@ -221,7 +264,8 @@ function Base.getproperty(alg::MPE, f::Symbol)
     end
 end
 
-alg_order(alg::MPE) = 1
+alg_order(::MPE) = 1
+isfsal(::MPE) = false
 
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
@@ -271,15 +315,12 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
-    integrator.kshortsize = 2
+    integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
@@ -287,11 +328,13 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack small_constant = cache
 
     # Attention: Implementation assumes that the pds is conservative,
-    # i.e. f.p[i,i] == 0 for all i
+    # i.e., P[i, i] == 0 for all i
 
-    P = f.p(uprev, p, t) # evaluate production matrix
+    # evaluate production matrix
+    P = f.p(uprev, p, t)
+    integrator.stats.nf += 1
 
-    # avoid division by zero due to zero patankar weights
+    # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
 
     # build linear system matrix
@@ -303,12 +346,8 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
     u = sol.u
+    integrator.stats.nsolve += 1
 
-    k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
-    integrator.fsallast = k
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
@@ -344,6 +383,42 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf += 1
 end
+
+# interpolation specializations
+interp_summary(::MPE) = "Linear interpolation"
+
+function _ode_interpolant(Θ, dt, u0, u1, k,
+                          cache::Union{MPEConstantCache, MPECache},
+                          idxs, # Optionally specialize for ::Nothing and others
+                          T::Type{Val{0}},
+                          differential_vars::Nothing)
+    linear_interpolant(Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant!(out, Θ, dt, u0, u1, k,
+                           cache::Union{MPEConstantCache, MPECache},
+                           idxs, # Optionally specialize for ::Nothing and others
+                           T::Type{Val{0}},
+                           differential_vars::Nothing)
+    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant(Θ, dt, u0, u1, k,
+                          cache::Union{MPEConstantCache, MPECache},
+                          idxs, # Optionally specialize for ::Nothing and others
+                          T::Type{Val{1}},
+                          differential_vars::Nothing)
+    linear_interpolant(Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant!(out, Θ, dt, u0, u1, k,
+                           cache::Union{MPEConstantCache, MPECache},
+                           idxs, # Optionally specialize for ::Nothing and others
+                           T::Type{Val{1}},
+                           differential_vars::Nothing)
+    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
+end
+
 
 ### MPRK #####################################################################################
 """
