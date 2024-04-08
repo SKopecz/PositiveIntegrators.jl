@@ -358,15 +358,18 @@ end
         end
 
         @testset "Convergence tests" begin
-            dts = 0.5 .^ (5:10)
             alg = MPE()
-            eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts)
-            @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            dts = 0.5 .^ (5:10)
+            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            for prob in problems
+                eoc = experimental_order_of_convergence(prob, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
 
-            test_times = [0.123456789, 1 / pi, exp(-1),
-                          1.23456789, 1 + 1 / pi, 1 + exp(-1)]
-            eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts, test_times)
-            @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                test_times = [0.123456789, 1 / pi, exp(-1),
+                              1.23456789, 1 + 1 / pi, 1 + exp(-1)]
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
         end
     end
 
@@ -451,14 +454,15 @@ end
 
         @testset "Convergence tests" begin
             dts = 0.5 .^ (5:10)
-            for alpha in (0.5, 1.0, 2.0)
+            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            for alpha in (0.5, 1.0, 2.0), prob in problems
                 alg = MPRK22(alpha)
-                eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts)
+                eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
 
                 test_times = [0.123456789, 1 / pi, exp(-1),
                               1.23456789, 1 + 1 / pi, 1 + exp(-1)]
-                eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts, test_times)
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
