@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using SparseArrays
+using Statistics: mean
 
 using OrdinaryDiffEq
 using PositiveIntegrators
@@ -8,6 +9,66 @@ using PositiveIntegrators
 using LinearSolve: RFLUFactorization, LUFactorization
 
 using Aqua: Aqua
+
+"""
+    experimental_order_of_convergence(prob, alg, dts, test_times)
+
+Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
+the mean error at the times `test_times`.
+Return the associated experimental order of convergence.
+"""
+function experimental_order_of_convergence(prob, alg, dts, test_times)
+    @assert length(dts) > 1
+    errors = zeros(eltype(dts), length(dts))
+    analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
+
+    for (i, dt) in enumerate(dts)
+        sol = solve(prob, alg; dt = dt, adaptive = false)
+        errors[i] = mean(test_times) do t
+            norm(sol(t) - analytic(t))
+        end
+    end
+
+    return experimental_order_of_convergence(errors, dts)
+end
+
+"""
+    experimental_order_of_convergence(prob, alg, dts)
+
+Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
+the mean error at the final time.
+Return the associated experimental order of convergence.
+"""
+function experimental_order_of_convergence(prob, alg, dts)
+    @assert length(dts) > 1
+    errors = zeros(eltype(dts), length(dts))
+    analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
+
+    for (i, dt) in enumerate(dts)
+        sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
+        errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
+    end
+
+    return experimental_order_of_convergence(errors, dts)
+end
+
+"""
+    experimental_order_of_convergence(errors, dts)
+
+Compute the experimental order of convergence for given `errors` and
+time step sizes `dts`.
+"""
+function experimental_order_of_convergence(errors, dts)
+    Base.require_one_based_indexing(errors, dts)
+    @assert length(errors) == length(dts)
+    orders = zeros(eltype(errors), length(errors) - 1)
+
+    for i in eachindex(orders)
+        orders[i] = log(errors[i] / errors[i + 1]) / log(dts[i] / dts[i + 1])
+    end
+
+    return mean(orders)
+end
 
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
@@ -295,6 +356,23 @@ using Aqua: Aqua
                 @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
             end
         end
+
+        @testset "Convergence tests" begin
+            alg = MPE()
+            dts = 0.5 .^ (5:10)
+            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            for prob in problems
+                eoc = experimental_order_of_convergence(prob, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+
+                test_times = [
+                    0.123456789, 1 / pi, exp(-1),
+                    1.23456789, 1 + 1 / pi, 1 + exp(-1),
+                ]
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
+        end
     end
 
     @testset "MPRK22" begin
@@ -373,6 +451,23 @@ using Aqua: Aqua
                 @test sol_sparse_ip.u ≈ sol_sparse_op.u
                 @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
                 @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
+            end
+        end
+
+        @testset "Convergence tests" begin
+            dts = 0.5 .^ (5:10)
+            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            for alpha in (0.5, 1.0, 2.0), prob in problems
+                alg = MPRK22(alpha)
+                eoc = experimental_order_of_convergence(prob, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+
+                test_times = [
+                    0.123456789, 1 / pi, exp(-1),
+                    1.23456789, 1 + 1 / pi, 1 + exp(-1),
+                ]
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
     end

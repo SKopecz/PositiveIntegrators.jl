@@ -37,7 +37,7 @@ import OrdinaryDiffEq: @cache,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        alg_cache, initialize!, perform_step!,
                        recursivefill!, _vec, DEFAULT_PRECS, wrapprecs,
-                       dolinsolve
+                       dolinsolve, alg_order
 
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
@@ -45,8 +45,9 @@ export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22
 
-export prob_pds_linmod, prob_pds_nonlinmod, prob_pds_robertson, prob_pds_brusselator,
-       prob_pds_sir, prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac
+export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+       prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
+       prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac
 
 # 3. Load source code
 

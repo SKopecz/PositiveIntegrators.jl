@@ -33,6 +33,20 @@ There is one independent linear invariant, e.g. ``u_1+u_2 = 1``.
 prob_pds_linmod = ConservativePDSProblem(P_linmod, u0_linmod, (0.0, 2.0),
                                          analytic = f_linmod_analytic)
 
+function P_linmod!(P, u, p, t)
+    P .= P_linmod(u, p, t)
+    return nothing
+end
+
+"""
+    prob_pds_linmod_inplace
+
+Same as [`prob_pds_linmod`](@ref) but with in-place computation.
+"""
+prob_pds_linmod_inplace = ConservativePDSProblem(P_linmod!, Array(u0_linmod),
+                                                 (0.0, 2.0),
+                                                 analytic = f_linmod_analytic)
+
 # nonlinear model problem
 function P_nonlinmod(u, p, t)
     @SMatrix [0.0 0.0 0.0; u[2] * u[1]/(u[1] + 1.0) 0.0 0.0; 0.0 0.3*u[2] 0.0]
@@ -179,7 +193,7 @@ There is one independent linear invariant, e.g. ``u_1+u_2+u_3 = 3.0``.
 
 ## References
 
-- Enrico Bertolazzi. 
+- Enrico Bertolazzi.
   "Positive and conservative schemes for mass action kinetics."
   Computers and Mathematics with Applications 32 (1996): 29-43.
   [DOI: 10.1016/0898-1221(96)00142-3](https://doi.org/10.1016/0898-1221(96)00142-3)
