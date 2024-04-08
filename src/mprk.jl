@@ -362,36 +362,33 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::MPECache)
-    integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
+    integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack P, D, weight = cache
-    #@muladd @.. broadcast=false u=0*uprev + 123.0# + dt * integrator.fsalfirst
 
-    P .= 0.0
+    # TODO: Shall we require the users to set unused entries to zero?
+    fill!(P, zero(eltype(P)))
+
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
+    integrator.stats.nf += 1
+
     build_mprk_matrix!(P, 1, P, D, uprev, dt)
-    # linres = P\uprev # TODO: needs to be implemented without allocations
+    # Same as linres = P \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = P, b = _vec(uprev),
                         du = integrator.fsalfirst, u = u, p = p, t = t,
                         weight = weight)
-
     u .= linres
-
-    f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+    integrator.stats.nsolve += 1
 end
 
 # interpolation specializations
