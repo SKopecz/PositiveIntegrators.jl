@@ -79,7 +79,6 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                                                        MVector(prob_pds_linmod.u0),
                                                        prob_pds_linmod.tspan)
 
-
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
