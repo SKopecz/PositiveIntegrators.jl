@@ -221,7 +221,7 @@ function Base.getproperty(alg::MPE, f::Symbol)
     end
 end
 
-OrdinaryDiffEq.alg_order(alg::MPE) = 1
+alg_order(alg::MPE) = 1
 
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
@@ -407,7 +407,7 @@ function Base.getproperty(alg::MPRK22, f::Symbol)
     end
 end
 
-OrdinaryDiffEq.alg_order(alg::MPRK22) = 2
+alg_order(alg::MPRK22) = 2
 
 struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache

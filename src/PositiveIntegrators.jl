@@ -37,7 +37,7 @@ import OrdinaryDiffEq: @cache,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        alg_cache, initialize!, perform_step!,
                        recursivefill!, _vec, DEFAULT_PRECS, wrapprecs,
-                       dolinsolve
+                       dolinsolve, alg_order
 
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
