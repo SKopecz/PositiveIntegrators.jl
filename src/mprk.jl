@@ -319,8 +319,18 @@ function initialize!(integrator, cache::MPEConstantCache)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = zero(integrator.u)
+    integrator.k[1] = integrator.u
+
+    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
+    #       in OrdinaryDiffEq.jl use something like
+    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
+    #                                             integrator.t) # Pre-start fsal
+    #         integrator.stats.nf += 1
+    #         integrator.fsallast = zero(integrator.fsalfirst)
+    #         integrator.k[1] = integrator.fsalfirst
+    #       Do we need something similar here to get a cache for k values
+    #       with the correct units?
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
