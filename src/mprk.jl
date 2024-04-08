@@ -180,16 +180,16 @@ end
 # Linear interpolations
 @muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{0}})
     Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0 + Θ * u1
+    @.. broadcast=false Θm1 * u0+Θ * u1
 end
 
 @muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{0}})
     Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0[idxs] + Θ * u1[idxs]
+    @.. broadcast=false Θm1 * u0[idxs]+Θ * u1[idxs]
 end
 
 @muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing,
-        T::Type{Val{0}})
+                                             T::Type{Val{0}})
     Θm1 = (1 - Θ)
     @.. broadcast=false out=Θm1 * u0 + Θ * u1
     out
@@ -202,7 +202,7 @@ end
 end
 
 @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
-    @.. broadcast=false (u1 - u0) / dt
+    @.. broadcast=false (u1 - u0)/dt
 end
 
 @inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{1}})
@@ -418,7 +418,6 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
                            differential_vars::Nothing)
     linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
 end
-
 
 ### MPRK #####################################################################################
 """

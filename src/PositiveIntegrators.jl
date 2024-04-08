@@ -43,7 +43,6 @@ import OrdinaryDiffEq: alg_order, isfsal,
                        alg_cache, initialize!, perform_step!,
                        _ode_interpolant, _ode_interpolant!
 
-
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
