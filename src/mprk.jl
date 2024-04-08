@@ -285,9 +285,9 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
+
     P = p_prototype(u, f)
     linsolve_tmp = zero(u)
-
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
 
@@ -319,8 +319,9 @@ function initialize!(integrator, cache::MPEConstantCache)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.u)
-    integrator.k[1] = integrator.u
+    integrator.fsalfirst = zero(integrator.u)
+    integrator.fsallast = integrator.fsalfirst
+    integrator.k[1] = integrator.fsallast
 
     # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
     #       in OrdinaryDiffEq.jl use something like
@@ -488,7 +489,8 @@ function Base.getproperty(alg::MPRK22, f::Symbol)
     end
 end
 
-alg_order(alg::MPRK22) = 2
+alg_order(::MPRK22) = 2
+isfsal(::MPRK22) = false
 
 struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
@@ -563,15 +565,23 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
-    integrator.kshortsize = 2
+    integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
+    integrator.fsalfirst = zero(integrator.u)
+    integrator.fsallast = integrator.fsalfirst
+    integrator.k[1] = integrator.fsallast
+
+    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
+    #       in OrdinaryDiffEq.jl use something like
+    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
+    #                                             integrator.t) # Pre-start fsal
+    #         integrator.stats.nf += 1
+    #         integrator.fsallast = zero(integrator.fsalfirst)
+    #         integrator.k[1] = integrator.fsalfirst
+    #       Do we need something similar here to get a cache for k values
+    #       with the correct units?
 end
 
 function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
@@ -579,10 +589,12 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     @unpack a21, b1, b2, small_constant = cache
 
     # Attention: Implementation assumes that the pds is conservative,
-    # i.e. f.p[i,i] == 0 for all i
+    # i.e. , P[i, i] == 0 for all i
 
-    P = f.p(uprev, p, t) # evaluate production matrix
+    # evaluate production matrix
+    P = f.p(uprev, p, t)
     Ptmp = a21 * P
+    integrator.stats.nf += 1
 
     # avoid division by zero due to zero patankar weights
     σ = add_small_constant(uprev, small_constant)
@@ -596,9 +608,10 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
     u = sol.u
+    integrator.stats.nsolve += 1
 
     # compute Patankar weight denominator
-    if a21 == 1.0
+    if isone(a21)
         σ = u
     else
         # σ = σ .* (u ./ σ) .^ (1 / a21) # generated Infs when solving brusselator
@@ -609,6 +622,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 
     P2 = f.p(u, p, t + a21 * dt)
     Ptmp = b1 * P + b2 * P2
+    integrator.stats.nf += 1
 
     # build linear system matrix
     M = build_mprk_matrix(Ptmp, σ, dt)
@@ -619,10 +633,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
     u = sol.u
-
-    k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
-    integrator.fsallast = k
+    integrator.stats.nsolve += 1
 
     # copied from perform_step for HeunConstantCache
     # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
@@ -632,21 +643,16 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
 function initialize!(integrator, cache::MPRK22Cache)
-    integrator.kshortsize = 2
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
+    integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
@@ -658,34 +664,72 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     f.p(P, uprev, p, t) # evaluate production terms
     sum_destruction_terms!(D, P) # store destruction terms in D
+    integrator.stats.nf += 1
+
     build_mprk_matrix!(M, a21, P, D, uprev, dt)
-    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    # Same as linres = M \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = M, b = _vec(uprev),
                         du = integrator.fsalfirst, u = u, p = p, t = t,
                         weight = weight)
     u .= linres
+    integrator.stats.nsolve += 1
 
     u .= u .+ small_constant
 
     σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ small_constant
 
     f.p(P2, u, p, t + a21 * dt) # evaluate production terms
+    sum_destruction_terms!(D, P) # store destruction terms in D
     sum_destruction_terms!(D2, P2) # store destruction terms in D2
+
     build_mprk_matrix!(M, b1, P, D, b2, P2, D2, σ, dt)
-    # linres = M \ uprev #TODO: needs to be implemented without allocations.
+    # Same as linres = M \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = M, b = _vec(uprev),
                         du = integrator.fsalfirst, u = u, p = p, t = t,
                         weight = weight)
     u .= linres
+    integrator.stats.nsolve += 1
 
     tmp .= u .- σ
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol, integrator.opts.internalnorm, t,
                          thread)
     integrator.EEst = integrator.opts.internalnorm(atmp, t)
+end
 
-    f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.stats.nf += 1
+# interpolation specializations
+interp_summary(::MPRK22) = "Linear interpolation"
+
+function _ode_interpolant(Θ, dt, u0, u1, k,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                          idxs, # Optionally specialize for ::Nothing and others
+                          T::Type{Val{0}},
+                          differential_vars::Nothing)
+    linear_interpolant(Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant!(out, Θ, dt, u0, u1, k,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                           idxs, # Optionally specialize for ::Nothing and others
+                           T::Type{Val{0}},
+                           differential_vars::Nothing)
+    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant(Θ, dt, u0, u1, k,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                          idxs, # Optionally specialize for ::Nothing and others
+                          T::Type{Val{1}},
+                          differential_vars::Nothing)
+    linear_interpolant(Θ, dt, u0, u1, idxs, T)
+end
+
+function _ode_interpolant!(out, Θ, dt, u0, u1, k,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                           idxs, # Optionally specialize for ::Nothing and others
+                           T::Type{Val{1}},
+                           differential_vars::Nothing)
+    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
 end
