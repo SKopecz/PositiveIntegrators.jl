@@ -10,6 +10,35 @@ using LinearSolve: RFLUFactorization, LUFactorization
 
 using Aqua: Aqua
 
+"""
+    experimental_order_of_convergence(prob, alg, dts, test_times)
+
+Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
+the mean error at the times `test_times`.
+Return the associated experimental order of convergence.
+"""
+function experimental_order_of_convergence(prob, alg, dts, test_times)
+    @assert length(dts) > 1
+    errors = zeros(eltype(dts), length(dts))
+    analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
+
+    for (i, dt) in enumerate(dts)
+        sol = solve(prob, alg; dt = dt, adaptive = false)
+        errors[i] = mean(test_times) do t
+            norm(sol(t) - analytic(t))
+        end
+    end
+
+    return experimental_order_of_convergence(errors, dts)
+end
+
+"""
+    experimental_order_of_convergence(prob, alg, dts)
+
+Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
+the mean error at the final time.
+Return the associated experimental order of convergence.
+"""
 function experimental_order_of_convergence(prob, alg, dts)
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
@@ -23,6 +52,12 @@ function experimental_order_of_convergence(prob, alg, dts)
     return experimental_order_of_convergence(errors, dts)
 end
 
+"""
+    experimental_order_of_convergence(errors, dts)
+
+Compute the experimental order of convergence for given `errors` and
+time step sizes `dts`.
+"""
 function experimental_order_of_convergence(errors, dts)
     Base.require_one_based_indexing(errors, dts)
     @assert length(errors) == length(dts)
@@ -327,6 +362,11 @@ end
             alg = MPE()
             eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts)
             @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+
+            test_times = [0.123456789, 1 / pi, exp(-1),
+                          1.23456789, 1 + 1 / pi, 1 + exp(-1)]
+            eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts, test_times)
+            @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
         end
     end
 
@@ -414,6 +454,11 @@ end
             for alpha in (0.5, 1.0, 2.0)
                 alg = MPRK22(alpha)
                 eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+
+                test_times = [0.123456789, 1 / pi, exp(-1),
+                              1.23456789, 1 + 1 / pi, 1 + exp(-1)]
+                eoc = experimental_order_of_convergence(prob_pds_linmod, alg, dts, test_times)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
