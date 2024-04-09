@@ -3,6 +3,8 @@ using LinearAlgebra
 using SparseArrays
 using Statistics: mean
 
+using StaticArrays: MVector
+
 using OrdinaryDiffEq
 using PositiveIntegrators
 
@@ -69,6 +71,13 @@ function experimental_order_of_convergence(errors, dts)
 
     return mean(orders)
 end
+
+const prob_pds_linmod_array = ConservativePDSProblem(prob_pds_linmod.f,
+                                                     Array(prob_pds_linmod.u0),
+                                                     prob_pds_linmod.tspan)
+const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f,
+                                                       MVector(prob_pds_linmod.u0),
+                                                       prob_pds_linmod.tspan)
 
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
@@ -359,8 +368,9 @@ end
 
         @testset "Convergence tests" begin
             alg = MPE()
-            dts = 0.5 .^ (5:10)
-            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            dts = 0.5 .^ (6:11)
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for prob in problems
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
@@ -455,8 +465,9 @@ end
         end
 
         @testset "Convergence tests" begin
-            dts = 0.5 .^ (5:10)
-            problems = (prob_pds_linmod, prob_pds_linmod_inplace)
+            dts = 0.5 .^ (6:11)
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for alpha in (0.5, 1.0, 2.0), prob in problems
                 alg = MPRK22(alpha)
                 eoc = experimental_order_of_convergence(prob, alg, dts)
