@@ -368,7 +368,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
 
         @testset "Convergence tests" begin
             alg = MPE()
-            dts = 0.5 .^ (5:10)
+            dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for prob in problems
@@ -465,7 +465,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
         end
 
         @testset "Convergence tests" begin
-            dts = 0.5 .^ (5:10)
+            dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for alpha in (0.5, 1.0, 2.0), prob in problems
