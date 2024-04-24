@@ -26,6 +26,9 @@ function experimental_order_of_convergence(prob, alg, dts, test_times)
 
     for (i, dt) in enumerate(dts)
         sol = solve(prob, alg; dt = dt, adaptive = false)
+        if i == 1
+            display(sol)
+        end
         errors[i] = mean(test_times) do t
             norm(sol(t) - analytic(t))
         end
