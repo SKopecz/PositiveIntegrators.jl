@@ -13,21 +13,35 @@ using LinearSolve: RFLUFactorization, LUFactorization
 using Aqua: Aqua
 
 """
-    experimental_order_of_convergence(prob, alg, dts, test_times)
+    experimental_order_of_convergence(prob, alg, dts, test_times;
+                                      only_first_index = false)
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the mean error at the times `test_times`.
 Return the associated experimental order of convergence.
+
+If `only_first_index == true`, only the first solution component is used
+to compute the error.
 """
-function experimental_order_of_convergence(prob, alg, dts, test_times)
+function experimental_order_of_convergence(prob, alg, dts, test_times;
+                                           only_first_index = false)
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
     analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
 
     for (i, dt) in enumerate(dts)
         sol = solve(prob, alg; dt = dt, adaptive = false)
-        errors[i] = mean(test_times) do t
-            norm(sol(t) - analytic(t))
+        if i == 1
+            display(sol)
+        end
+        if only_first_index
+            errors[i] = mean(test_times) do t
+                norm(sol(t; idxs = 1) - first(analytic(t)))
+            end
+        else
+            errors[i] = mean(test_times) do t
+                norm(sol(t) - analytic(t))
+            end
         end
     end
 
@@ -381,6 +395,22 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 ]
                 eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
+                                                        only_first_index = true)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
+        end
+
+        @testset "Interpolation tests" begin
+            alg = @inferred MPE()
+            dt = 0.5^6
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
+            for prob in problems
+                sol = solve(prob, alg; dt, adaptive = false)
+                # check derivative of interpolation
+                @test_nowarn sol(0.5, Val{1})
+                @test_nowarn sol(0.5, Val{1}; idxs = 1)
             end
         end
     end
@@ -469,7 +499,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for alpha in (0.5, 1.0, 2.0), prob in problems
-                alg = MPRK22(alpha)
+                alg = @inferred MPRK22(alpha)
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
 
@@ -479,6 +509,22 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 ]
                 eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
+                                                        only_first_index = true)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
+        end
+
+        @testset "Interpolation tests" begin
+            dt = 0.5^6
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
+            for alpha in (0.5, 1.0, 2.0), prob in problems
+                alg = @inferred MPRK22(alpha)
+                sol = solve(prob, alg; dt, adaptive = false)
+                # check derivative of interpolation
+                @test_nowarn sol(0.5, Val{1})
+                @test_nowarn sol(0.5, Val{1}; idxs = 1)
             end
         end
     end
