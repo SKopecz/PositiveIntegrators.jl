@@ -400,6 +400,18 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
+
+        @testset "Interpolation tests" begin
+            alg = @inferred MPE()
+            dt = 0.5^6
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
+            for prob in problems
+                sol = solve(prob, alg; dt, adaptive = false)
+                @test_nowarn sol(0.5; deriv = Val{1})
+                @test_nowarn sol(0.5; deriv = Val{1}, idsx = 1)
+            end
+        end
     end
 
     @testset "MPRK22" begin
@@ -486,7 +498,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for alpha in (0.5, 1.0, 2.0), prob in problems
-                alg = MPRK22(alpha)
+                alg = @inferred MPRK22(alpha)
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
 
@@ -499,6 +511,18 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
                                                         only_first_index = true)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
+        end
+
+        @testset "Interpolation tests" begin
+            dt = 0.5^6
+            problems = (prob_pds_linmod, prob_pds_linmod_array,
+                        prob_pds_linmod_mvector, prob_pds_linmod_inplace)
+            for alpha in (0.5, 1.0, 2.0), prob in problems
+                alg = @inferred MPRK22(alpha)
+                sol = solve(prob, alg; dt, adaptive = false)
+                @test_nowarn sol(0.5; deriv = Val{1})
+                @test_nowarn sol(0.5; deriv = Val{1}, idsx = 1)
             end
         end
     end
