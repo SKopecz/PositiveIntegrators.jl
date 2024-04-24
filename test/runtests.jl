@@ -408,8 +408,9 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             for prob in problems
                 sol = solve(prob, alg; dt, adaptive = false)
-                @test_nowarn sol(0.5; deriv = Val{1})
-                @test_nowarn sol(0.5; deriv = Val{1}, idsx = 1)
+                # check derivative of interpolation
+                @test_nowarn sol(0.5, Val{1})
+                @test_nowarn sol(0.5, Val{1}; idsx = 1)
             end
         end
     end
@@ -521,8 +522,9 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
             for alpha in (0.5, 1.0, 2.0), prob in problems
                 alg = @inferred MPRK22(alpha)
                 sol = solve(prob, alg; dt, adaptive = false)
-                @test_nowarn sol(0.5; deriv = Val{1})
-                @test_nowarn sol(0.5; deriv = Val{1}, idsx = 1)
+                # check derivative of interpolation
+                @test_nowarn sol(0.5, Val{1})
+                @test_nowarn sol(0.5, Val{1}; idsx = 1)
             end
         end
     end
