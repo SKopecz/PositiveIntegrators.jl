@@ -13,13 +13,18 @@ using LinearSolve: RFLUFactorization, LUFactorization
 using Aqua: Aqua
 
 """
-    experimental_order_of_convergence(prob, alg, dts, test_times)
+    experimental_order_of_convergence(prob, alg, dts, test_times;
+                                      only_first_index = false)
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the mean error at the times `test_times`.
 Return the associated experimental order of convergence.
+
+If `only_first_index == true`, only the first solution component is used
+to compute the error.
 """
-function experimental_order_of_convergence(prob, alg, dts, test_times)
+function experimental_order_of_convergence(prob, alg, dts, test_times;
+                                           only_first_index = false)
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
     analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
@@ -29,8 +34,14 @@ function experimental_order_of_convergence(prob, alg, dts, test_times)
         if i == 1
             display(sol)
         end
-        errors[i] = mean(test_times) do t
-            norm(sol(t) - analytic(t))
+        if only_first_index
+            errors[i] = mean(test_times) do t
+                norm(sol(t; idxs = 1) - first(analytic(t)))
+            end
+        else
+            errors[i] = mean(test_times) do t
+                norm(sol(t) - analytic(t))
+            end
         end
     end
 
@@ -384,6 +395,9 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 ]
                 eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
+                                                        only_first_index = true)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
     end
@@ -481,6 +495,9 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                     1.23456789, 1 + 1 / pi, 1 + exp(-1),
                 ]
                 eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
+                                                        only_first_index = true)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
         end
