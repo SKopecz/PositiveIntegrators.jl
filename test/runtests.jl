@@ -410,7 +410,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 sol = solve(prob, alg; dt, adaptive = false)
                 # check derivative of interpolation
                 @test_nowarn sol(0.5, Val{1})
-                @test_nowarn sol(0.5, Val{1}; idsx = 1)
+                @test_nowarn sol(0.5, Val{1}; idxs = 1)
             end
         end
     end
@@ -524,7 +524,7 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                 sol = solve(prob, alg; dt, adaptive = false)
                 # check derivative of interpolation
                 @test_nowarn sol(0.5, Val{1})
-                @test_nowarn sol(0.5, Val{1}; idsx = 1)
+                @test_nowarn sol(0.5, Val{1}; idxs = 1)
             end
         end
     end
