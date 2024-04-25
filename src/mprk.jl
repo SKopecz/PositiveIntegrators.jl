@@ -393,7 +393,11 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
 end
 
 # interpolation specializations
-interp_summary(::MPE) = "Linear interpolation"
+function interp_summary(::Type{cacheType},
+                        dense::Bool) where {
+                                            cacheType <: Union{MPEConstantCache, MPECache}}
+    "1st order linear"
+end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
                           cache::Union{MPEConstantCache, MPECache},
@@ -700,7 +704,12 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 end
 
 # interpolation specializations
-interp_summary(::MPRK22) = "Linear interpolation"
+function interp_summary(::Type{cacheType},
+                        dense::Bool) where {
+                                            cacheType <:
+                                            Union{MPRK22ConstantCache, MPRK22Cache}}
+    "1st order linear"
+end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
                           cache::Union{MPRK22ConstantCache, MPRK22Cache},
