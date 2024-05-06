@@ -431,7 +431,7 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
     linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
 end
 
-### MPRK #####################################################################################
+### MPRK22 #####################################################################################
 """
     MPRK22(α; [linsolve = ...])
 
@@ -703,16 +703,374 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     integrator.EEst = integrator.opts.internalnorm(atmp, t)
 end
 
+### MPRK43 #####################################################################################
+"""
+    MPRK43I(α, β; [linsolve = ...])
+
+A third-order modified Patankar-Runge-Kutta algorithm for (conservative)
+production-destruction systems. This one-step, four-stage method is
+third-order accurate, unconditionally positivity-preserving, and linearly
+implicit. The parameters `α,β` are described by Kopecz and Meister (2018).
+
+This modified Patankar-Runge-Kutta method requires the special structure of a
+[`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
+
+You can optionally choose the linear solver to be used by passing an
+algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
+as keyword argument `linsolve`.
+
+## References
+
+- Stefan Kopecz and Andreas Meister.
+  "Unconditionally positive and conservative third order modified Patankar–Runge–Kutta 
+   discretizations of production–destruction systems."
+   BIT Numer Math 58 (2018): 691–728.
+  [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
+"""
+struct MPRK43I{T, Thread, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+    alpha::T
+    beta::T
+    thread::Thread
+    linsolve::F
+end
+
+struct MPRK43II{T, Thread, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+    gamma::T
+    thread::Thread
+    linsolve::F
+end
+
+function MPRK43I(alpha, beta; thread = False(), linsolve = LUFactorization())
+    MPRK43I{typeof(alpha), typeof(thread), typeof(linsolve)}(alpha, beta,
+                                                             thread, linsolve)
+end
+
+function MPRK43II(gamma; thread = False(), linsolve = LUFactorization())
+    MPRK43II{typeof(gamma), typeof(thread), typeof(linsolve)}(gamma, thread, linsolve)
+end
+
+# TODO: Consider switching to the interface of LinearSolve.jl directly,
+#       avoiding `dolinesolve` from OrdinaryDiffEq.jl.
+# TODO: Think about adding preconditioners to the algorithm
+# This hack is currently required to make OrdinaryDiffEq.jl happy...
+function Base.getproperty(alg::Union{MPRK43I, MPRK43II}, f::Symbol)
+    # preconditioners
+    if f === :precs
+        return Returns((nothing, nothing))
+    else
+        return getfield(alg, f)
+    end
+end
+
+alg_order(::MPRK43I) = 3
+alg_order(::MPRK43II) = 3
+isfsal(::MPRK43I) = false
+isfsal(::MPRK43II) = false
+
+struct MPRK43Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
+       OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    atmp::uType
+    k::rateType
+    fsalfirst::rateType
+    P::PType
+    P2::PType
+    D::uType
+    D2::uType
+    M::PType
+    σ::uType
+    tab::tabType
+    thread::Thread
+    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
+end
+
+function set_constant_parameters(alg::MPRK43I)
+    a21 = alg.alpha
+    a31 = (3.0 * alg.alpha * alg.beta * (1.0 - alg.alpha) - alg.beta^2) /
+          (alg.alpha * (2.0 - 3.0 * alg.alpha))
+    a32 = (alg.beta * (alg.beta - alg.alpha)) / (alg.alpha * (2.0 - 3.0 * alg.alpha))
+    b1 = 1.0 + (2.0 - 3.0 * (alg.alpha + alg.beta)) / (6.0 * alg.alpha * alg.beta)
+    b2 = (3.0 * alg.beta - 2.0) / (6.0 * alg.alpha * (alg.beta - alg.alpha))
+    b3 = (2.0 - 3.0 * alg.alpha) / (6.0 * alg.beta * (alg.beta - alg.alpha))
+    c2 = alg.alpha
+    c3 = alg.beta
+
+    beta2 = 1.0 / (2.0 * a21)
+    beta1 = 1.0 - beta2
+
+    q1 = 1.0 / (3.0 * a21 * (a31 + a32) * b3)
+    q2 = 1.0 / a21
+
+    return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
+end
+
+function set_constant_parameters(alg::MPRK43II)
+    a21 = 2.0 / 3.0
+    a31 = 2.0 / 3.0 - 1.0 / (4.0 * alg.gamma)
+    a32 = 1.0 / (4.0 * alg.gamma)
+    b1 = 1.0 / 4.0
+    b2 = 3.0 / 4.0 - alg.gamma
+    b3 = alg.gamma
+    c2 = a21
+    c3 = a21
+
+    beta2 = 1.0 / (2.0 * a21)
+    beta1 = 1.0 - beta2
+
+    q1 = 1.0 / (3.0 * a21 * (a31 + a32) * b3)
+    q2 = 1.0 / a21
+
+    return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
+end
+
+function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = set_constant_parameters(alg)
+    tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
+                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+
+    tmp = zero(u)
+
+    M = p_prototype(u, f)
+    linsolve_tmp = zero(u)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+
+    linprob = LinearProblem(M, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+
+    MPRK43Cache(u, uprev, tmp,
+                zero(u), # atmp
+                zero(rate_prototype), # k
+                zero(rate_prototype), #fsalfirst
+                p_prototype(u, f), # P
+                p_prototype(u, f), # P2
+                zero(u), # D
+                zero(u), # D2
+                M,
+                zero(u), # σ
+                tab, alg.thread,
+                linsolve_tmp, linsolve, weight)
+end
+
+struct MPRK43ConstantCache{T} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    b1::T
+    b2::T
+    b3::T
+    c2::T
+    c3::T
+    beta1::T
+    beta2::T
+    q1::T
+    q2::T
+    small_constant::T
+end
+
+function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+
+    #TODO: Should assert alg.alpha ≠ alg.beta, alg.alpha ≠ 0, alg.beta ≠ 0, alg.alpha ≠ 2/3 
+    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = set_constant_parameters(alg)
+    tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
+                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+end
+
+function initialize!(integrator, cache::MPRK43ConstantCache)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsalfirst = zero(integrator.u)
+    integrator.fsallast = integrator.fsalfirst
+    integrator.k[1] = integrator.fsallast
+
+    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
+    #       in OrdinaryDiffEq.jl use something like
+    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
+    #                                             integrator.t) # Pre-start fsal
+    #         integrator.stats.nf += 1
+    #         integrator.fsallast = zero(integrator.fsalfirst)
+    #         integrator.k[1] = integrator.fsalfirst
+    #       Do we need something similar here to get a cache for k values
+    #       with the correct units?
+end
+
+function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = false)
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache
+
+    # Attention: Implementation assumes that the pds is conservative,
+    # i.e. , P[i, i] == 0 for all i
+
+    # evaluate production matrix
+    P = f.p(uprev, p, t)
+    Ptmp = a21 * P
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u2 = sol.u
+    u = u2
+    integrator.stats.nsolve += 1
+
+    # compute Patankar weight denominator
+    σ = σ .^ (1 - q1) .* u .^ q1
+
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(σ, small_constant)
+
+    P2 = f.p(u, p, t + c2 * dt)
+    Ptmp = a31 * P + a32 * P2
+    integrator.stats.nf += 1
+
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    # compute Patankar weight denominator
+    σ = uprev .^ (1 - q2) .* u2 .^ q2
+
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(σ, small_constant)
+
+    Ptmp = beta1 * P + beta2 * P2
+    integrator.stats.nf += 1
+
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    σ = sol.u
+    integrator.stats.nsolve += 1
+
+    # avoid division by zero due to zero patankar weights
+    σ = add_small_constant(σ, small_constant)
+
+    P3 = f.p(u, p, t + c2 * dt)
+    Ptmp = b1 * P + b2 * P2 + b3 * P3
+    integrator.stats.nf += 1
+
+    # build linear system matrix
+    M = build_mprk_matrix(Ptmp, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    # copied from perform_step for HeunConstantCache
+    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
+    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
+    tmp = u - σ
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+                               integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::MPRK43Cache)
+    @unpack k, fsalfirst = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+end
+
+function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread, weight = cache
+    @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
+
+    uprev .= uprev .+ small_constant
+
+    f.p(P, uprev, p, t) # evaluate production terms
+    sum_destruction_terms!(D, P) # store destruction terms in D
+    integrator.stats.nf += 1
+
+    build_mprk_matrix!(M, a21, P, D, uprev, dt)
+    # Same as linres = M \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    u .= u .+ small_constant
+
+    σ .= uprev .* (u ./ uprev) .^ (1 / a21) .+ small_constant
+
+    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
+    sum_destruction_terms!(D, P) # store destruction terms in D
+    sum_destruction_terms!(D2, P2) # store destruction terms in D2
+
+    build_mprk_matrix!(M, b1, P, D, b2, P2, D2, σ, dt)
+    # Same as linres = M \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = M, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    tmp .= u .- σ
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         thread)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+end
+
+########################################################################################
+
 # interpolation specializations
 function interp_summary(::Type{cacheType},
                         dense::Bool) where {
                                             cacheType <:
-                                            Union{MPRK22ConstantCache, MPRK22Cache}}
+                                            Union{MPRK22ConstantCache, MPRK22Cache,
+                                                  MPRK43ConstantCache, MPRK43Cache}}
     "1st order linear"
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                       MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{0}},
                           differential_vars::Nothing)
@@ -720,7 +1078,8 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                        MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{0}},
                            differential_vars::Nothing)
@@ -728,7 +1087,8 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                       MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{1}},
                           differential_vars::Nothing)
@@ -736,7 +1096,8 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache},
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                        MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{1}},
                            differential_vars::Nothing)
