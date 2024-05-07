@@ -921,6 +921,7 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
 
     # avoid division by zero due to zero patankar weights
     σ = add_small_constant(uprev, small_constant)
+    σ0 = σ
 
     # build linear system matrix
     M = build_mprk_matrix(Ptmp, σ, dt)
@@ -956,10 +957,12 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     integrator.stats.nsolve += 1
 
     # compute Patankar weight denominator
-    σ = uprev .^ (1 - q2) .* u2 .^ q2
+    if !(q1 ≈ q2)
+        σ = σ0 .^ (1 - q2) .* u2 .^ q2
 
-    # avoid division by zero due to zero patankar weights
-    σ = add_small_constant(σ, small_constant)
+        # avoid division by zero due to zero patankar weights
+        σ = add_small_constant(σ, small_constant)
+    end
 
     Ptmp = beta1 * P + beta2 * P2
     integrator.stats.nf += 1
