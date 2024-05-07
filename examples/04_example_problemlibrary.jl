@@ -198,7 +198,7 @@ sol_sir = solve(prob_pds_sir, Tsit5());
 sol_sir_Euler = solve(prob_pds_sir, Euler(), dt = 1.0);
 sol_sir_MPE = solve(prob_pds_sir, MPE(), dt = 1.0);
 sol_sir_MPRK22 = solve(prob_pds_sir, MPRK22(1.0), dt = 1.0, adaptive = false);
-sol_sir_MPRK43I = solve(prob_pds_sir, MPRK43I(1.0,0.5), dt = 1.0, adaptive = false);
+sol_sir_MPRK43I = solve(prob_pds_sir, MPRK43I(1.0, 0.5), dt = 1.0, adaptive = false);
 sol_sir_MPRK43II = solve(prob_pds_sir, MPRK43II(0.5), dt = 1.0, adaptive = false);
 
 # plot
@@ -218,7 +218,7 @@ p5 = plot(sol_sir)
 myplot!(sol_sir_MPRK43II, "MPRK43II")
 plot!(sol_sir_MPRK43II, idxs = (f3, 0, 1, 2, 3), label = "f3")
 plot(p1, p2, p3, p4, p5, layout = (3, 2))
-plot!(legend=:none)
+plot!(legend = :none)
 # convergence order
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sims = convergence_tab_plot(prob_pds_sir, [MPE(), Euler()], test_setup; dts = 0.5 .^ (1:15),
@@ -230,7 +230,7 @@ sims = convergence_tab_plot(prob_pds_sir, [MPRK22(1.0), MPRK22(2 / 3), MPRK22(0.
 for i in 1:4
     @assert sims[i].𝒪est[:l∞] > 1.9
 end
-sims = convergence_tab_plot(prob_pds_sir, [MPRK43I(1.0,0.5), MPRK43II(0.5), Rodas3()],
+sims = convergence_tab_plot(prob_pds_sir, [MPRK43I(1.0, 0.5), MPRK43II(0.5), Rodas3()],
                             test_setup; dts = 0.5 .^ (5:11),
                             order_plot = true);
 for i in 1:3
@@ -239,9 +239,12 @@ end
 ## bertolazzi problem #####################################################
 sol_bertolazzi = solve(prob_pds_bertolazzi, TRBDF2());
 sol_bertolazzi_MPE = solve(prob_pds_bertolazzi, MPE(), dt = 0.01);
-sol_bertolazzi_MPRK22 = solve(prob_pds_bertolazzi, MPRK22(1.0), dt = 0.01, abstol=1e-3, reltol=1e-3);
-sol_bertolazzi_MPRK43I = solve(prob_pds_bertolazzi, MPRK43I(1.0,0.5), dt = 0.01, abstol=1e-3, reltol=1e-3);
-sol_bertolazzi_MPRK43II = solve(prob_pds_bertolazzi, MPRK43II(0.5), dt = 0.01, abstol=1e-3, reltol=1e-3);
+sol_bertolazzi_MPRK22 = solve(prob_pds_bertolazzi, MPRK22(1.0), dt = 0.01, abstol = 1e-3,
+                              reltol = 1e-3);
+sol_bertolazzi_MPRK43I = solve(prob_pds_bertolazzi, MPRK43I(1.0, 0.5), dt = 0.01,
+                               abstol = 1e-3, reltol = 1e-3);
+sol_bertolazzi_MPRK43II = solve(prob_pds_bertolazzi, MPRK43II(0.5), dt = 0.01,
+                                abstol = 1e-3, reltol = 1e-3);
 
 # plot
 p1 = plot(sol_bertolazzi, legend = :right)
@@ -272,7 +275,7 @@ convergence_tab_plot(prob_pds_bertolazzi, [MPE(), ImplicitEuler()], test_setup;
 sol_npzd = solve(prob_pds_npzd, Rosenbrock23());
 sol_npzd_MPE = solve(prob_pds_npzd, MPE(), dt = 0.4);
 sol_npzd_MPRK22 = solve(prob_pds_npzd, MPRK22(1.0), dt = 0.4, adaptive = false);
-sol_npzd_MPRK43I = solve(prob_pds_npzd, MPRK43I(1.0,0.5), dt = 0.4, adaptive = false);
+sol_npzd_MPRK43I = solve(prob_pds_npzd, MPRK43I(1.0, 0.5), dt = 0.4, adaptive = false);
 sol_npzd_MPRK43II = solve(prob_pds_npzd, MPRK43II(0.5), dt = 0.4, adaptive = false);
 
 # plot
@@ -289,7 +292,7 @@ p4 = plot(sol_npzd)
 myplot!(sol_npzd_MPRK43II, "MPRK43II")
 plot!(sol_npzd_MPRK43II, idxs = (f_npzd, 0, 1, 2, 3, 4), label = "f_npzd")
 plot(p1, p2, p3, p4, layout = (2, 2))
-plot!(legend=:none)
+plot!(legend = :none)
 
 # convergence order
 # error should take all time steps into account, not only the final time!
@@ -305,7 +308,7 @@ for i in 1:4
 end
 
 sims = convergence_tab_plot(prob_pds_npzd,
-                            [MPRK43I(1.0,0.5), MPRK43II(0.5), Rodas3()], test_setup;
+                            [MPRK43I(1.0, 0.5), MPRK43II(0.5), Rodas3()], test_setup;
                             dts = 0.5 .^ (12:17), order_plot = true);
 for i in 1:2
     @assert sims[i].𝒪est[:l∞] > 2.9
