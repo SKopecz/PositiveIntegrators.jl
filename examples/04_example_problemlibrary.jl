@@ -10,8 +10,6 @@ using OrdinaryDiffEq
 using Plots
 using DiffEqDevTools, PrettyTables
 
-sol_robertson_MPRK43II = solve(prob_pds_robertson, MPRK43II(2.0 / 3.0), reltol = 1e-3,
-                               abstol = 1e-2);
 
 # load utility function for the assessment of the order of numerical schemes
 include("utilities.jl")
