@@ -832,20 +832,20 @@ function set_constant_parameters(alg::MPRK43I)
 end
 
 function set_constant_parameters(alg::MPRK43II)
-    a21 = 2.0 / 3.0
-    a31 = 2.0 / 3.0 - 1.0 / (4.0 * alg.gamma)
-    a32 = 1.0 / (4.0 * alg.gamma)
-    b1 = 1.0 / 4.0
-    b2 = 3.0 / 4.0 - alg.gamma
+    a21 = 2 * one(alg.gamma) / 3
+    a31 = a21 - 1 / (4 * alg.gamma)
+    a32 = 1 / (4 * alg.gamma)
+    b1 = one(alg.gamma) / 4
+    b2 = 3 * one(alg.gamma) / 4 - alg.gamma
     b3 = alg.gamma
     c2 = a21
     c3 = a21
 
-    beta2 = 1.0 / (2.0 * a21)
-    beta1 = 1.0 - beta2
+    beta2 = 1 / (2 * a21)
+    beta1 = 1 - beta2
 
-    q1 = 1.0 / (3.0 * a21 * (a31 + a32) * b3)
-    q2 = 1.0 / a21
+    q1 = 1 / (3 * a21 * (a31 + a32) * b3)
+    q2 = 1 / a21
 
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
 end
