@@ -872,7 +872,7 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
     #TODO: Should assert alg.alpha ≠ alg.beta, alg.alpha ≠ 0, alg.beta ≠ 0, alg.alpha ≠ 2/3 
-    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = set_constant_parameters(alg)
+    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
                               beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
 end
