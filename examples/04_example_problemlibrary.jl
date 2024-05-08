@@ -1,15 +1,14 @@
 # Install packages
 import Pkg
 Pkg.activate(@__DIR__)
-#Pkg.develop(path = dirname(@__DIR__))
-#Pkg.instantiate()
+Pkg.develop(path = dirname(@__DIR__))
+Pkg.instantiate()
 
 # load packages
 using PositiveIntegrators
 using OrdinaryDiffEq
 using Plots
 using DiffEqDevTools, PrettyTables
-
 
 # load utility function for the assessment of the order of numerical schemes
 include("utilities.jl")
@@ -122,8 +121,6 @@ sol_robertson = solve(prob_pds_robertson, Rosenbrock23());
 sol_robertson_MPRK22 = solve(prob_pds_robertson, MPRK22(1.0), reltol = 1e-3, abstol = 1e-2);
 sol_robertson_MPRK43I = solve(prob_pds_robertson, MPRK43I(1.0, 0.5), reltol = 1e-3,
                               abstol = 1e-2);
-# TODO: Check why MPRK43II is not working
-# TODO: Implement "controller" which doubles timestep size for each step
 sol_robertson_MPRK43II = solve(prob_pds_robertson, MPRK43II(2.0 / 3.0), reltol = 1e-3,
                                abstol = 1e-2);
 
@@ -156,7 +153,6 @@ sol_brusselator_MPRK22 = solve(prob_pds_brusselator, MPRK22(1.0), dt = 0.25,
                                adaptive = false);
 sol_brusselator_MPRK43I = solve(prob_pds_brusselator, MPRK43I(1.0, 0.5), dt = 0.25,
                                 adaptive = false);
-# TODO: Check why MPRK43II is not working
 sol_brusselator_MPRK43II = solve(prob_pds_brusselator, MPRK43II(2.0 / 3.0), dt = 0.25,
                                  adaptive = false);
 
