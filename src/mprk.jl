@@ -813,20 +813,20 @@ end
 
 function set_constant_parameters(alg::MPRK43I)
     a21 = alg.alpha
-    a31 = (3.0 * alg.alpha * alg.beta * (1.0 - alg.alpha) - alg.beta^2) /
-          (alg.alpha * (2.0 - 3.0 * alg.alpha))
-    a32 = (alg.beta * (alg.beta - alg.alpha)) / (alg.alpha * (2.0 - 3.0 * alg.alpha))
-    b1 = 1.0 + (2.0 - 3.0 * (alg.alpha + alg.beta)) / (6.0 * alg.alpha * alg.beta)
-    b2 = (3.0 * alg.beta - 2.0) / (6.0 * alg.alpha * (alg.beta - alg.alpha))
-    b3 = (2.0 - 3.0 * alg.alpha) / (6.0 * alg.beta * (alg.beta - alg.alpha))
+    a31 = (3 * alg.alpha * alg.beta * (1 - alg.alpha) - alg.beta^2) /
+          (alg.alpha * (2 - 3 * alg.alpha))
+    a32 = (alg.beta * (alg.beta - alg.alpha)) / (alg.alpha * (2 - 3 * alg.alpha))
+    b1 = 1 + (2 - 3 * (alg.alpha + alg.beta)) / (6 * alg.alpha * alg.beta)
+    b2 = (3 * alg.beta - 2) / (6 * alg.alpha * (alg.beta - alg.alpha))
+    b3 = (2 - 3 * alg.alpha) / (6 * alg.beta * (alg.beta - alg.alpha))
     c2 = alg.alpha
     c3 = alg.beta
 
-    beta2 = 1.0 / (2.0 * a21)
-    beta1 = 1.0 - beta2
+    beta2 = 1 / (2 * a21)
+    beta1 = 1 - beta2
 
-    q1 = 1.0 / (3.0 * a21 * (a31 + a32) * b3)
-    q2 = 1.0 / a21
+    q1 = 1 / (3 * a21 * (a31 + a32) * b3)
+    q2 = 1 / a21
 
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
 end
