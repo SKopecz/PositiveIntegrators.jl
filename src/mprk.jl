@@ -811,7 +811,7 @@ struct MPRK43Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
     weight::uNoUnitsType
 end
 
-function set_constant_parameters(alg::MPRK43I)
+function get_constant_parameters(alg::MPRK43I)
     a21 = alg.alpha
     a31 = (3 * alg.alpha * alg.beta * (1 - alg.alpha) - alg.beta^2) /
           (alg.alpha * (2 - 3 * alg.alpha))
