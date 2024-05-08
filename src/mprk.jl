@@ -831,7 +831,7 @@ function get_constant_parameters(alg::MPRK43I)
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
 end
 
-function set_constant_parameters(alg::MPRK43II)
+function get_constant_parameters(alg::MPRK43II)
     a21 = 2 * one(alg.gamma) / 3
     a31 = a21 - 1 / (4 * alg.gamma)
     a32 = 1 / (4 * alg.gamma)
