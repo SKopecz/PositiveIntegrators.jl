@@ -745,7 +745,7 @@ end
 A third-order modified Patankar-Runge-Kutta algorithm for (conservative)
 production-destruction systems. This one-step, four-stage method is
 third-order accurate, unconditionally positivity-preserving, and linearly
-implicit. The parameters `γ` is described by Kopecz and Meister (2018).
+implicit. The parameter `γ` is described by Kopecz and Meister (2018).
 
 This modified Patankar-Runge-Kutta method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
