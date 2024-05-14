@@ -751,7 +751,7 @@ non-negative Runge--Kutta coefficients.
 Each member of this family is a one-step method with four-stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well. The parameter `γ` must satisfy
-`\\frac{3}{8}≤ γ≤\\frac{3}{4}`. 
+`3/8 ≤ γ ≤ 3/4`. 
 Further details are given in Kopecz and Meister (2018).  
 
 These modified Patankar-Runge-Kutta methods require the special structure of a
