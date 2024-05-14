@@ -529,6 +529,52 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
         end
     end
 
+    @testset "MPRK43" begin
+        @testset "MPRK43 error handling" begin
+            @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
+                                                                       MPRK43I(0.0, 0.5))
+            @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
+                                                                       MPRK43I(2.0 / 3.0,
+                                                                               0.5))
+            @test_throws "For this choice of α MPRK43I requires 2/3 ≤ β ≤ 3α(1-α)." solve(prob_pds_linmod,
+                                                                                          MPRK43I(0.5,
+                                                                                                  0.5))
+            @test_throws "For this choice of α MPRK43I requires 2/3 ≤ β ≤ 3α(1-α)." solve(prob_pds_linmod,
+                                                                                          MPRK43I(0.5,
+                                                                                                  0.8))
+            @test_throws "For this choice of α MPRK43I requires 3α(1-α) ≤ β ≤ 2/3." solve(prob_pds_linmod,
+                                                                                          MPRK43I(0.7,
+                                                                                                  0.7))
+            @test_throws "For this choice of α MPRK43I requires 3α(1-α) ≤ β ≤ 2/3." solve(prob_pds_linmod,
+                                                                                          MPRK43I(0.7,
+                                                                                                  0.1))
+            @test_throws "For this choice of α MPRK43I requires (3α-2)/(6α-3) ≤ β ≤ 2/3." solve(prob_pds_linmod,
+                                                                                                MPRK43I(1.0,
+                                                                                                        0.7))
+            @test_throws "For this choice of α MPRK43I requires (3α-2)/(6α-3) ≤ β ≤ 2/3." solve(prob_pds_linmod,
+                                                                                                MPRK43I(1.0,
+                                                                                                        0.1))
+            @test_throws "MPRK43II requires 3/8 ≤ γ ≤ 3/4." solve(prob_pds_linmod,
+                                                                  MPRK43II(1.0))
+            @test_throws "MPRK43II requires 3/8 ≤ γ ≤ 3/4." solve(prob_pds_linmod,
+                                                                  MPRK43II(0.0))
+        end
+
+        @testset "Convergence tests" begin
+            dts = 0.5 .^ (6:11)
+            problems = (prob_pds_linmod, prob_pds_linmod_array)
+            for alg in [
+                    MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75),
+                    MPRK43II(0.5),
+                    MPRK43II(2.0 / 3.0),
+                ], prob in problems
+                eoc = experimental_order_of_convergence(prob, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
+        end
+    end
+
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
     @testset "Examples" begin
