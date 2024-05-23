@@ -117,40 +117,6 @@ function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt)
     return nothing
 end
 
-function build_mprk_matrix!(M::Tridiagonal,
-                            b1, P1::Tridiagonal, D1,
-                            b2, P2::Tridiagonal, D2,
-                            sigma, dt)
-    # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
-    # M[i,j] = -dt * P[i,j] / sigma[j]
-    Base.require_one_based_indexing(M.dl, M.d, M.du,
-                                    P1.dl, P1.d, P1.du, D1,
-                                    P2.dl, P2.d, P2.du, D2,
-                                    sigma)
-    @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
-            length(P1.dl) + 1 == length(P1.d) == length(P1.du) + 1 ==
-            length(D1) ==
-            length(P2.dl) + 1 == length(P2.d) == length(P2.du) + 1 ==
-            length(D2) == length(sigma)
-
-    factor1 = b1 * dt
-    factor2 = b2 * dt
-
-    for i in eachindex(M.d, D1, D2, sigma)
-        M.d[i] = 1 + (factor1 * D1[i] + factor2 * D2[i]) / sigma[i]
-    end
-
-    for i in eachindex(M.dl, P1.dl, P2.dl)
-        M.dl[i] = -(factor1 * P1.dl[i] + factor2 * P2.dl[i]) / sigma[i]
-    end
-
-    for i in eachindex(M.dl, P1.du, P2.du)
-        M.du[i] = -(factor1 * P1.du[i] + factor2 * P2.du[i]) / sigma[i + 1]
-    end
-
-    return M
-end
-
 #####################################################################
 # Linear interpolations
 @muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{0}})
