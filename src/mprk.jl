@@ -257,9 +257,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack small_constant = cache
 
     # Attention: Implementation assumes that the pds is conservative,
-    # i.e., P[i, i] == 0 for all i
-    # We use P to store the last evaluation of the PDS 
-    # as well as to store the system matrix of the linear system    
+    # i.e., P[i, i] == 0 for all i  
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
@@ -294,6 +292,9 @@ end
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack P, D, weight = cache
+
+    # We use P to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system  
 
     # TODO: Shall we require the users to set unused entries to zero?
     fill!(P, zero(eltype(P)))
@@ -514,8 +515,6 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 
     # Attention: Implementation assumes that the pds is conservative,
     # i.e. , P[i, i] == 0 for all i
-    # We use P2 to store the last evaluation of the PDS 
-    # as well as to store the system matrix of the linear system
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
@@ -586,6 +585,9 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack tmp, atmp, P, P2, D, D2, σ, thread, weight = cache
     @unpack a21, b1, b2, c2, small_constant = cache.tab
 
+    # We use P2 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
     @.. broadcast=false P2=a21 * P
@@ -617,7 +619,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
 
     build_mprk_matrix!(P2, P2, σ, dt)
 
-    # Same as linres = M \ uprev
+    # Same as linres = P2 \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = P2, b = _vec(uprev),
                         du = integrator.fsalfirst, u = u, p = p, t = t,
