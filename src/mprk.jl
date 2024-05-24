@@ -207,6 +207,8 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
 
+    # We use P to store the evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
     linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     assumptions = LinearSolve.OperatorAssumptions(true))
@@ -256,6 +258,8 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
 
     # Attention: Implementation assumes that the pds is conservative,
     # i.e., P[i, i] == 0 for all i
+    # We use P to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system    
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
