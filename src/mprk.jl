@@ -424,7 +424,6 @@ struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
     P2::PType
     D::uType
     D2::uType
-    M::PType
     σ::uType
     tab::tabType
     thread::Thread
@@ -442,12 +441,14 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     tmp = zero(u)
 
-    M = p_prototype(u, f)
+    P2 = p_prototype(u, f)
     linsolve_tmp = zero(u)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
 
-    linprob = LinearProblem(M, _vec(linsolve_tmp); u0 = _vec(tmp))
+    # We use P2 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+    linprob = LinearProblem(P2, _vec(linsolve_tmp); u0 = _vec(tmp))
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                     assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -456,10 +457,9 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                 zero(rate_prototype), # k
                 zero(rate_prototype), #fsalfirst
                 p_prototype(u, f), # P
-                p_prototype(u, f), # P2
+                P2, # P2
                 zero(u), # D
                 zero(u), # D2
-                M,
                 zero(u), # σ
                 tab, alg.thread,
                 linsolve_tmp, linsolve, weight)
@@ -510,6 +510,8 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 
     # Attention: Implementation assumes that the pds is conservative,
     # i.e. , P[i, i] == 0 for all i
+    # We use P2 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
@@ -577,7 +579,7 @@ end
 
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, atmp, P, P2, D, D2, M, σ, thread, weight = cache
+    @unpack tmp, atmp, P, P2, D, D2, σ, thread, weight = cache
     @unpack a21, b1, b2, c2, small_constant = cache.tab
 
     f.p(P, uprev, p, t) # evaluate production terms
