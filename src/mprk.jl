@@ -12,34 +12,9 @@ p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 #####################################################################
 # out-of-place for dense and static arrays
 function build_mprk_matrix(P, sigma, dt)
-    # M[i,i] = (sigma[i] + dt*sum_j P[j,i])/sigma[i]
-    # M[i,j] = -dt*P[i,j]/sigma[j]
+    # re-use the in-place version implemented below
     M = similar(P)
-    zeroM = zero(eltype(M))
-
-    # Set sigma on diagonal
-    @inbounds for i in eachindex(sigma)
-        M[i, i] = sigma[i]
-    end
-
-    # Run through P and fill M accordingly.
-    # If P[i,j] ≠ 0 set M[i,j] = -dt*P[i,j] and add dt*P[i,j] to M[j,j].
-    @fastmath @inbounds @simd for I in CartesianIndices(P)
-        if I[1] != I[2]
-            if !iszero(P[I])
-                dtP = dt * P[I]
-                M[I] = -dtP / sigma[I[2]]
-                M[I[2], I[2]] += dtP
-            else
-                M[I] = zeroM
-            end
-        end
-    end
-
-    # Divide diagonal elements by Patankar weights denominators
-    @fastmath @inbounds @simd for i in eachindex(sigma)
-        M[i, i] /= sigma[i]
-    end
+    build_mprk_matrix!(M, P, sigma, dt)
 
     if P isa StaticArray
         return SMatrix(M)
