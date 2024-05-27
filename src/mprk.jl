@@ -571,41 +571,6 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     integrator.u = u
 end
 
-#=
-function alg_cache(alg::Union{MPRK43I,MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
-               alg.alpha, floatmin(uEltypeNoUnits))
-
-tmp = zero(u)
-
-P3 = p_prototype(u, f)
-linsolve_tmp = zero(u)
-weight = similar(u, uEltypeNoUnits)
-recursivefill!(weight, false)
-
-# We use P2 to store the last evaluation of the PDS 
-# as well as to store the system matrix of the linear system
-linprob = LinearProblem(P3, _vec(linsolve_tmp); u0 = _vec(tmp))
-linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-     assumptions = LinearSolve.OperatorAssumptions(true))
-
-MPRK22Cache(u, uprev, tmp,
- zero(u), # atmp
- zero(rate_prototype), # k
- zero(rate_prototype), #fsalfirst
- p_prototype(u, f), # P
- P2, # P2
- zero(u), # D
- zero(u), # D2
- zero(u), # σ
- tab, alg.thread,
- linsolve_tmp, linsolve, weight)
-end
-=#
-
 function initialize!(integrator, cache::MPRK22Cache)
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
@@ -996,7 +961,7 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
 
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system
     linprob = LinearProblem(P3, _vec(linsolve_tmp); u0 = _vec(tmp))
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
