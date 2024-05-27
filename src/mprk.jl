@@ -571,6 +571,41 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     integrator.u = u
 end
 
+#=
+function alg_cache(alg::Union{MPRK43I,MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+    uprev, uprev2, f, t, dt, reltol, p, calck,
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
+               alg.alpha, floatmin(uEltypeNoUnits))
+
+tmp = zero(u)
+
+P3 = p_prototype(u, f)
+linsolve_tmp = zero(u)
+weight = similar(u, uEltypeNoUnits)
+recursivefill!(weight, false)
+
+# We use P2 to store the last evaluation of the PDS 
+# as well as to store the system matrix of the linear system
+linprob = LinearProblem(P3, _vec(linsolve_tmp); u0 = _vec(tmp))
+linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+     assumptions = LinearSolve.OperatorAssumptions(true))
+
+MPRK22Cache(u, uprev, tmp,
+ zero(u), # atmp
+ zero(rate_prototype), # k
+ zero(rate_prototype), #fsalfirst
+ p_prototype(u, f), # P
+ P2, # P2
+ zero(u), # D
+ zero(u), # D2
+ zero(u), # σ
+ tab, alg.thread,
+ linsolve_tmp, linsolve, weight)
+end
+=#
+
 function initialize!(integrator, cache::MPRK22Cache)
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
@@ -738,9 +773,10 @@ struct MPRK43Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
     fsalfirst::rateType
     P::PType
     P2::PType
+    P3::PType
     D::uType
     D2::uType
-    M::PType
+    D3::uType
     σ::uType
     tab::tabType
     thread::Thread
@@ -861,7 +897,9 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
 
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
-    σ0 = σ
+    if !(q1 ≈ q2)
+        σ0 = copy(σ)
+    end
 
     # build linear system matrix
     M = build_mprk_matrix(Ptmp, σ, dt)
@@ -905,7 +943,6 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     end
 
     Ptmp = beta1 * P + beta2 * P2
-    integrator.stats.nf += 1
 
     # build linear system matrix
     M = build_mprk_matrix(Ptmp, σ, dt)
@@ -936,15 +973,140 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     u = sol.u
     integrator.stats.nsolve += 1
 
-    # copied from perform_step for HeunConstantCache
-    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
-    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
     integrator.u = u
+end
+
+function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
+    tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
+                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+
+    tmp = zero(u)
+
+    P3 = p_prototype(u, f)
+    linsolve_tmp = zero(u)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+
+    # We use P2 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+    linprob = LinearProblem(P3, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                    assumptions = LinearSolve.OperatorAssumptions(true))
+
+    MPRK43Cache(u, uprev, tmp,
+                zero(u), # atmp
+                zero(rate_prototype), # k
+                zero(rate_prototype), #fsalfirst
+                p_prototype(u, f), # P
+                p_prototype(u, f), # P2
+                P3,
+                zero(u), # D
+                zero(u), # D2
+                zero(u), # D3
+                zero(u), # σ
+                tab, alg.thread,
+                linsolve_tmp, linsolve, weight)
+end
+
+function initialize!(integrator, cache::MPRK43Cache)
+    @unpack k, fsalfirst = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+end
+
+function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, atmp, P, P2, P3, D, D2, D3, σ, thread, weight = cache
+    @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
+
+    # We use P3 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+
+    f.p(P, uprev, p, t) # evaluate production terms
+    @.. broadcast=false P3=a21 * P
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=uprev + small_constant
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P3, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    if !(q1 ≈ q2)
+        atmp .= u #u2 in out-of-place version
+    end
+    integrator.stats.nsolve += 1
+
+    @.. broadcast=false σ=σ^(1 - q1) * u^q1
+    @.. broadcast=false σ=σ + small_constant
+
+    f.p(P2, u, p, t + c2 * dt) # evaluate production terms
+    @.. broadcast=false P3=a31 * P + a32 * P2
+    integrator.stats.nf += 1
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P3, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    if !(q1 ≈ q2)
+        @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * atmp^q2
+        @.. broadcast=false σ=σ + small_constant
+    end
+
+    @.. broadcast=false P3=beta1 * P + beta2 * P2
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P3, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    σ .= linres
+    integrator.stats.nsolve += 1
+
+    f.p(P3, u, p, t + c3 * dt) # evaluate production terms
+    @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    integrator.stats.nf += 1
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P3, b = _vec(uprev),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    @.. broadcast=false tmp=u - σ
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         thread)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
 end
 
 ########################################################################################
