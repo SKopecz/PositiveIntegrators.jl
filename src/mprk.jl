@@ -863,7 +863,7 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
     if !(q1 ≈ q2)
-        σ0 = copy(σ)
+        σ0 = σ
     end
 
     # build linear system matrix
