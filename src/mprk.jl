@@ -11,10 +11,10 @@ p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 
 #####################################################################
 # out-of-place for dense and static arrays
-function build_mprk_matrix(P, sigma, dt)
+function build_mprk_matrix(P, sigma, dt; d = nothing)
     # re-use the in-place version implemented below
     M = similar(P)
-    build_mprk_matrix!(M, P, sigma, dt)
+    build_mprk_matrix!(M, P, sigma, dt; d = d)
 
     if P isa StaticArray
         return SMatrix(M)
@@ -24,18 +24,28 @@ function build_mprk_matrix(P, sigma, dt)
 end
 
 # in-place for dense arrays
-function build_mprk_matrix!(M, P, sigma, dt)
+function build_mprk_matrix!(M, P, sigma, dt; d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
     Base.require_one_based_indexing(M, P, sigma)
-    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(sigma)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(sigma) 
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(sigma) == length(d)
+    end
 
     zeroM = zero(eltype(P))
 
     # Set sigma on diagonal
     @inbounds for i in eachindex(sigma)
         M[i, i] = sigma[i]
+    end
+    # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
+    if !isnothing(d)
+        @inbounds for i in eachindex(d)
+            M[i, i] += dt * d[i]
+        end 
     end
 
     # Run through P and fill M accordingly.
@@ -189,33 +199,46 @@ struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-MPEConstantCache(floatmin(uEltypeNoUnits))
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    MPEConstantCache(floatmin(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
-integrator.kshortsize = 1
-integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
-# Avoid undefined entries if k is an array of arrays
-integrator.fsalfirst = zero(integrator.u)
-integrator.fsallast = integrator.fsalfirst
-integrator.k[1] = integrator.fsallast
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsalfirst = zero(integrator.u)
+    integrator.fsallast = integrator.fsalfirst
+    integrator.k[1] = integrator.fsallast
 
-# TODO: Do we need to set fsalfirst here? The other non-FSAL caches
-#       in OrdinaryDiffEq.jl use something like
-#         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
-#                                             integrator.t) # Pre-start fsal
-#         integrator.stats.nf += 1
-#         integrator.fsallast = zero(integrator.fsalfirst)
-#         integrator.k[1] = integrator.fsalfirst
-#       Do we need something similar here to get a cache for k values
-#       with the correct units?
+    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
+    #       in OrdinaryDiffEq.jl use something like
+    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
+    #                                             integrator.t) # Pre-start fsal
+    #         integrator.stats.nf += 1
+    #         integrator.fsallast = zero(integrator.fsalfirst)
+    #         integrator.k[1] = integrator.fsalfirst
+    #       Do we need something similar here to get a cache for k values
+    #       with the correct units?
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
+    f = integrator.f
+
+    if f isa ConservativePDSFunction
+        perform_step_conservative!(integrator, cache, repeat_step)
+    elseif f isa PDSFunction
+        perform_step_nonconservative!(integrator, cache, repeat_step)
+    else
+        throw(ArgumentError("MPE can only be applied to production-destruction systems"))
+    end
+end
+
+function perform_step_conservative!(integrator, cache::MPEConstantCache,
+                                    repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack small_constant = cache
 
@@ -234,6 +257,37 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
 
     # solve linear system
     linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    integrator.u = u
+end
+
+function perform_step_nonconservative!(integrator, cache::MPEConstantCache,
+                                       repeat_step = false)
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack small_constant = cache
+
+    # Attention: Implementation assumes that the pds is conservative,
+    # i.e., P[i, i] == 0 for all i  
+
+    # evaluate PDS
+    P = f.p(uprev, p, t)
+    d = f.d(uprev, p, t)
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix and right hand side
+    rhs = uprev + dt * diag(P)
+    M = build_mprk_matrix(P, σ, dt; d = d)
+
+    # solve linear system
+    linprob = LinearProblem(M, rhs)
     sol = solve(linprob, alg.linsolve,
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
