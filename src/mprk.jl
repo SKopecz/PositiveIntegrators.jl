@@ -158,6 +158,7 @@ as keyword argument `linsolve`.
   production-destruction equations."
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
+- TODO: Add literature for nonconservative part - Meister ???
 """
 struct MPE{F} <: OrdinaryDiffEqAlgorithm
     linsolve::F
@@ -182,6 +183,65 @@ end
 
 alg_order(::MPE) = 1
 isfsal(::MPE) = false
+
+struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
+    small_constant::T
+end
+
+function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+    uprev, uprev2, f, t, dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+MPEConstantCache(floatmin(uEltypeNoUnits))
+end
+
+function initialize!(integrator, cache::MPEConstantCache)
+integrator.kshortsize = 1
+integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+# Avoid undefined entries if k is an array of arrays
+integrator.fsalfirst = zero(integrator.u)
+integrator.fsallast = integrator.fsalfirst
+integrator.k[1] = integrator.fsallast
+
+# TODO: Do we need to set fsalfirst here? The other non-FSAL caches
+#       in OrdinaryDiffEq.jl use something like
+#         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
+#                                             integrator.t) # Pre-start fsal
+#         integrator.stats.nf += 1
+#         integrator.fsallast = zero(integrator.fsalfirst)
+#         integrator.k[1] = integrator.fsalfirst
+#       Do we need something similar here to get a cache for k values
+#       with the correct units?
+end
+
+function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack small_constant = cache
+
+    # Attention: Implementation assumes that the pds is conservative,
+    # i.e., P[i, i] == 0 for all i  
+
+    # evaluate production matrix
+    P = f.p(uprev, p, t)
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix
+    M = build_mprk_matrix(P, σ, dt)
+
+    # solve linear system
+    linprob = LinearProblem(M, uprev)
+    sol = solve(linprob, alg.linsolve,
+                alias_A = false, alias_b = false,
+                assumptions = LinearSolve.OperatorAssumptions(true))
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    integrator.u = u
+end
 
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     u::uType
@@ -219,65 +279,6 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
              P,
              zero(u), # D
              linsolve_tmp, linsolve, weight)
-end
-
-struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
-    small_constant::T
-end
-
-function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                   uprev, uprev2, f, t, dt, reltol, p, calck,
-                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    MPEConstantCache(floatmin(uEltypeNoUnits))
-end
-
-function initialize!(integrator, cache::MPEConstantCache)
-    integrator.kshortsize = 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsalfirst = zero(integrator.u)
-    integrator.fsallast = integrator.fsalfirst
-    integrator.k[1] = integrator.fsallast
-
-    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
-    #       in OrdinaryDiffEq.jl use something like
-    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
-    #                                             integrator.t) # Pre-start fsal
-    #         integrator.stats.nf += 1
-    #         integrator.fsallast = zero(integrator.fsalfirst)
-    #         integrator.k[1] = integrator.fsalfirst
-    #       Do we need something similar here to get a cache for k values
-    #       with the correct units?
-end
-
-function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
-    @unpack alg, t, dt, uprev, f, p = integrator
-    @unpack small_constant = cache
-
-    # Attention: Implementation assumes that the pds is conservative,
-    # i.e., P[i, i] == 0 for all i  
-
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
-    integrator.stats.nf += 1
-
-    # avoid division by zero due to zero Patankar weights
-    σ = add_small_constant(uprev, small_constant)
-
-    # build linear system matrix
-    M = build_mprk_matrix(P, σ, dt)
-
-    # solve linear system
-    linprob = LinearProblem(M, uprev)
-    sol = solve(linprob, alg.linsolve,
-                alias_A = false, alias_b = false,
-                assumptions = LinearSolve.OperatorAssumptions(true))
-    u = sol.u
-    integrator.stats.nsolve += 1
-
-    integrator.u = u
 end
 
 function initialize!(integrator, cache::MPECache)
