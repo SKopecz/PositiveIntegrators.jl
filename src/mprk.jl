@@ -356,7 +356,7 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
         linsolve_tmp[i] += dt * P[i, i]
     end
 
-    build_mprk_matrix!(P, P, uprev, dt; d = D)
+    build_mprk_matrix!(P, P, uprev, dt, D)
 
     # Same as linres = P \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
