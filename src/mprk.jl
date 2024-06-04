@@ -37,16 +37,14 @@ function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
 
     zeroM = zero(eltype(P))
 
-    if isnothing(d)
-        # Set only sigma on diagonal
-        @inbounds for i in eachindex(sigma)
-            M[i, i] = sigma[i]
-        end
-    else
-        # Set sigma and nonconservative destruction terms 
-        # on diagonal (for non-conservative PDSFunctions only!)
+    # Set sigma on diagonal
+    @inbounds for i in eachindex(sigma)
+        M[i, i] = sigma[i]
+    end
+    # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
+    if !isnothing(d)
         @inbounds for i in eachindex(d)
-            M[i, i] = sigma[i] + dt * d[i]
+            M[i, i] += dt * d[i]
         end
     end
 
