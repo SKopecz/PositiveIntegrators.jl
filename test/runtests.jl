@@ -102,6 +102,9 @@ function f_analytic(u0, p, t)
             exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
 end
 
+# This is the usual conservative linear model problem, rewritten as
+# u₁' = -3 u₁ + 0.5 u₂ - 2 u₁ + 0.5 u₂ (= -5 u₁ + u₂)
+# u₂' =  3 u₁ - 0.5 u₂ - 0.5 u₂ + 2 u₁ (= 5 u₁ - u₂)  
 # linear model problem - nonconservative - out-of-place
 linmodP(u, p, t) = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
 linmodD(u, p, t) = [2 * u[1]; 0.5 * u[2]]
@@ -338,49 +341,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
 
         @testset "Linear model problem (nonconservative)" begin
-            # This is the usual conservative linear model problem, rewritten as
-            # u₁' = -3 u₁ + 0.5 u₂ - 2 u₁ + 0.5 u₂ (= -5 u₁ + u₂)
-            # u₂' =  3 u₁ - 0.5 u₂ - 0.5 u₂ + 2 u₁ (= 5 u₁ - u₂)  
-
-            # problem data
-            u0 = [0.9, 0.1]
-            tspan = (0.0, 2.0)
-            p = [5.0, 1.0]
-
-            # analytic solution
-            function f_analytic(u0, p, t)
-                u₁⁰, u₂⁰ = u0
-                a, b = p
-                c = a + b
-                return ((u₁⁰ + u₂⁰) * [b; a] +
-                        exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
-            end
-
-            # linear model problem - out-of-place
-            linmodP(u, p, t) = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
-            linmodD(u, p, t) = [2 * u[1]; 0.5 * u[2]]
-            prob_pds_linmod_nonconservative = PDSProblem(linmodP, linmodD, u0, tspan, p;
-                                                         analytic = f_analytic)
-
-            # linear model problem - in-place
-            function linmodP!(P, u, p, t)
-                fill!(P, zero(eltype(P)))
-                P[1, 1] = 0.5 * u[2]
-                P[1, 2] = 0.5 * u[2]
-                P[2, 1] = 3 * u[1]
-                P[2, 2] = 2 * u[1]
-                return nothing
-            end
-            function linmodD!(D, u, p, t)
-                fill!(D, zero(eltype(D)))
-                D[1] = 2 * u[1]
-                D[2] = 0.5 * u[2]
-                return nothing
-            end
-            prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, u0,
-                                                                 tspan, p;
-                                                                 analytic = f_analytic)
-
             dt = 0.25
             sol_MPE_op = solve(prob_pds_linmod_nonconservative, MPE(); dt)
             sol_MPE_ip = solve(prob_pds_linmod_nonconservative_inplace, MPE(); dt)
