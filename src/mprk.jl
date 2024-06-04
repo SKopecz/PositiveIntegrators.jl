@@ -214,6 +214,9 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPE can only be applied to production-destruction systems"))
+    end
     MPEConstantCache(floatmin(uEltypeNoUnits))
 end
 
@@ -256,11 +259,9 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
         rhs = uprev + dt * diag(P)
         M = build_mprk_matrix(P, σ, dt, d)
         linprob = LinearProblem(M, rhs)
-    elseif f isa ConservativePDSFunction
+    else
         M = build_mprk_matrix(P, σ, dt)
         linprob = LinearProblem(M, uprev)
-    else
-        throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
 
     # solve linear system
