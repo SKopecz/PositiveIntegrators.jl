@@ -273,6 +273,17 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
     end
 
     @testset "MPE" begin
+        @testset "MPE error handling" begin
+            @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
+                                                                       MPRK43I(0.0, 0.5))
+            f_oop = (u, p, t) -> u
+            f_ip = (du, u, p, t) -> u
+            prob_oop = ODEProblem(f_oop, [1.0; 2.0], (0.0, 1.0)) 
+            prob_ip = ODEProblem(f_ip, [1.0; 2.0], (0.0, 1.0))            
+            @test_throws "MPE can only be applied to production-destruction systems" solve(prob_oop, MPE(), dt = 0.25) 
+            @test_throws "MPE can only be applied to production-destruction systems" solve(prob_ip, MPE(), dt = 0.25) 
+        end
+
         @testset "Linear model problem (conservative)" begin
             # For this linear model problem, the modified Patankar-Euler
             # method is equivalent to the implicit Euler method.
