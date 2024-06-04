@@ -93,6 +93,39 @@ const prob_pds_linmod_mvector = ConservativePDSProblem(prob_pds_linmod_inplace.f
                                                        MVector(prob_pds_linmod.u0),
                                                        prob_pds_linmod.tspan)
 
+# analytic solution of linear model problem
+function f_analytic(u0, p, t)
+    u₁⁰, u₂⁰ = u0
+    a, b = p
+    c = a + b
+    return ((u₁⁰ + u₂⁰) * [b; a] +
+            exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
+end
+
+# linear model problem - nonconservative - out-of-place
+linmodP(u, p, t) = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
+linmodD(u, p, t) = [2 * u[1]; 0.5 * u[2]]
+const prob_pds_linmod_nonconservative = PDSProblem(linmodP, linmodD, [0.9, 0.1], (0.0, 2.0),
+                                                   [5.0, 1.0];
+                                                   analytic = f_analytic)
+
+# linear model problem - nonconservative -  in-place
+function linmodP!(P, u, p, t)
+    P[1, 1] = 0.5 * u[2]
+    P[1, 2] = 0.5 * u[2]
+    P[2, 1] = 3 * u[1]
+    P[2, 2] = 2 * u[1]
+    return nothing
+end
+function linmodD!(D, u, p, t)
+    D[1] = 2 * u[1]
+    D[2] = 0.5 * u[2]
+    return nothing
+end
+const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [0.9, 0.1],
+                                                           (0.0, 2.0), [5.0, 1.0];
+                                                           analytic = f_analytic)
+
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
