@@ -231,7 +231,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack small_constant = cache
 
-    f = integrator.f  
+    f = integrator.f
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
