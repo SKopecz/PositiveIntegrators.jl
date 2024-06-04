@@ -73,16 +73,26 @@ function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
 end
 
 # optimized versions for Tridiagonal matrices
-function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt)
+function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M.dl, M.d, M.du,
                                     P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(σ) == length(d)
+    end
 
-    for i in eachindex(M.d, σ)
-        M.d[i] = σ[i]
+    if isnothing(d)
+        for i in eachindex(M.d, σ)
+            M.d[i] = σ[i]
+        end
+    else
+        for i in eachindex(M.d, σ, d)
+            M.d[i] = σ[i] + dt * d[i]
+        end
     end
 
     for i in eachindex(M.dl, P.dl)
@@ -352,7 +362,7 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     integrator.stats.nf += 1
 
     linsolve_tmp .= uprev
-    @inbounds for i in 1:length(linsolve_tmp)
+    @inbounds for i in eachindex(linsolve_tmp)
         linsolve_tmp[i] += dt * P[i, i]
     end
 
