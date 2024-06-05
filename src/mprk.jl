@@ -12,7 +12,6 @@ p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
 d_prototype(u, f) = zeros(eltype(u), (length(u),))
 d_prototype(u, f::PDSFunction) = zero(f.d_prototype)
 
-
 #####################################################################
 # out-of-place for dense and static arrays
 function build_mprk_matrix(P, sigma, dt, d = nothing)
@@ -82,6 +81,7 @@ function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
                                     P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
+
     if !isnothing(d)
         Base.require_one_based_indexing(d)
         @assert length(σ) == length(d)
