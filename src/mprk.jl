@@ -8,6 +8,10 @@ end
 #####################################################################
 p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
 p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
+p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
+d_prototype(u, f) = zeros(eltype(u), (length(u),))
+d_prototype(u, f::PDSFunction) = zero(f.d_prototype)
+
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -321,6 +325,8 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                              P,
                              linsolve_tmp, linsolve, weight)
     elseif f isa PDSFunction
+        D = d_prototype(u, f)
+
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
         linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
@@ -331,7 +337,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                  zero(rate_prototype), # k
                  zero(rate_prototype), # fsalfirst
                  P,
-                 zero(u), # D
+                 D,
                  linsolve_tmp, linsolve, weight)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
