@@ -161,10 +161,14 @@ end
 """
     MPE([linsolve = ...])
 
-The first-order modified Patankar-Euler algorithm for (conservative)
-production-destruction systems. This one-step, one-stage method is
+The first-order modified Patankar-Euler algorithm for production-destruction systems. This one-step, one-stage method is
 first-order accurate, unconditionally positivity-preserving, and
 linearly implicit.
+
+The scheme was introduced by Burchard et al for conservative production-destruction systems. 
+For nonconservative production–destruction system we use the straight forward extension
+
+``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``.
 
 The modified Patankar-Euler method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
@@ -180,7 +184,6 @@ as keyword argument `linsolve`.
   production-destruction equations."
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
-- TODO: Add literature for nonconservative part - Meister ???
 """
 struct MPE{F} <: OrdinaryDiffEqAlgorithm
     linsolve::F
