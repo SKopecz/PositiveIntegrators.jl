@@ -260,6 +260,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
         M = build_mprk_matrix(P, σ, dt, d)
         linprob = LinearProblem(M, rhs)
     else
+        # f isa Conservative PDSFunction
         M = build_mprk_matrix(P, σ, dt)
         linprob = LinearProblem(M, uprev)
     end
