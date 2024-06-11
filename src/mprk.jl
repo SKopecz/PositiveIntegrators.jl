@@ -8,13 +8,14 @@ end
 #####################################################################
 p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
 p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
+p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
 
 #####################################################################
 # out-of-place for dense and static arrays
-function build_mprk_matrix(P, sigma, dt)
+function build_mprk_matrix(P, sigma, dt, d = nothing)
     # re-use the in-place version implemented below
     M = similar(P)
-    build_mprk_matrix!(M, P, sigma, dt)
+    build_mprk_matrix!(M, P, sigma, dt, d)
 
     if P isa StaticArray
         return SMatrix(M)
@@ -24,18 +25,28 @@ function build_mprk_matrix(P, sigma, dt)
 end
 
 # in-place for dense arrays
-function build_mprk_matrix!(M, P, sigma, dt)
+function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
     Base.require_one_based_indexing(M, P, sigma)
     @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(sigma)
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(sigma) == length(d)
+    end
 
     zeroM = zero(eltype(P))
 
     # Set sigma on diagonal
     @inbounds for i in eachindex(sigma)
         M[i, i] = sigma[i]
+    end
+    # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
+    if !isnothing(d)
+        @inbounds for i in eachindex(d)
+            M[i, i] += dt * d[i]
+        end
     end
 
     # Run through P and fill M accordingly.
@@ -61,7 +72,7 @@ function build_mprk_matrix!(M, P, sigma, dt)
 end
 
 # optimized versions for Tridiagonal matrices
-function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt)
+function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M.dl, M.d, M.du,
@@ -69,8 +80,19 @@ function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
 
-    for i in eachindex(M.d, σ)
-        M.d[i] = σ[i]
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(σ) == length(d)
+    end
+
+    if isnothing(d)
+        for i in eachindex(M.d, σ)
+            M.d[i] = σ[i]
+        end
+    else
+        for i in eachindex(M.d, σ, d)
+            M.d[i] = σ[i] + dt * d[i]
+        end
     end
 
     for i in eachindex(M.dl, P.dl)
@@ -139,10 +161,14 @@ end
 """
     MPE([linsolve = ...])
 
-The first-order modified Patankar-Euler algorithm for (conservative)
-production-destruction systems. This one-step, one-stage method is
+The first-order modified Patankar-Euler algorithm for production-destruction systems. This one-step, one-stage method is
 first-order accurate, unconditionally positivity-preserving, and
 linearly implicit.
+
+The scheme was introduced by Burchard et al for conservative production-destruction systems. 
+For nonconservative production–destruction system we use the straight forward extension
+
+``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``.
 
 The modified Patankar-Euler method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
@@ -183,44 +209,6 @@ end
 alg_order(::MPE) = 1
 isfsal(::MPE) = false
 
-struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    P::PType
-    D::uType
-    linsolve_tmp::uType  # stores rhs of linear system
-    linsolve::F
-    weight::uNoUnitsType
-end
-
-function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                   uprev, uprev2, f, t, dt, reltol, p, calck,
-                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-
-    P = p_prototype(u, f)
-    linsolve_tmp = zero(u)
-    weight = similar(u, uEltypeNoUnits)
-    recursivefill!(weight, false)
-
-    # We use P to store the evaluation of the PDS 
-    # as well as to store the system matrix of the linear system
-    linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    assumptions = LinearSolve.OperatorAssumptions(true))
-
-    MPECache(u, uprev, tmp,
-             zero(rate_prototype), # k
-             zero(rate_prototype), # fsalfirst
-             P,
-             zero(u), # D
-             linsolve_tmp, linsolve, weight)
-end
-
 struct MPEConstantCache{T} <: OrdinaryDiffEqConstantCache
     small_constant::T
 end
@@ -229,6 +217,9 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPE can only be applied to production-destruction systems"))
+    end
     MPEConstantCache(floatmin(uEltypeNoUnits))
 end
 
@@ -256,8 +247,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack small_constant = cache
 
-    # Attention: Implementation assumes that the pds is conservative,
-    # i.e., P[i, i] == 0 for all i  
+    f = integrator.f
 
     # evaluate production matrix
     P = f.p(uprev, p, t)
@@ -266,11 +256,19 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
 
-    # build linear system matrix
-    M = build_mprk_matrix(P, σ, dt)
+    # build linear system matrix and rhs
+    if f isa PDSFunction
+        d = f.d(uprev, p, t)  # evaluate nonconservative destruction terms
+        rhs = uprev + dt * diag(P)
+        M = build_mprk_matrix(P, σ, dt, d)
+        linprob = LinearProblem(M, rhs)
+    else
+        # f isa Conservative PDSFunction
+        M = build_mprk_matrix(P, σ, dt)
+        linprob = LinearProblem(M, uprev)
+    end
 
     # solve linear system
-    linprob = LinearProblem(M, uprev)
     sol = solve(linprob, alg.linsolve,
                 alias_A = false, alias_b = false,
                 assumptions = LinearSolve.OperatorAssumptions(true))
@@ -280,7 +278,73 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     integrator.u = u
 end
 
-function initialize!(integrator, cache::MPECache)
+struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    k::rateType
+    fsalfirst::rateType
+    P::PType
+    D::uType
+    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
+end
+
+struct MPEConservativeCache{uType, rateType, PType, F, uNoUnitsType} <:
+       OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    k::rateType
+    fsalfirst::rateType
+    P::PType
+    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve::F
+    weight::uNoUnitsType
+end
+
+function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    P = p_prototype(u, f)
+    linsolve_tmp = zero(u)
+    weight = similar(u, uEltypeNoUnits)
+    recursivefill!(weight, false)
+
+    if f isa ConservativePDSFunction
+        # We use P to store the evaluation of the PDS 
+        # as well as to store the system matrix of the linear system
+        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                        assumptions = LinearSolve.OperatorAssumptions(true))
+
+        MPEConservativeCache(u, uprev, tmp,
+                             zero(rate_prototype), # k
+                             zero(rate_prototype), # fsalfirst
+                             P,
+                             linsolve_tmp, linsolve, weight)
+    elseif f isa PDSFunction
+        # We use P to store the evaluation of the PDS 
+        # as well as to store the system matrix of the linear system
+        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                        assumptions = LinearSolve.OperatorAssumptions(true))
+
+        MPECache(u, uprev, tmp,
+                 zero(rate_prototype), # k
+                 zero(rate_prototype), # fsalfirst
+                 P,
+                 zero(u), #D
+                 linsolve_tmp, linsolve, weight)
+    else
+        throw(ArgumentError("MPE can only be applied to production-destruction systems"))
+    end
+end
+
+function initialize!(integrator, cache::Union{MPECache, MPEConservativeCache})
     @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
@@ -291,13 +355,41 @@ end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, D, weight = cache
+    @unpack P, D, linsolve_tmp, weight = cache
 
     # We use P to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
 
-    # TODO: Shall we require the users to set unused entries to zero?
-    fill!(P, zero(eltype(P)))
+    # We require the users to set unused entries to zero!
+
+    f.p(P, uprev, p, t) # evaluate production terms
+    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    integrator.stats.nf += 1
+
+    linsolve_tmp .= uprev
+    @inbounds for i in eachindex(linsolve_tmp)
+        linsolve_tmp[i] += dt * P[i, i]
+    end
+
+    build_mprk_matrix!(P, P, uprev, dt, D)
+
+    # Same as linres = P \ uprev
+    linres = dolinsolve(integrator, cache.linsolve;
+                        A = P, b = _vec(linsolve_tmp),
+                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        weight = weight)
+    u .= linres
+    integrator.stats.nsolve += 1
+end
+
+function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack P, weight = cache
+
+    # We use P to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system  
+
+    # We require the users to set unused entries to zero!
 
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
