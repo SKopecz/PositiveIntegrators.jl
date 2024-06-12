@@ -283,17 +283,16 @@ struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutabl
     fsalfirst::rateType
     P::PType
     D::uType
-    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve_rhs::uType  # stores rhs of linear system
     linsolve::F
     weight::uNoUnitsType
 end
 
-struct MPEConservativeCache{uType, rateType, PType, F, uNoUnitsType} <:
+struct MPEConservativeCache{rateType, PType, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
     k::rateType
     fsalfirst::rateType
     P::PType
-    linsolve_tmp::uType  # stores rhs of linear system
     linsolve::F
     weight::uNoUnitsType
 end
@@ -319,7 +318,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         MPEConservativeCache(zero(rate_prototype), # k
                              zero(rate_prototype), # fsalfirst
                              P,
-                             zero(u), linsolve, weight)
+                             linsolve, weight)
     elseif f isa PDSFunction
         linsolve_rhs = zero(u)
         # We use P to store the evaluation of the PDS 
@@ -349,7 +348,7 @@ end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, D, linsolve_tmp, weight = cache
+    @unpack P, D, linsolve_rhs, weight = cache
 
     # We use P to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
@@ -360,16 +359,16 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
     integrator.stats.nf += 1
 
-    linsolve_tmp .= uprev
-    @inbounds for i in eachindex(linsolve_tmp)
-        linsolve_tmp[i] += dt * P[i, i]
+    linsolve_rhs .= uprev
+    @inbounds for i in eachindex(linsolve_rhs)
+        linsolve_rhs[i] += dt * P[i, i]
     end
 
     build_mprk_matrix!(P, P, uprev, dt, D)
 
     # Same as linres = P \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
-                        A = P, b = _vec(linsolve_tmp),
+                        A = P, b = _vec(linsolve_rhs),
                         du = integrator.fsalfirst, u = u, p = p, t = t,
                         weight = weight)
     u .= linres
