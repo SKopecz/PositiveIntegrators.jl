@@ -279,8 +279,6 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
 end
 
 struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
     tmp::uType
     k::rateType
     fsalfirst::rateType
@@ -293,8 +291,6 @@ end
 
 struct MPEConservativeCache{uType, rateType, PType, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
     tmp::uType
     k::rateType
     fsalfirst::rateType
@@ -321,7 +317,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPEConservativeCache(u, uprev, tmp,
+        MPEConservativeCache(tmp,
                              zero(rate_prototype), # k
                              zero(rate_prototype), # fsalfirst
                              P,
@@ -333,7 +329,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(u, uprev, tmp,
+        MPECache(tmp,
                  zero(rate_prototype), # k
                  zero(rate_prototype), # fsalfirst
                  P,
