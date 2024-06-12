@@ -302,27 +302,29 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
+    
     P = p_prototype(u, f)
-    linsolve_tmp = zero(u)
+    linsolve_u = zero(u)
     weight = similar(u, uEltypeNoUnits)
     recursivefill!(weight, false)
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        # Right hand side of linear system is always uprev
+        linprob = LinearProblem(P, _vec(uprev); u0 = _vec(linsolve_u))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPEConservativeCache(zero(rate_prototype), # k
                              zero(rate_prototype), # fsalfirst
                              P,
-                             linsolve_tmp, linsolve, weight)
+                             zero(u), linsolve, weight)
     elseif f isa PDSFunction
+        linsolve_rhs = zero(u)
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        linprob = LinearProblem(P, _vec(linsolve_rhs); u0 = _vec(linsolve_u))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -330,7 +332,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                  zero(rate_prototype), # fsalfirst
                  P,
                  zero(u), #D
-                 linsolve_tmp, linsolve, weight)
+                 linsolve_rhs, linsolve, weight)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
