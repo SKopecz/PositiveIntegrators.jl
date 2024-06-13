@@ -278,9 +278,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     integrator.u = u
 end
 
-struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
-    k::rateType
-    fsalfirst::rateType
+struct MPECache{uType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
     P::PType
     D::uType
     linsolve_rhs::uType  # stores rhs of linear system
@@ -288,10 +286,8 @@ struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutabl
     weight::uNoUnitsType
 end
 
-struct MPEConservativeCache{rateType, PType, F, uNoUnitsType} <:
+struct MPEConservativeCache{PType, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
-    k::rateType
-    fsalfirst::rateType
     P::PType
     linsolve::F
     weight::uNoUnitsType
@@ -315,9 +311,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPEConservativeCache(zero(rate_prototype), # k
-                             zero(rate_prototype), # fsalfirst
-                             P,
+        MPEConservativeCache(P,
                              linsolve, weight)
     elseif f isa PDSFunction
         linsolve_rhs = zero(u)
@@ -327,9 +321,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(zero(rate_prototype), # k
-                 zero(rate_prototype), # fsalfirst
-                 P,
+        MPECache(P,
                  zero(u), #D
                  linsolve_rhs, linsolve, weight)
     else
@@ -338,12 +330,6 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function initialize!(integrator, cache::Union{MPECache, MPEConservativeCache})
-    @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
-    integrator.kshortsize = 1
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
 end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
@@ -369,7 +355,8 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     # Same as linres = P \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = P, b = _vec(linsolve_rhs),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        #du = integrator.fsalfirst, 
+                        u = u, p = p, t = t,
                         weight = weight)
     u .= linres
     integrator.stats.nsolve += 1
@@ -392,7 +379,8 @@ function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = fa
     # Same as linres = P \ uprev
     linres = dolinsolve(integrator, cache.linsolve;
                         A = P, b = _vec(uprev),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
+                        #du = integrator.fsalfirst, 
+                        u = u, p = p, t = t,
                         weight = weight)
     u .= linres
     integrator.stats.nsolve += 1
