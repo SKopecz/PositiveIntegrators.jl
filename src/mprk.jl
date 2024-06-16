@@ -278,84 +278,54 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     integrator.u = u
 end
 
-struct MPECache{uType, rateType, PType, F, uNoUnitsType} <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
+struct MPECache{uType, PType, F} <: OrdinaryDiffEqMutableCache
     P::PType
     D::uType
-    linsolve_tmp::uType  # stores rhs of linear system
+    linsolve_rhs::uType  # stores rhs of linear system
     linsolve::F
-    weight::uNoUnitsType
 end
 
-struct MPEConservativeCache{uType, rateType, PType, F, uNoUnitsType} <:
-       OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
+struct MPEConservativeCache{PType, F} <: OrdinaryDiffEqMutableCache
     P::PType
-    linsolve_tmp::uType  # stores rhs of linear system
     linsolve::F
-    weight::uNoUnitsType
 end
 
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
     P = p_prototype(u, f)
-    linsolve_tmp = zero(u)
-    weight = similar(u, uEltypeNoUnits)
-    recursivefill!(weight, false)
+    linsolve_u = zero(u)
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        # Right hand side of linear system is always uprev
+        linprob = LinearProblem(P, _vec(uprev); u0 = _vec(linsolve_u))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPEConservativeCache(u, uprev, tmp,
-                             zero(rate_prototype), # k
-                             zero(rate_prototype), # fsalfirst
-                             P,
-                             linsolve_tmp, linsolve, weight)
+        MPEConservativeCache(P, linsolve)
     elseif f isa PDSFunction
+        linsolve_rhs = zero(u)
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P, _vec(linsolve_tmp); u0 = _vec(tmp))
+        linprob = LinearProblem(P, _vec(linsolve_rhs); u0 = _vec(linsolve_u))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(u, uprev, tmp,
-                 zero(rate_prototype), # k
-                 zero(rate_prototype), # fsalfirst
-                 P,
-                 zero(u), #D
-                 linsolve_tmp, linsolve, weight)
+        MPECache(P, zero(u), linsolve_rhs, linsolve)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
 end
 
 function initialize!(integrator, cache::Union{MPECache, MPEConservativeCache})
-    @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
-    integrator.kshortsize = 1
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
 end
 
 function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, D, linsolve_tmp, weight = cache
+    @unpack P, D, linsolve, linsolve_rhs = cache
 
     # We use P to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
@@ -366,25 +336,24 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
     integrator.stats.nf += 1
 
-    linsolve_tmp .= uprev
-    @inbounds for i in eachindex(linsolve_tmp)
-        linsolve_tmp[i] += dt * P[i, i]
+    linsolve_rhs .= uprev
+    @inbounds for i in eachindex(linsolve_rhs)
+        linsolve_rhs[i] += dt * P[i, i]
     end
 
     build_mprk_matrix!(P, P, uprev, dt, D)
 
-    # Same as linres = P \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P, b = _vec(linsolve_tmp),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    # Same as linres = P \ linsolve_rhs
+    linsolve.A = P
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 end
 
 function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, weight = cache
+    @unpack P, linsolve = cache
 
     # We use P to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
@@ -397,10 +366,9 @@ function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = fa
     build_mprk_matrix!(P, P, uprev, dt)
 
     # Same as linres = P \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P, b = _vec(uprev),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    linsolve.A = P
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 end

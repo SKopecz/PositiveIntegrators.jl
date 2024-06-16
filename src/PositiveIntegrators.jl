@@ -22,7 +22,7 @@ using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
 
 using SymbolicIndexingInterface
 
-using LinearSolve: LinearSolve, LinearProblem, LUFactorization
+using LinearSolve: LinearSolve, LinearProblem, LUFactorization, solve!
 
 using SciMLBase: DEFAULT_OBSERVED
 import SciMLBase: interp_summary,
