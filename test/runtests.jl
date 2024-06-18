@@ -286,8 +286,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test_throws "MPE can only be applied to production-destruction systems" solve(prob_ip,
                                                                                            MPE(),
                                                                                            dt = 0.25)
-            #TODO: Test that MPRK22 requires α ≥ 1/2  
-            #TODO: Test that MPRK22, MPRK43I, MPRK43II can only be applied to PDS
+            #TODO: Test that MPRK22 requires α ≥ 1/2 (not yet implemented)
+            #TODO: Test that MPRK22, MPRK43I, MPRK43II can only be applied to PDS (not yet implemented)
             @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
                                                                        MPRK43I(0.0, 0.5))
             @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
@@ -372,7 +372,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
 
         # Here we check that different linear solvers can be used
-        #TODO: Add other 3rd order schemes
         @testset "Different linear solvers" begin
             # problem data
             u0 = [0.9, 0.1]
@@ -701,7 +700,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Check convergence of 3rd order MPRK schemes for nonconservative PDS (not yet implemnted)
+            #TODO: Check convergence of 3rd order MPRK schemes for nonconservative PDS (not yet implemented)
         end
 
         @testset "Interpolation tests (conservative)" begin
