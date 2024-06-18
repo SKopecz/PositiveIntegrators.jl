@@ -501,7 +501,10 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    @assert alg.alpha ≥ 1 / 2 "MPRK22 requires α ≥ 1/2."
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
+    end
+    @assert alg.alpha≥1 / 2 "MPRK22 requires α ≥ 1/2."
     tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
                               alg.alpha, floatmin(uEltypeNoUnits))
 
@@ -543,7 +546,10 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    @assert alg.alpha ≥ 1 / 2 "MPRK22 requires α ≥ 1/2."
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
+    end
+    @assert alg.alpha≥1 / 2 "MPRK22 requires α ≥ 1/2."
     MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha), alg.alpha,
                         floatmin(uEltypeNoUnits))
 end
@@ -882,6 +888,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
+    end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
                               beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
@@ -1009,6 +1018,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
+    end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
                               beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
