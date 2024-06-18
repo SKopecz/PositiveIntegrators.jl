@@ -403,9 +403,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             prob_ip_2 = ConservativePDSProblem(linmodP!, u0, tspan, p;
                                                analytic = f_analytic)
 
-            algs = (MPE,)
+            algs = (MPE, (; kwargs...) -> MPRK(1.0; kwargs...))
             #TODO: Add 2nd and 3rd order schemes (not yet implemented)
-            #How can we add an algorithm such as MPRK(1.0) here?
             for alg in algs
                 @show alg
                 # Check different linear solvers
