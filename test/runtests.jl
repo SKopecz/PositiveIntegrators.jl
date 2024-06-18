@@ -317,7 +317,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                                   MPRK43II(0.0))
         end
 
-        # Here we check that MPE equls IE for a linear PDS
+        # Here we check that MPE equals implicit Euler (IE) for a linear PDS
         @testset "Linear model problem: MPE = IE?" begin
             # problem data
             u0 = [0.9, 0.1]
