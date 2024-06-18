@@ -286,7 +286,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test_throws "MPE can only be applied to production-destruction systems" solve(prob_ip,
                                                                                            MPE(),
                                                                                            dt = 0.25)
-            #TODO: Test that MPRK22 requires α ≥ 1/2 (not yet implemented)
+            @test_throws "MPRK22 requires α ≥ 1/2." solve(prob_pds_linmod, MPRK22(0.25))
+            @test_throws "MPRK22 requires α ≥ 1/2." solve(prob_pds_linmod, MPRK22(0.25))
             #TODO: Test that MPRK22, MPRK43I, MPRK43II can only be applied to PDS (not yet implemented)
             @test_throws "MPRK43I requires α ≥ 1/3 and α ≠ 2/3." solve(prob_pds_linmod,
                                                                        MPRK43I(0.0, 0.5))
