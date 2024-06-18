@@ -403,7 +403,10 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             prob_ip_2 = ConservativePDSProblem(linmodP!, u0, tspan, p;
                                                analytic = f_analytic)
 
-            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...))
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...), 
+            (; kwargs...) -> MPRK22(0.5; kwargs...),(; kwargs...) -> MPRK22(2.0; kwargs...),
+            (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...), (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+            (; kwargs...) -> MPRK43II(0.5; kwargs...),(; kwargs...) -> MPRK43II(2.0/3.0; kwargs...))
             #TODO: Add 2nd and 3rd order schemes (not yet implemented)
             for alg in algs
                 @show alg
