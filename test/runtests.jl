@@ -458,9 +458,10 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
-                        MPRK43I(0.5, 0.75), MPRK43II(2.0 / 3.0),
-                        MPRK43II(0.5))
+            @testset "$alg" for alg in (MPE(), 
+                                        MPRK22(0.5), MPRK22(1.0), 
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
