@@ -477,6 +477,23 @@ end
 alg_order(::MPRK22) = 2
 isfsal(::MPRK22) = false
 
+function get_constant_parameters(alg::MPRK22)
+    if !(alg.alpha ≥ 1 / 2)
+        throw(ArgumentError("MPRK22 requires α ≥ 1/2."))
+    end
+
+    a21 = alg.alpha
+    b2 = 1/(2*a21)
+    b1 = 1-b2
+    c2 = a21
+
+    # This should never happen
+    if !all((a21, b1, b2, c2) .≥ 0) 
+        throw(ArgumentError("MPRK22 requires nonnegative RK coefficients."))
+    end
+    return a21, b1, b2, c2
+end
+
 struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
     u::uType
@@ -504,11 +521,8 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
     end
-    if !(alg.alpha ≥ 1 / 2)
-        throw(ArgumentError("MPRK22 requires α ≥ 1/2."))
-    end
-    tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
-                              alg.alpha, floatmin(uEltypeNoUnits))
+    a21, b1, b2, c2 = get_constant_parameters(alg)
+    tab = MPRK22ConstantCache(a21, b1, b2, c2, floatmin(uEltypeNoUnits))
 
     tmp = zero(u)
 
@@ -544,6 +558,7 @@ struct MPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
     small_constant::T
 end
 
+
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
@@ -551,11 +566,9 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
     end
-    if !(alg.alpha ≥ 1 / 2)
-        throw(ArgumentError("MPRK22 requires α ≥ 1/2."))
-    end
-    MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha), alg.alpha,
-                        floatmin(uEltypeNoUnits))
+    
+    a21, b1, b2, c2 = get_constant_parameters(alg)
+    MPRK22ConstantCache(a21, b1, b2, c2, floatmin(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
