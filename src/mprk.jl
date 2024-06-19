@@ -477,6 +477,23 @@ end
 alg_order(::MPRK22) = 2
 isfsal(::MPRK22) = false
 
+function get_constant_parameters(alg::MPRK22)
+    if !(alg.alpha ≥ 1 / 2)
+        throw(ArgumentError("MPRK22 requires α ≥ 1/2."))
+    end
+
+    a21 = alg.alpha
+    b2 = 1 / (2 * a21)
+    b1 = 1 - b2
+    c2 = a21
+
+    # This should never happen
+    if !all((a21, b1, b2, c2) .≥ 0)
+        throw(ArgumentError("MPRK22 requires nonnegative RK coefficients."))
+    end
+    return a21, b1, b2, c2
+end
+
 struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
        OrdinaryDiffEqMutableCache
     u::uType
@@ -501,8 +518,11 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
-                              alg.alpha, floatmin(uEltypeNoUnits))
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
+    end
+    a21, b1, b2, c2 = get_constant_parameters(alg)
+    tab = MPRK22ConstantCache(a21, b1, b2, c2, floatmin(uEltypeNoUnits))
 
     tmp = zero(u)
 
@@ -542,11 +562,12 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
+    end
 
-    #TODO: Should assert alg.alpha >= 0.5
-
-    MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha), alg.alpha,
-                        floatmin(uEltypeNoUnits))
+    a21, b1, b2, c2 = get_constant_parameters(alg)
+    MPRK22ConstantCache(a21, b1, b2, c2, floatmin(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
@@ -811,14 +832,22 @@ struct MPRK43Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
 end
 
 function get_constant_parameters(alg::MPRK43I)
-    @assert alg.alpha ≥ 1 / 3&&alg.alpha ≠ 2 / 3 "MPRK43I requires α ≥ 1/3 and α ≠ 2/3."
+    if !(alg.alpha ≥ 1 / 3 && alg.alpha ≠ 2 / 3)
+        throw(ArgumentError("MPRK43I requires α ≥ 1/3 and α ≠ 2/3."))
+    end
     α0 = 1 / 6 * (3 + (3 - 2 * sqrt(2))^(1 / 3) + (3 + 2 * sqrt(2))^(1 / 3))
     if 1 / 3 ≤ alg.alpha < 2 / 3
-        @assert 2/3≤alg.beta≤3*alg.alpha*(1-alg.alpha) "For this choice of α MPRK43I requires 2/3 ≤ β ≤ 3α(1-α)."
+        if !(2 / 3 ≤ alg.beta ≤ 3 * alg.alpha * (1 - alg.alpha))
+            throw(ArgumentError("For this choice of α MPRK43I requires 2/3 ≤ β ≤ 3α(1-α)."))
+        end
     elseif 2 / 3 < alg.alpha ≤ α0
-        @assert 3*alg.alpha*(1-alg.alpha)≤alg.beta≤2/3 "For this choice of α MPRK43I requires 3α(1-α) ≤ β ≤ 2/3."
+        if !(3 * alg.alpha * (1 - alg.alpha) ≤ alg.beta ≤ 2 / 3)
+            throw(ArgumentError("For this choice of α MPRK43I requires 3α(1-α) ≤ β ≤ 2/3."))
+        end
     else
-        @assert (3 * alg.alpha - 2)/(6 * alg.alpha - 3)≤alg.beta≤2/3 "For this choice of α MPRK43I requires (3α-2)/(6α-3) ≤ β ≤ 2/3."
+        if !((3 * alg.alpha - 2) / (6 * alg.alpha - 3) ≤ alg.beta ≤ 2 / 3)
+            throw(ArgumentError("For this choice of α MPRK43I requires (3α-2)/(6α-3) ≤ β ≤ 2/3."))
+        end
     end
 
     a21 = alg.alpha
@@ -837,12 +866,17 @@ function get_constant_parameters(alg::MPRK43I)
     q1 = 1 / (3 * a21 * (a31 + a32) * b3)
     q2 = 1 / a21
 
-    @assert all((a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2) .≥ 0) "MPRK43I requires nonnegative RK coefficients."
+    #This should never happen
+    if !all((a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2) .≥ 0)
+        throw(ArgumentError("MPRK43I requires nonnegative RK coefficients."))
+    end
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
 end
 
 function get_constant_parameters(alg::MPRK43II)
-    @assert 3/8≤alg.gamma≤3/4 "MPRK43II requires 3/8 ≤ γ ≤ 3/4."
+    if !(3 / 8 ≤ alg.gamma ≤ 3 / 4)
+        throw(ArgumentError("MPRK43II requires 3/8 ≤ γ ≤ 3/4."))
+    end
 
     a21 = 2 * one(alg.gamma) / 3
     a31 = a21 - 1 / (4 * alg.gamma)
@@ -859,7 +893,10 @@ function get_constant_parameters(alg::MPRK43II)
     q1 = 1 / (3 * a21 * (a31 + a32) * b3)
     q2 = 1 / a21
 
-    @assert all((a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2) .≥ 0) "MPRK43II requires nonnegative RK coefficients."
+    #This should never happen
+    if !all((a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2) .≥ 0)
+        throw(ArgumentError("MPRK43II requires nonnegative RK coefficients."))
+    end
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
 end
 
@@ -883,6 +920,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
+    end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
                               beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
@@ -1010,6 +1050,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
+    end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
                               beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
