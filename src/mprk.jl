@@ -166,7 +166,7 @@ first-order accurate, unconditionally positivity-preserving, and
 linearly implicit.
 
 The scheme was introduced by Burchard et al for conservative production-destruction systems. 
-For nonconservative production–destruction system we use the straight forward extension
+For nonconservative production–destruction systems we use the straight forward extension
 
 ``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``.
 
@@ -224,23 +224,6 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
-    integrator.kshortsize = 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsalfirst = zero(integrator.u)
-    integrator.fsallast = integrator.fsalfirst
-    integrator.k[1] = integrator.fsallast
-
-    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
-    #       in OrdinaryDiffEq.jl use something like
-    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
-    #                                             integrator.t) # Pre-start fsal
-    #         integrator.stats.nf += 1
-    #         integrator.fsallast = zero(integrator.fsalfirst)
-    #         integrator.k[1] = integrator.fsalfirst
-    #       Do we need something similar here to get a cache for k values
-    #       with the correct units?
 end
 
 function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
@@ -416,7 +399,7 @@ end
 """
     MPRK22(α; [linsolve = ...])
 
-The second-order modified Patankar-Runge-Kutta algorithm for (conservative)
+The second-order modified Patankar-Runge-Kutta algorithm for 
 production-destruction systems. This one-step, two-stage method is
 second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameter `α` is described by Kopecz and Meister (2018) and
