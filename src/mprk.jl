@@ -504,7 +504,9 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
     end
-    @assert alg.alpha≥1 / 2 "MPRK22 requires α ≥ 1/2."
+    if !(alg.alpha ≥ 1 / 2)
+        throw(ArgumentError("MPRK22 requires α ≥ 1/2."))
+    end
     tab = MPRK22ConstantCache(alg.alpha, 1 - 1 / (2 * alg.alpha), 1 / (2 * alg.alpha),
                               alg.alpha, floatmin(uEltypeNoUnits))
 
