@@ -193,17 +193,6 @@ function MPE(; linsolve = LUFactorization())
     MPE(linsolve)
 end
 
-# TODO: Think about adding preconditioners to the MPE algorithm
-# This hack is currently required to make OrdinaryDiffEq.jl happy...
-function Base.getproperty(alg::MPE, f::Symbol)
-    # preconditioners
-    if f === :precs
-        return Returns((nothing, nothing))
-    else
-        return getfield(alg, f)
-    end
-end
-
 alg_order(::MPE) = 1
 isfsal(::MPE) = false
 
@@ -456,17 +445,6 @@ end
 
 function MPRK22(alpha; linsolve = LUFactorization())
     MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve)
-end
-
-# TODO: Think about adding preconditioners to the MPRK22 algorithm
-# This hack is currently required to make OrdinaryDiffEq.jl happy...
-function Base.getproperty(alg::MPRK22, f::Symbol)
-    # preconditioners
-    if f === :precs
-        return Returns((nothing, nothing))
-    else
-        return getfield(alg, f)
-    end
 end
 
 alg_order(::MPRK22) = 2
@@ -935,17 +913,6 @@ function get_constant_parameters(alg::MPRK43II)
         throw(ArgumentError("MPRK43II requires nonnegative RK coefficients."))
     end
     return a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2
-end
-
-# TODO: Think about adding preconditioners to the algorithm
-# This hack is currently required to make OrdinaryDiffEq.jl happy...
-function Base.getproperty(alg::Union{MPRK43I, MPRK43II}, f::Symbol)
-    # preconditioners
-    if f === :precs
-        return Returns((nothing, nothing))
-    else
-        return getfield(alg, f)
-    end
 end
 
 struct MPRK43ConstantCache{T} <: OrdinaryDiffEqConstantCache
