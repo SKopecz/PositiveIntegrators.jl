@@ -1247,9 +1247,11 @@ function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     σ .= linres
-    integrator.stats.nsolve += 1
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=σ + small_constant
 
     f.p(P3, u, p, t + c3 * dt) # evaluate production terms
     f.d(D3, u, p, t + c3 * dt) # evaluate nonconservative destruction terms
@@ -1339,9 +1341,11 @@ function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step =
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     σ .= linres
-    integrator.stats.nsolve += 1
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=σ + small_constant
 
     f.p(P3, u, p, t + c3 * dt) # evaluate production terms
     @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
