@@ -251,10 +251,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     end
 
     # solve linear system
-    # TODO check if this can be shortened 
-    sol = solve(linprob, alg.linsolve,
-                alias_A = false, alias_b = false,
-                assumptions = LinearSolve.OperatorAssumptions(true))
+    sol = solve(linprob, alg.linsolve)
     u = sol.u
     integrator.stats.nsolve += 1
 
@@ -284,14 +281,13 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     P = p_prototype(u, f)
     σ = zero(u)
-    linsolve_u = zero(u)
     tab = MPEConstantCache(floatmin(uEltypeNoUnits))
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
         # Right hand side of linear system is always uprev
-        linprob = LinearProblem(P, _vec(uprev); u0 = _vec(linsolve_u))
+        linprob = LinearProblem(P, _vec(uprev))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -300,7 +296,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve_rhs = zero(u)
         # We use P to store the evaluation of the PDS 
         # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P, _vec(linsolve_rhs); u0 = _vec(linsolve_u))
+        linprob = LinearProblem(P, _vec(linsolve_rhs))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
@@ -318,7 +314,7 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack P, D, σ, linsolve, linsolve_rhs = cache
     @unpack small_constant = cache.tab
 
-    # We use P to store the last evaluation of the PDS 
+    # We use P to store the evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
 
     # We require the users to set unused entries to zero!
@@ -350,7 +346,7 @@ function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = fa
     @unpack P, σ, linsolve = cache
     @unpack small_constant = cache.tab
 
-    # We use P to store the last evaluation of the PDS 
+    # We use P to store the evaluation of the PDS 
     # as well as to store the system matrix of the linear system  
 
     # We require the users to set unused entries to zero!
@@ -420,6 +416,10 @@ second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
 Torlo, Öffner and Ranocha (2022).
+
+The scheme was introduced by Kopecz and Meister for conservative production-destruction systems. 
+For nonconservative production–destruction systems we use the straight forward extension
+analogous to `MPE`.
 
 This modified Patankar-Runge-Kutta method requires the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
@@ -509,25 +509,6 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
-    #=
-    integrator.kshortsize = 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsalfirst = zero(integrator.u)
-    integrator.fsallast = integrator.fsalfirst
-    integrator.k[1] = integrator.fsallast
-
-    # TODO: Do we need to set fsalfirst here? The other non-FSAL caches
-    #       in OrdinaryDiffEq.jl use something like
-    #         integrator.fsalfirst = integrator.f(integrator.uprev, integrator,
-    #                                             integrator.t) # Pre-start fsal
-    #         integrator.stats.nf += 1
-    #         integrator.fsallast = zero(integrator.fsalfirst)
-    #         integrator.k[1] = integrator.fsalfirst
-    #       Do we need something similar here to get a cache for k values
-    #       with the correct units?
-    =#
 end
 
 function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
@@ -558,9 +539,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     end
 
     # solve linear system
-    sol = solve(linprob, alg.linsolve,
-                alias_A = false, alias_b = false,
-                assumptions = LinearSolve.OperatorAssumptions(true))
+    sol = solve(linprob, alg.linsolve)
     u = sol.u
     integrator.stats.nsolve += 1
 
@@ -591,16 +570,13 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     end
 
     # solve linear system
-    sol = solve(linprob, alg.linsolve,
-                alias_A = false, alias_b = false,
-                assumptions = LinearSolve.OperatorAssumptions(true))
+    sol = solve(linprob, alg.linsolve)
     u = sol.u
     integrator.stats.nsolve += 1
 
     # copied from perform_step for HeunConstantCache
     # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
     # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
-    # TODO check if this can be shortened
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -609,37 +585,26 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     integrator.u = u
 end
 
-struct MPRK22Cache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
+struct MPRK22Cache{uType, PType, tabType, F} <:
        OrdinaryDiffEqMutableCache
     tmp::uType
-    atmp::uType
-    k::rateType
-    fsalfirst::rateType
     P::PType
     P2::PType
     D::uType
     D2::uType
     σ::uType
     tab::tabType
-    thread::Thread
-    linsolve_rhs::uType  # stores rhs of linear system
     linsolve::F
-    weight::uNoUnitsType
 end
 
-struct MPRK22ConservativeCache{uType, rateType, PType, tabType, Thread, F, uNoUnitsType} <:
+struct MPRK22ConservativeCache{uType, PType, tabType, F} <:
        OrdinaryDiffEqMutableCache
     tmp::uType
-    atmp::uType
-    k::rateType
-    fsalfirst::rateType
     P::PType
     P2::PType
     σ::uType
     tab::tabType
-    thread::Thread
     linsolve::F
-    weight::uNoUnitsType
 end
 
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -648,66 +613,47 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, b1, b2 = get_constant_parameters(alg)
     tab = MPRK22ConstantCache(a21, b1, b2, floatmin(uEltypeNoUnits))
-
     tmp = zero(u)
-
+    P = p_prototype(u, f)
+    # We use P2 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
     P2 = p_prototype(u, f)
-    linsolve_tmp = zero(u)
-    weight = similar(u, uEltypeNoUnits)
-    recursivefill!(weight, false)
+    σ = zero(u)
 
     if f isa ConservativePDSFunction
-        # We use P2 to store the last evaluation of the PDS 
-        # as well as to store the system matrix of the linear system
-        linprob = LinearProblem(P2, _vec(uprev); u0 = _vec(tmp))
+        # The right hand side of the linear system is always uprev. But using
+        # tmp instead of uprev for the rhs we allows'alias_b=true'. uprev must
+        # not be altered, since it is needed to compute the adaptive time step
+        # size. 
+        linprob = LinearProblem(P2, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPRK22ConservativeCache(tmp,
-                                zero(u), # atmp
-                                zero(rate_prototype), # k
-                                zero(rate_prototype), #fsalfirst
-                                p_prototype(u, f), # P
-                                P2, # P2
-                                zero(u), # σ
+        MPRK22ConservativeCache(tmp, P, P2, σ,
                                 tab, #MPRK22ConstantCache
-                                False(), #thread
-                                linsolve, weight)
+                                linsolve)
     elseif f isa PDSFunction
-        linsolve_rhs = zero(u)
-        linprob = LinearProblem(P2, _vec(linsolve_rhs); u0 = _vec(tmp))
+        linprob = LinearProblem(P2, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPRK22Cache(tmp,
-                    zero(u), # atmp
-                    zero(rate_prototype), # k
-                    zero(rate_prototype), #fsalfirst
-                    p_prototype(u, f), # P
-                    P2, # P2
+        MPRK22Cache(tmp, P, P2,
                     zero(u), # D
                     zero(u), # D2
-                    zero(u), # σ
+                    σ,
                     tab, #MPRK22ConstantCache 
-                    False(), #thread
-                    linsolve_rhs, linsolve, weight)
+                    linsolve)
     else
         throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
     end
 end
 
 function initialize!(integrator, cache::Union{MPRK22Cache, MPRK22ConservativeCache})
-    @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
-    integrator.kshortsize = 1
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
 end
 
 function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, atmp, P, P2, D, D2, σ, linsolve_rhs, thread, weight = cache
+    @unpack tmp, P, P2, D, D2, σ, linsolve = cache
     @unpack a21, b1, b2, small_constant = cache.tab
 
     # We use P2 to store the last evaluation of the PDS 
@@ -722,18 +668,18 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=uprev + small_constant
 
-    linsolve_rhs .= uprev
-    @inbounds for i in eachindex(linsolve_rhs)
-        linsolve_rhs[i] += dt * P2[i, i]
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P2[i, i]
     end
 
     build_mprk_matrix!(P2, P2, σ, dt, D2)
 
-    # Same as linres = P2 \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P2, b = _vec(linsolve_rhs),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    # Same as linres = P2 \ linsolve_rhs
+    linsolve.A = P2
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 
@@ -751,50 +697,54 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @.. broadcast=false P2=b1 * P + b2 * P2
     @.. broadcast=false D2=b1 * D + b2 * D2
 
-    linsolve_rhs .= uprev
-    @inbounds for i in eachindex(linsolve_rhs)
-        linsolve_rhs[i] += dt * P2[i, i]
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P2[i, i]
     end
 
     build_mprk_matrix!(P2, P2, σ, dt, D2)
 
     # Same as linres = P2 \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P2, b = _vec(linsolve_rhs),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    linsolve.A = P2
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false tmp=u - σ
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+    # Now σ stores the error estimate
+    @.. broadcast=false σ=u - σ
+
+    # Now tmp stores error residuals
+    calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol, integrator.opts.internalnorm, t,
-                         thread)
-    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
 function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, atmp, P, P2, σ, thread, weight = cache
+    @unpack tmp, P, P2, σ, linsolve = cache
     @unpack a21, b1, b2, small_constant = cache.tab
+
+    # Set right hand side of linear system
+    tmp .= uprev
 
     # We use P2 to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system
-
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
     @.. broadcast=false P2=a21 * P
 
-    # avoid division by zero due to zero Patankar weights
+    # Avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=uprev + small_constant
 
     build_mprk_matrix!(P2, P2, σ, dt)
 
     # Same as linres = P2 \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P2, b = _vec(uprev),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    linsolve.A = P2
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 
@@ -813,18 +763,20 @@ function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step =
     build_mprk_matrix!(P2, P2, σ, dt)
 
     # Same as linres = P2 \ uprev
-    linres = dolinsolve(integrator, cache.linsolve;
-                        A = P2, b = _vec(uprev),
-                        du = integrator.fsalfirst, u = u, p = p, t = t,
-                        weight = weight)
+    linsolve.A = P2
+    linres = solve!(linsolve)
+
     u .= linres
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false tmp=u - σ
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+    # Now σ stores the error estimate
+    @.. broadcast=false σ=u - σ
+
+    # Now tmp stores error residuals
+    calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol, integrator.opts.internalnorm, t,
-                         thread)
-    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
 ### MPRK43 #####################################################################################
