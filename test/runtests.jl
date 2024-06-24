@@ -418,6 +418,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
                     (; kwargs...) -> MPRK43II(0.5; kwargs...),
                     (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...))
+
             for alg in algs
                 # Check different linear solvers
                 dt = 0.25
@@ -523,7 +524,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
-        #TODO: Add 2nd and 3rd order schemes (not yet implemented)
         @testset "Different matrix types (nonconservative)" begin
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -856,7 +856,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
-    #=
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
     @testset "Examples" begin
@@ -880,5 +879,4 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
     end
-    =#
 end;
