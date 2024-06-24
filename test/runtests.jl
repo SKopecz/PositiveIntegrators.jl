@@ -592,11 +592,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             dt = 0.25
 
             @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0)
-                                        #TODO: Add MPRK43 (not implemented yet)
-                                        #MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        #MPRK43II(2.0 / 3.0), MPRK43II(0.5)
-                                        )
+                                        MPRK22(0.5), MPRK22(1.0),
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -721,11 +719,23 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Check convergence of 3rd order MPRK schemes for nonconservative PDS (not yet implemented)
+            dts = 0.5 .^ (6:11)
+            problems = (prob_pds_linmod_nonconservative,
+                        prob_pds_linmod_nonconservative_inplace)
+            for alg in [
+                    MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75),
+                    MPRK43II(0.5),
+                    MPRK43II(2.0 / 3.0),
+                ], prob in problems
+                eoc = experimental_order_of_convergence(prob, alg, dts)
+                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            end
         end
 
         @testset "Interpolation tests (conservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
             dt = 0.5^6
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -740,7 +750,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
 
         @testset "Interpolation tests (nonconservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
             dt = 0.5^6
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -833,13 +844,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
             prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
 
-            #=
-            TODO: Add MPRK43 schemes
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
-            MPRK43I(1.0, 0.5),MPRK43I(0.5, 0.75),MPRK43II(0.5),
-            MPRK43II(2.0 / 3.0))
-            =#
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
+                    MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
+                    MPRK43II(2.0 / 3.0))
 
             dt = 1e-3
             for alg in algs
