@@ -848,13 +848,13 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             dt = 1e-3
             for alg in algs
                 sol1 = solve(prob_ip, alg; dt = dt, adaptive = false)
-                @test !any(isnan.(sol1.u[end]))
+                @test !any(isnan, sol1.u[end])
                 sol2 = solve(prob_ip_2, alg; dt = dt, adaptive = false)
-                @test !any(isnan.(sol2.u[end]))
+                @test !any(isnan, sol2.u[end])
                 sol3 = solve(prob_oop, alg; dt = dt, adaptive = false)
-                @test !any(isnan.(sol3.u[end]))
+                @test !any(isnan, sol3.u[end])
                 sol4 = solve(prob_oop_2, alg; dt = dt, adaptive = false)
-                @test !any(isnan.(sol4.u[end]))
+                @test !any(isnan, sol4.u[end])
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
             end
         end
