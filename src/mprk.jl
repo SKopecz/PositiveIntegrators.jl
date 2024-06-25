@@ -399,8 +399,8 @@ end
 """
     MPRK22(α; [linsolve = ...])
 
-The second-order modified Patankar-Runge-Kutta algorithm for 
-production-destruction systems. This one-step, two-stage method is
+A family of second-order modified Patankar-Runge-Kutta algorithms for 
+production-destruction systems. Each member of this family is an one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
@@ -763,7 +763,7 @@ end
 """
     MPRK43I(α, β; [linsolve = ...])
 
-A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
+A family of third-order modified Patankar-Runge-Kutta schemes for
 production-destruction systems, which is based on the two-parameter family of third order explicit Runge--Kutta schemes.
 Each member of this family is a one-step method with four-stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
