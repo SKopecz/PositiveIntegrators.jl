@@ -851,7 +851,7 @@ end
 A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
 production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with 
 non-negative Runge--Kutta coefficients.
-Each member of this family is a one-step method with four-stages which is
+Each member of this family is a one-step method with four stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well. The parameter `γ` must satisfy
 `3/8 ≤ γ ≤ 3/4`. 
