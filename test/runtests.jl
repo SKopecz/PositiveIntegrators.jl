@@ -722,12 +722,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
-            for alg in [
-                    MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0),
-                ], prob in problems
+            algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+            for alg in algs, prob in problems
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
