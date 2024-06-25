@@ -773,7 +773,7 @@ see Kopecz and Meister (2018) for details.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems. 
 For nonconservative production–destruction systems we use the straight forward extension
-analogous to `MPE`.
+analogous to [`MPE`](@ref).
 
 These modified Patankar-Runge-Kutta methods require the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
