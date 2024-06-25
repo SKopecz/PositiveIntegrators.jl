@@ -602,7 +602,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     if f isa ConservativePDSFunction
         # The right hand side of the linear system is always uprev. But using
-        # tmp instead of uprev for the rhs we allows'alias_b=true'. uprev must
+        # tmp instead of uprev for the rhs we allow `alias_b=true`. uprev must
         # not be altered, since it is needed to compute the adaptive time step
         # size. 
         linprob = LinearProblem(P2, _vec(tmp))
