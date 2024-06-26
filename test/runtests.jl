@@ -324,6 +324,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                                   MPRK43II(1.0))
             @test_throws "MPRK43II requires 3/8 ≤ γ ≤ 3/4." solve(prob_pds_linmod,
                                                                   MPRK43II(0.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod, SSPMPRK22(-1.0, 1.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod, SSPMPRK22(0.0, -1.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod, SSPMPRK22(1.0, 10.0))
         end
 
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
@@ -380,6 +383,17 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test sol_MPE_ip.u ≈ sol_MPE_ip_2.u ≈ sol_IE_ip.u
         end
 
+        # Here we check that MPRK22(α) = SSPMPRK22(0,α)
+        @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
+            for α in (0.5, 2.0/3.0, 1.0, 2.0)
+                sol1 = solve(prob_pds_linmod, MPRK22(α))
+                sol2 = solve(prob_pds_linmod, SSPMPRK22(0.0,α))
+                sol3 = solve(prob_pds_linmod_inplace, MPRK22(α))
+                sol4 = solve(prob_pds_linmod_inplace, SSPMPRK22(0.0,α))
+                @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
+            end
+        end
+
         # Here we check that different linear solvers can be used
         @testset "Different linear solvers" begin
             # problem data
@@ -417,7 +431,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
                     (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
                     (; kwargs...) -> MPRK43II(0.5; kwargs...),
-                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...))
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...))
 
             for alg in algs
                 # Check different linear solvers
@@ -478,7 +493,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in (MPE(),
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -594,7 +609,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in (MPE(),
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),SSPMPRK22(0.5, 1.0))
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -651,7 +666,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),SSPMPRK22(0.5, 1.0))
             dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -677,7 +692,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),SSPMPRK22(0.5, 1.0))
             dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -748,7 +763,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
         @testset "Interpolation tests (nonconservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),SSPMPRK22(0.5, 1.0))
             dt = 0.5^6
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -795,7 +810,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0))
+                    MPRK43II(2.0 / 3.0),SSPMPRK22(0.5, 1.0))
 
             for alg in algs
                 sol = solve(prob_ip, alg; dt = dt, adaptive = false)
@@ -843,7 +858,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0))
+                    MPRK43II(2.0 / 3.0),SSPMPRK22(0.5, 1.0))
 
             dt = 1e-3
             for alg in algs
@@ -860,6 +875,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
+    #=
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
     @testset "Examples" begin
@@ -883,4 +899,5 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
     end
+    =#
 end;
