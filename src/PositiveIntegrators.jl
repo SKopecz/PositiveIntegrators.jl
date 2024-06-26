@@ -59,11 +59,15 @@ export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
 # production-destruction systems
 include("proddest.jl")
 
-# modified Patankar-Runge-Kutta (MPRK) methods
-include("mprk.jl")
-
+#TODO: sspmprk.jl must be included before mprk.jl since the interpolation specializations
+# at the end of mprk.jl need to know SSPMPRK22ConstantCache.
+# It would probably be a good idea to separate schemes and interpolations. 
+#
 # modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
 include("sspmprk.jl")
+
+# modified Patankar-Runge-Kutta (MPRK) methods
+include("mprk.jl")
 
 # predefined PDS problems
 include("PDSProblemLibrary.jl")
