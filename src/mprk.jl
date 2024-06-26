@@ -1349,13 +1349,15 @@ end
 function interp_summary(::Type{cacheType},
                         dense::Bool) where {
                                             cacheType <:
-                                            Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,                                                
+                                            Union{MPRK22ConstantCache, MPRK22Cache,
+                                                  SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                                   MPRK43ConstantCache, MPRK43Cache}}
     "1st order linear"
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                       SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                        MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{0}},
@@ -1364,7 +1366,8 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                        SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                         MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{0}},
@@ -1373,7 +1376,8 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                       SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                        MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{1}},
@@ -1382,7 +1386,8 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                                        SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                         MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{1}},
