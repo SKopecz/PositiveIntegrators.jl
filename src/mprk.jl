@@ -553,9 +553,9 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     u = sol.u
     integrator.stats.nsolve += 1
 
-    # copied from perform_step for HeunConstantCache
-    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
-    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
+    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation
+    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
+    # TODO: Find first order approximation if a21≠ 1.0.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -693,6 +693,9 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
+    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation
+    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
+    # TODO: Find first order approximation if a21≠ 1.0.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
@@ -750,6 +753,9 @@ function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step =
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
+    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation    
+    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
+    # TODO: Find first order approximation if a21≠ 1.0.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
@@ -1343,13 +1349,13 @@ end
 function interp_summary(::Type{cacheType},
                         dense::Bool) where {
                                             cacheType <:
-                                            Union{MPRK22ConstantCache, MPRK22Cache,
+                                            Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,                                                
                                                   MPRK43ConstantCache, MPRK43Cache}}
     "1st order linear"
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                        MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{0}},
@@ -1358,7 +1364,7 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                         MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{0}},
@@ -1367,7 +1373,7 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                          cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                        MPRK43ConstantCache, MPRK43Cache},
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{1}},
@@ -1376,7 +1382,7 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
+                           cache::Union{MPRK22ConstantCache, MPRK22Cache,SSPMPRK22ConstantCache, SSPMPRK22Cache,
                                         MPRK43ConstantCache, MPRK43Cache},
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{1}},
