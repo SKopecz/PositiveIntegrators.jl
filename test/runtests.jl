@@ -324,6 +324,10 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                                   MPRK43II(1.0))
             @test_throws "MPRK43II requires 3/8 ≤ γ ≤ 3/4." solve(prob_pds_linmod,
                                                                   MPRK43II(0.0))
+            @test_throws "SSPMPRK22 can only be applied to production-destruction systems" solve(prob_oop,
+                                                                  SSPMPRK22(0.5,1.0))
+            @test_throws "SSPMPRK22 can only be applied to production-destruction systems" solve(prob_ip,
+                                                                  SSPMPRK22(0.5,1.0))
             @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod,
                                                                                           SSPMPRK22(-1.0,
                                                                                                     1.0))
@@ -884,7 +888,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
-    #=
+    
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
     @testset "Examples" begin
@@ -908,5 +912,5 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
     end
-    =#
+    
 end;
