@@ -3,7 +3,7 @@
     SSPMPRK22(α, β; [linsolve = ...])
 
 A family of second-order modified Patankar-Runge-Kutta algorithms for 
-production-destruction systems. Each member of this family is an one-step, two-stage method which is
+production-destruction systems. Each member of this family is a one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameters `α` and `β` are described by Huang and Shu (2019) and
 studied by Huang, Izgin, Kopecz, Meister and Shu (2023). 
@@ -227,7 +227,7 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                        tab, #MPRK22ConstantCache 
                        linsolve)
     else
-        throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
+        throw(ArgumentError("SSPMPRK22 can only be applied to production-destruction systems"))
     end
 end
 
@@ -370,3 +370,511 @@ function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_ste
                          False())
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
+
+"""
+    SSPMPRK43([linsolve = ...])
+
+A third-order modified Patankar-Runge-Kutta algorithm for 
+production-destruction systems. This scheme is a one-step, two-stage method which is
+third-order accurate, unconditionally positivity-preserving, and linearly
+implicit. The scheme is described by Huang, Zhao and Shu (2019) and
+studied by Huang, Izgin, Kopecz, Meister and Shu (2023). 
+The difference to [`MPRK43I`](@ref) or [`MPRK43II`](@ref) is that this method is based on the SSP formulation of 
+an explicit third-order Runge-Kutta method. 
+
+The scheme was introduced by Huang, Zhao and Shu for conservative production-destruction systems. 
+For nonconservative production–destruction systems we use the straight forward extension
+analogous to [`MPE`](@ref).
+
+This modified Patankar-Runge-Kutta method requires the special structure of a
+[`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
+
+You can optionally choose the linear solver to be used by passing an
+algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
+as keyword argument `linsolve`.
+
+## References
+
+- Juntao Huang, Weifeng Zhao and Chi-Wang Shu.
+  "A Third-Order Unconditionally Positivity-Preserving Scheme for 
+  Production–Destruction Equations with Applications to Non-equilibrium Flows."
+  Journal of Scientific Computing 79 (2019): 1015–1056
+  [DOI: 10.1007/s10915-018-0881-9](https://doi.org/10.1007/s10915-018-0881-9)
+- Juntao Huang, Thomas Izgin, Stefan Kopecz, Andreas Meister and Chi-Wang Shu.
+  "On the stability of strong-stability-preserving modified Patankar-Runge-Kutta schemes."
+  ESAIM: Mathematical Modelling and Numerical Analysis 57 (2023):1063–1086
+  [DOI: 10.1051/m2an/2023005](https://doi.org/10.1051/m2an/2023005)
+"""
+struct SSPMPRK43{F} <: OrdinaryDiffEqAdaptiveAlgorithm
+    linsolve::F
+end
+
+function SSPMPRK43(; linsolve = LUFactorization())
+    SSPMPRK43{typeof(linsolve)}(linsolve)
+end
+
+alg_order(::SSPMPRK43) = 3
+isfsal(::SSPMPRK43) = false
+
+function get_constant_parameters(alg::SSPMPRK43)
+    n1 = 2.569046025732011E-01
+    n2 = 7.430953974267989E-01
+    z = 6.288938077828750E-01
+    η1 = 3.777285888379173E-02
+    η2 = 1.0 / 3.0
+    η3 = 1.868649805549811E-01
+    η4 = 2.224876040351123
+    s = 5.721964308755304
+
+    α10 = 1.0
+    α20 = 9.2600312554031827E-01
+    α21 = 7.3996874459681783E-02
+    α30 = 7.0439040373427619E-01
+    α31 = 2.0662904223744017E-10
+    α32 = 2.9560959605909481E-01
+    β10 = 4.7620819268131703E-01
+    β20 = 7.7545442722396801E-02
+    β21 = 5.9197500149679749E-01
+    β30 = 2.0044747790361456E-01
+    β31 = 6.8214380786704851E-10
+    β32 = 5.9121918658514827E-01
+
+    c3 = β20 + α21 * β10 + β21
+
+    return n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30,
+           β31, β32, c3
+end
+
+struct SSPMPRK43ConstantCache{T} <: OrdinaryDiffEqConstantCache
+    n1::T
+    n2::T
+    z::T
+    η1::T
+    η2::T
+    η3::T
+    η4::T
+    s::T
+    α10::T
+    α20::T
+    α21::T
+    α30::T
+    α31::T
+    α32::T
+    β10::T
+    β20::T
+    β21::T
+    β30::T
+    β31::T
+    β32::T
+    c3::T
+    small_constant::T
+end
+
+# Out-of-place
+function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    if !(f isa PDSFunction || f isa ConservativePDSFunction)
+        throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
+    end
+    n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10,
+                           β20, β21, β30,
+                           β31, β32, c3, floatmin(uEltypeNoUnits))
+end
+
+function initialize!(integrator, cache::SSPMPRK43ConstantCache)
+end
+
+function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = false)
+    @unpack alg, t, dt, uprev, f, p = integrator
+    @unpack n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache
+
+    f = integrator.f
+
+    # evaluate production matrix
+    P = f.p(uprev, p, t)
+    Ptmp = β10 * P
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    σ = add_small_constant(uprev, small_constant)
+
+    # build linear system matrix and rhs
+    if f isa PDSFunction
+        d = f.d(uprev, p, t)
+        dtmp = β10 * d
+        rhs = α10 * uprev + dt * diag(Ptmp)
+        M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
+    else
+        rhs = α10 * uprev
+        M = build_mprk_matrix(Ptmp, σ, dt)
+    end
+
+    # solve linear system
+    linprob = LinearProblem(M, rhs)
+    sol = solve(linprob, alg.linsolve)
+    u2 = sol.u
+    u = u2
+    integrator.stats.nsolve += 1
+
+    # compute Patankar weight denominator
+    ρ = n1 * u + n2 * u .^ 2 ./ σ
+    # avoid division by zero due to zero Patankar weights
+    ρ = add_small_constant(ρ, small_constant)
+
+    P2 = f.p(u, p, t + β10 * dt)
+    Ptmp = β20 * P + β21 * P2
+    integrator.stats.nf += 1
+
+    # build linear system matrix and rhs
+    if f isa PDSFunction
+        d2 = f.d(u, p, t + β10 * dt)  # evaluate nonconservative destruction terms
+        dtmp = β20 * d + β21 * d2
+        rhs = α20 * uprev + α21 * u2 + dt * diag(Ptmp)
+        M = build_mprk_matrix(Ptmp, ρ, dt, dtmp)
+
+    else
+        rhs = α20 * uprev + α21 * u2
+        M = build_mprk_matrix(Ptmp, ρ, dt)
+    end
+
+    # solve linear system
+    linprob = LinearProblem(M, rhs)
+    sol = solve(linprob, alg.linsolve)
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    # compute Patankar weight denominator
+    σ = σ .^ (1 - s) .* u2 .^ s
+    # avoid division by zero due to zero Patankar weights
+    σ = add_small_constant(σ, small_constant)
+
+    Ptmp = η3 * P + η4 * P2
+
+    # build linear system matrix and rhs
+    if f isa PDSFunction
+        dtmp = η3 * d + η4 * d2
+        rhs = η1 * uprev + η2 * u2 + dt * diag(Ptmp)
+        M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
+    else
+        rhs = η1 * uprev + η2 * u2
+        M = build_mprk_matrix(Ptmp, σ, dt)
+    end
+
+    # solve linear system
+    linprob = LinearProblem(M, rhs)
+    sol = solve(linprob, alg.linsolve)
+    σ = sol.u
+    integrator.stats.nsolve += 1
+
+    # compute Patankar weight denominator
+    σ = σ + z .* uprev .* u ./ rho
+    # avoid division by zero due to zero Patankar weights
+    σ = add_small_constant(σ, small_constant)
+
+    P3 = f.p(u, p, t + c3 * dt)
+    Ptmp = β30 * P + β31 * P2 + β32 * P3
+    integrator.stats.nf += 1
+
+    # build linear system matrix
+    if f isa PDSFunction
+        d3 = f.d(u, p, t + c3 * dt)  # evaluate nonconservative destruction terms
+        dtmp = β30 * d + β31 * d2 + β30 * d3
+        rhs = α30 * uprev + α31 * u2 + α32 * u + dt * diag(Ptmp)
+        M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
+    else
+        rhs = α30 * uprev + α31 * u2 + α32 * u
+        M = build_mprk_matrix(Ptmp, σ, dt)
+    end
+
+    # solve linear system
+    linprob = LinearProblem(M, rhs)
+    sol = solve(linprob, alg.linsolve)
+    u = sol.u
+    integrator.stats.nsolve += 1
+
+    #TODO: Figure out if a second order approximation of the solution
+    # is hidden somewhere.
+    #=
+    tmp = u - σ
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+                               integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    =#
+
+    integrator.u = u
+end
+
+#=
+struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+    tmp::uType
+    tmp2::uType
+    P::PType
+    P2::PType
+    P3::PType
+    D::uType
+    D2::uType
+    D3::uType
+    σ::uType
+    tab::tabType
+    linsolve::F
+end
+
+struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+    tmp::uType
+    tmp2::uType
+    P::PType
+    P2::PType
+    P3::PType
+    σ::uType
+    tab::tabType
+    linsolve::F
+end
+
+# In-place
+function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
+    tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
+                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+    tmp = zero(u)
+    tmp2 = zero(u)
+    P = p_prototype(u, f)
+    P2 = p_prototype(u, f)
+    # We use P3 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+    P3 = p_prototype(u, f)
+    σ = zero(u)
+
+    if f isa ConservativePDSFunction
+        # The right hand side of the linear system is always uprev. But using
+        # tmp instead of uprev for the rhs we allow `alias_b=true`. uprev must
+        # not be altered, since it is needed to compute the adaptive time step
+        # size. 
+        linprob = LinearProblem(P3, _vec(tmp))
+        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                        assumptions = LinearSolve.OperatorAssumptions(true))
+        MPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, tab, linsolve)
+    elseif f isa PDSFunction
+        D = zero(u)
+        D2 = zero(u)
+        D3 = zero(u)
+
+        linprob = LinearProblem(P3, _vec(tmp))
+        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                        assumptions = LinearSolve.OperatorAssumptions(true))
+
+        MPRK43Cache(tmp, tmp2, P, P2, P3, D, D2, D3, σ, tab, linsolve)
+    else
+        throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
+    end
+end
+
+function initialize!(integrator, cache::Union{MPRK43Cache, MPRK43ConservativeCache})
+end
+
+function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, tmp2, P, P2, P3, D, D2, D3, σ, linsolve = cache
+    @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
+
+    # We use P3 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+
+    f.p(P, uprev, p, t) # evaluate production terms
+    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    @.. broadcast=false P3=a21 * P
+    @.. broadcast=false D3=a21 * D
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=uprev + small_constant
+
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P3[i, i]
+    end
+
+    build_mprk_matrix!(P3, P3, σ, dt, D3)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    if !(q1 ≈ q2)
+        tmp2 .= u #u2 in out-of-place version
+    end
+    integrator.stats.nsolve += 1
+
+    @.. broadcast=false σ=σ^(1 - q1) * u^q1
+    @.. broadcast=false σ=σ + small_constant
+
+    f.p(P2, u, p, t + c2 * dt) # evaluate production terms
+    f.d(D2, u, p, t + c2 * dt) # evaluate nonconservative destruction terms
+    @.. broadcast=false P3=a31 * P + a32 * P2
+    @.. broadcast=false D3=a31 * D + a32 * D2
+    integrator.stats.nf += 1
+
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P3[i, i]
+    end
+
+    build_mprk_matrix!(P3, P3, σ, dt, D3)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    if !(q1 ≈ q2)
+        @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
+        @.. broadcast=false σ=σ + small_constant
+    end
+
+    @.. broadcast=false P3=beta1 * P + beta2 * P2
+    @.. broadcast=false D3=beta1 * D + beta2 * D2
+
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P3[i, i]
+    end
+
+    build_mprk_matrix!(P3, P3, σ, dt, D3)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
+
+    σ .= linres
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=σ + small_constant
+
+    f.p(P3, u, p, t + c3 * dt) # evaluate production terms
+    f.d(D3, u, p, t + c3 * dt) # evaluate nonconservative destruction terms
+    @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    @.. broadcast=false D3=b1 * D + b2 * D2 + b3 * D3
+    integrator.stats.nf += 1
+
+    # tmp holds the right hand side of the linear system
+    tmp .= uprev
+    @inbounds for i in eachindex(tmp)
+        tmp[i] += dt * P3[i, i]
+    end
+
+    build_mprk_matrix!(P3, P3, σ, dt, D3)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    # Now tmp stores the error estimate
+    @.. broadcast=false tmp=u - σ
+
+    # Now tmp2 stores error residuals
+    calculate_residuals!(tmp2, tmp, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp2, t)
+end
+
+function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, tmp2, P, P2, P3, σ, linsolve = cache
+    @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
+
+    # Set right hand side of linear system
+    tmp .= uprev
+
+    # We use P3 to store the last evaluation of the PDS 
+    # as well as to store the system matrix of the linear system
+    f.p(P, uprev, p, t) # evaluate production terms
+    @.. broadcast=false P3=a21 * P
+    integrator.stats.nf += 1
+
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=uprev + small_constant
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    if !(q1 ≈ q2)
+        tmp2 .= u #u2 in out-of-place version
+    end
+    integrator.stats.nsolve += 1
+
+    @.. broadcast=false σ=σ^(1 - q1) * u^q1
+    @.. broadcast=false σ=σ + small_constant
+
+    f.p(P2, u, p, t + c2 * dt) # evaluate production terms
+    @.. broadcast=false P3=a31 * P + a32 * P2
+    integrator.stats.nf += 1
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    if !(q1 ≈ q2)
+        @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
+        @.. broadcast=false σ=σ + small_constant
+    end
+
+    @.. broadcast=false P3=beta1 * P + beta2 * P2
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
+
+    σ .= linres
+    # avoid division by zero due to zero Patankar weights
+    @.. broadcast=false σ=σ + small_constant
+
+    f.p(P3, u, p, t + c3 * dt) # evaluate production terms
+    @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    integrator.stats.nf += 1
+
+    build_mprk_matrix!(P3, P3, σ, dt)
+
+    # Same as linres = P3 \ tmp
+    linsolve.A = P3
+    linres = solve!(linsolve)
+
+    u .= linres
+    integrator.stats.nsolve += 1
+
+    # Now tmp stores the error estimate
+    @.. broadcast=false tmp=u - σ
+
+    # Now tmp2 stores error residuals
+    calculate_residuals!(tmp2, tmp, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp2, t)
+end
+=#
