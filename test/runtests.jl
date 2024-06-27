@@ -339,6 +339,10 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod,
                                                                                           SSPMPRK22(1.0,
                                                                                                     10.0))
+            @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_oop,
+                                                                                                 SSPMPRK43())
+            @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_ip,
+                                                                                                 SSPMPRK43())
         end
 
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
@@ -444,7 +448,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
                     (; kwargs...) -> MPRK43II(0.5; kwargs...),
                     (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
-                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...))
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
 
             for alg in algs
                 # Check different linear solvers
@@ -506,7 +511,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0))
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -623,7 +628,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0))
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -734,12 +739,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             dts = 0.5 .^ (6:11)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
-            for alg in [
-                    MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0),
-                ], prob in problems
+            algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
+            for alg in algs, prob in problems
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
             end
@@ -752,7 +754,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
             for alg in algs, prob in problems
                 eoc = experimental_order_of_convergence(prob, alg, dts)
                 @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
@@ -761,7 +763,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
         @testset "Interpolation tests (conservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
+                    SSPMPRK22(0.5, 1.0), SSPMPRK43())
             dt = 0.5^6
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -778,7 +781,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         @testset "Interpolation tests (nonconservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
                     MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
-                    SSPMPRK22(0.5, 1.0))
+                    SSPMPRK22(0.5, 1.0), SSPMPRK43())
             dt = 0.5^6
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -825,7 +828,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0))
+                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
 
             for alg in algs
                 sol = solve(prob_ip, alg; dt = dt, adaptive = false)
@@ -873,7 +876,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0))
+                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
 
             dt = 1e-3
             for alg in algs
