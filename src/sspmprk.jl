@@ -556,8 +556,11 @@ function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = 
     # build linear system matrix and rhs
     if f isa PDSFunction
         dtmp = η3 * d + η4 * d2
+
         rhs = η1 * uprev + η2 * u2 + dt * diag(Ptmp)
+
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
+
     else
         rhs = η1 * uprev + η2 * u2
         M = build_mprk_matrix(Ptmp, σ, dt)
@@ -581,7 +584,7 @@ function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = 
     # build linear system matrix
     if f isa PDSFunction
         d3 = f.d(u, p, t + c3 * dt)  # evaluate nonconservative destruction terms
-        dtmp = β30 * d + β31 * d2 + β30 * d3
+        dtmp = β30 * d + β31 * d2 + β32 * d3
         rhs = α30 * uprev + α31 * u2 + α32 * u + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
     else
@@ -752,6 +755,7 @@ function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
     integrator.stats.nsolve += 1
 
     σ .= linres
+
     @.. broadcast=false σ=σ + z * uprev * u / ρ
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=σ + small_constant
