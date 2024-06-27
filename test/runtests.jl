@@ -340,9 +340,11 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                                                           SSPMPRK22(1.0,
                                                                                                     10.0))
             @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_oop,
-                                                                                                 SSPMPRK43())
+                                                                                                 SSPMPRK43(),
+                                                                                                 dt = 0.1)
             @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_ip,
-                                                                                                 SSPMPRK43())
+                                                                                                 SSPMPRK43(),
+                                                                                                 dt = 0.1)
         end
 
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
