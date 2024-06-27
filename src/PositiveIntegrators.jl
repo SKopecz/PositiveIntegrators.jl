@@ -48,7 +48,7 @@ export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22, MPRK43I, MPRK43II
-export SSPMPRK22
+export SSPMPRK22, SSPMPRK43
 
 export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
