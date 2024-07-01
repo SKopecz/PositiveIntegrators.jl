@@ -172,7 +172,7 @@ function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = 
 end
 
 struct SSPMPRK22Cache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+       MPRKCache
     tmp::uType
     P::PType
     P2::PType
@@ -184,7 +184,7 @@ struct SSPMPRK22Cache{uType, PType, tabType, F} <:
 end
 
 struct SSPMPRK22ConservativeCache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+       MPRKCache
     tmp::uType
     P::PType
     P2::PType
@@ -487,10 +487,12 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
     end
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    # small_constant = floatmin(uEltypeNoUnits)
+    small_constant = 1e-50
     SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31,
                            α32, β10,
                            β20, β21, β30,
-                           β31, β32, c3, floatmin(uEltypeNoUnits))
+                           β31, β32, c3, small_constant)
 end
 
 function initialize!(integrator, cache::SSPMPRK43ConstantCache)
@@ -619,7 +621,7 @@ function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43Cache{uType, PType, tabType, F} <: MPRKCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -634,7 +636,7 @@ struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -652,9 +654,11 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    # small_constant = floatmin(uEltypeNoUnits)
+    small_constant = 1e-50
     tab = SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30,
                                  α31, α32,
-                                 β10, β20, β21, β30, β31, β32, c3, floatmin(uEltypeNoUnits))
+                                 β10, β20, β21, β30, β31, β32, c3, small_constant)
     tmp = zero(u)
     tmp2 = zero(u)
     P = p_prototype(u, f)

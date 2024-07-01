@@ -247,7 +247,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     integrator.u = u
 end
 
-struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPECache{PType, uType, tabType, F} <: MPRKCache
     P::PType
     D::uType
     σ::uType
@@ -256,7 +256,7 @@ struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct MPEConservativeCache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPEConservativeCache{PType, uType, tabType, F} <: MPRKCache
     P::PType
     σ::uType
     tab::tabType
@@ -565,7 +565,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 end
 
 struct MPRK22Cache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+       MPRKCache
     tmp::uType
     P::PType
     P2::PType
@@ -577,7 +577,7 @@ struct MPRK22Cache{uType, PType, tabType, F} <:
 end
 
 struct MPRK22ConservativeCache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+       MPRKCache
     tmp::uType
     P::PType
     P2::PType
@@ -1073,7 +1073,7 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     integrator.u = u
 end
 
-struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPRK43Cache{uType, PType, tabType, F} <: MPRKCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -1087,7 +1087,7 @@ struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -1348,18 +1348,12 @@ end
 #######################################################################################
 # interpolation specializations
 function interp_summary(::Type{cacheType},
-                        dense::Bool) where {
-                                            cacheType <:
-                                            Union{MPRK22ConstantCache, MPRK22Cache,
-                                                  SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                                  MPRK43ConstantCache, MPRK43Cache}}
+                        dense::Bool) where {cacheType <: MPRKCache}
     "1st order linear"
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                       SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                       MPRK43ConstantCache, MPRK43Cache},
+                          cache::MPRKCache,
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{0}},
                           differential_vars::Nothing)
@@ -1367,9 +1361,7 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                        SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                        MPRK43ConstantCache, MPRK43Cache},
+                           cache::MPRKCache,
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{0}},
                            differential_vars::Nothing)
@@ -1377,9 +1369,7 @@ function _ode_interpolant!(out, Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                       SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                       MPRK43ConstantCache, MPRK43Cache},
+                          cache::MPRKCache,
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{1}},
                           differential_vars::Nothing)
@@ -1387,9 +1377,7 @@ function _ode_interpolant(Θ, dt, u0, u1, k,
 end
 
 function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                        SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                        MPRK43ConstantCache, MPRK43Cache},
+                           cache::MPRKCache,
                            idxs, # Optionally specialize for ::Nothing and others
                            T::Type{Val{1}},
                            differential_vars::Nothing)
