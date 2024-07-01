@@ -114,49 +114,6 @@ function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     return nothing
 end
 
-#####################################################################
-# Linear interpolations
-@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0+Θ * u1
-end
-
-@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0[idxs]+Θ * u1[idxs]
-end
-
-@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing,
-                                             T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false out=Θm1 * u0 + Θ * u1
-    out
-end
-
-@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @views @.. broadcast=false out=Θm1 * u0[idxs] + Θ * u1[idxs]
-    out
-end
-
-@inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
-    @.. broadcast=false (u1 - u0)/dt
-end
-
-@inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{1}})
-    @.. broadcast=false (u1[idxs] - u0[idxs])/dt
-end
-
-@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
-    @.. broadcast=false out=(u1 - u0) / dt
-    out
-end
-
-@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{1}})
-    @views @.. broadcast=false out=(u1[idxs] - u0[idxs]) / dt
-    out
-end
-
 ### MPE #####################################################################################
 """
     MPE([linsolve = ...])
@@ -354,45 +311,6 @@ function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = fa
 
     u .= linres
     integrator.stats.nsolve += 1
-end
-
-# interpolation specializations
-function interp_summary(::Type{cacheType},
-                        dense::Bool) where {
-                                            cacheType <: Union{MPEConstantCache, MPECache}}
-    "1st order linear"
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPEConstantCache, MPECache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{0}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPEConstantCache, MPECache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{0}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPEConstantCache, MPECache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{1}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPEConstantCache, MPECache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{1}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
 end
 
 ### MPRK22 #####################################################################################
@@ -1344,42 +1262,3 @@ function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step =
 end
 
 ########################################################################################
-
-#######################################################################################
-# interpolation specializations
-function interp_summary(::Type{cacheType},
-                        dense::Bool) where {cacheType <: MPRKCache}
-    "1st order linear"
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::MPRKCache,
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{0}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::MPRKCache,
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{0}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::MPRKCache,
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{1}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::MPRKCache,
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{1}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end

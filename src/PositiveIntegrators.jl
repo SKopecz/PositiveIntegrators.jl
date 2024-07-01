@@ -61,15 +61,13 @@ include("proddest.jl")
 
 abstract type MPRKCache <: OrdinaryDiffEqMutableCache end
 
-#TODO: sspmprk.jl must be included before mprk.jl since the interpolation specializations
-# at the end of mprk.jl need to know SSPMPRK22ConstantCache.
-# It would probably be a good idea to separate schemes and interpolations. 
-#
+# modified Patankar-Runge-Kutta (MPRK) methods
+include("mprk.jl")
+
 # modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
 include("sspmprk.jl")
 
-# modified Patankar-Runge-Kutta (MPRK) methods
-include("mprk.jl")
+include("interpolation.jl")
 
 # predefined PDS problems
 include("PDSProblemLibrary.jl")
