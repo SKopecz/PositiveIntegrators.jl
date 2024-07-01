@@ -1,7 +1,7 @@
 name = "PositiveIntegrators"
 uuid = "d1b20bf0-b083-4985-a874-dc5121669aa5"
 authors = ["Stefan Kopecz, Hendrik Ranocha, and contributors"]
-version = "0.1.14"
+version = "0.1.15"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
