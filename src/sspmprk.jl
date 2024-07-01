@@ -172,7 +172,7 @@ function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = 
 end
 
 struct SSPMPRK22Cache{uType, PType, tabType, F} <:
-       MPRKCache
+       OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -184,7 +184,7 @@ struct SSPMPRK22Cache{uType, PType, tabType, F} <:
 end
 
 struct SSPMPRK22ConservativeCache{uType, PType, tabType, F} <:
-       MPRKCache
+       OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -621,7 +621,7 @@ function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = 
     integrator.u = u
 end
 
-struct SSPMPRK43Cache{uType, PType, tabType, F} <: MPRKCache
+struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -636,7 +636,7 @@ struct SSPMPRK43Cache{uType, PType, tabType, F} <: MPRKCache
     linsolve::F
 end
 
-struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKCache
+struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType

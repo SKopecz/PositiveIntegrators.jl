@@ -116,7 +116,7 @@ end
 
 ### MPE #####################################################################################
 """
-    MPE([linsolve = ...])
+    MPE([linsolve = ..., small_constant = ...])
 
 The first-order modified Patankar-Euler algorithm for production-destruction systems. This one-step, one-stage method is
 first-order accurate, unconditionally positivity-preserving, and
@@ -133,6 +133,8 @@ The modified Patankar-Euler method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter` small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -142,12 +144,13 @@ as keyword argument `linsolve`.
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct MPE{F} <: OrdinaryDiffEqAlgorithm
+struct MPE{F, T} <: OrdinaryDiffEqAlgorithm
     linsolve::F
+    small_constant::T
 end
 
-function MPE(; linsolve = LUFactorization())
-    MPE(linsolve)
+function MPE(; linsolve = LUFactorization(), small_constant = floatmin())
+    MPE(linsolve, small_constant)
 end
 
 alg_order(::MPE) = 1
@@ -165,7 +168,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
-    MPEConstantCache(floatmin(uEltypeNoUnits))
+    MPEConstantCache(convert(uEltypeNoUnits, alg.small_constant))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
@@ -204,7 +207,7 @@ function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     integrator.u = u
 end
 
-struct MPECache{PType, uType, tabType, F} <: MPRKCache
+struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
     P::PType
     D::uType
     σ::uType
@@ -213,7 +216,7 @@ struct MPECache{PType, uType, tabType, F} <: MPRKCache
     linsolve::F
 end
 
-struct MPEConservativeCache{PType, uType, tabType, F} <: MPRKCache
+struct MPEConservativeCache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
     P::PType
     σ::uType
     tab::tabType
@@ -227,7 +230,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     P = p_prototype(u, f)
     σ = zero(u)
-    tab = MPEConstantCache(floatmin(uEltypeNoUnits))
+    tab = MPEConstantCache(alg.small_constant)
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
@@ -315,7 +318,7 @@ end
 
 ### MPRK22 #####################################################################################
 """
-    MPRK22(α; [linsolve = ...])
+    MPRK22(α; [linsolve = ..., small_constant = ...])
 
 The second-order modified Patankar-Runge-Kutta algorithm for 
 production-destruction systems. This one-step, two-stage method is
@@ -334,6 +337,8 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -483,7 +488,7 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
 end
 
 struct MPRK22Cache{uType, PType, tabType, F} <:
-       MPRKCache
+       OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -495,7 +500,7 @@ struct MPRK22Cache{uType, PType, tabType, F} <:
 end
 
 struct MPRK22ConservativeCache{uType, PType, tabType, F} <:
-       MPRKCache
+       OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -685,7 +690,7 @@ end
 
 ### MPRK43 #####################################################################################
 """
-    MPRK43I(α, β; [linsolve = ...])
+    MPRK43I(α, β; [linsolve = ..., small_constant = ...])
 
 A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
 production-destruction systems, which is based on the two-parameter family of third order explicit Runge--Kutta schemes.
@@ -705,6 +710,8 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -770,7 +777,7 @@ function get_constant_parameters(alg::MPRK43I)
 end
 
 """
-    MPRK43II(γ; [linsolve = ...])
+    MPRK43II(γ; [linsolve = ..., small_constant = ...])
 
 A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
 production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with 
@@ -791,6 +798,8 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter`small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -991,7 +1000,7 @@ function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = fal
     integrator.u = u
 end
 
-struct MPRK43Cache{uType, PType, tabType, F} <: MPRKCache
+struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -1005,7 +1014,7 @@ struct MPRK43Cache{uType, PType, tabType, F} <: MPRKCache
     linsolve::F
 end
 
-struct MPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKCache
+struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
