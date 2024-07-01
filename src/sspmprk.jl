@@ -21,6 +21,8 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter`small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -38,10 +40,12 @@ struct SSPMPRK22{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     beta::T
     linsolve::F
+    small_constant::T
 end
 
-function SSPMPRK22(alpha, beta; linsolve = LUFactorization())
-    SSPMPRK22{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve)
+function SSPMPRK22(alpha, beta; linsolve = LUFactorization(),
+                   small_constant = floatmin(alpha))
+    SSPMPRK22{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant)
 end
 
 alg_order(::SSPMPRK22) = 2
@@ -91,7 +95,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
 
     a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, floatmin(uEltypeNoUnits))
+    small_constant = alg.small_constant
+    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, small_constant)
 end
 
 function initialize!(integrator, cache::SSPMPRK22ConstantCache)
@@ -199,7 +204,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, floatmin(uEltypeNoUnits))
+    small_constant = alg.small_constant
+    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, small_constant)
     tmp = zero(u)
     P = p_prototype(u, f)
     # We use P2 to store the last evaluation of the PDS 
@@ -392,6 +398,8 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter`small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero.
 
 ## References
 
@@ -405,12 +413,13 @@ as keyword argument `linsolve`.
   ESAIM: Mathematical Modelling and Numerical Analysis 57 (2023):1063–1086
   [DOI: 10.1051/m2an/2023005](https://doi.org/10.1051/m2an/2023005)
 """
-struct SSPMPRK43{F} <: OrdinaryDiffEqAlgorithm
+struct SSPMPRK43{F, T} <: OrdinaryDiffEqAlgorithm
     linsolve::F
+    small_constant::T
 end
 
-function SSPMPRK43(; linsolve = LUFactorization())
-    SSPMPRK43{typeof(linsolve)}(linsolve)
+function SSPMPRK43(; linsolve = LUFactorization(), small_constant = 1e-50)
+    SSPMPRK43{typeof(linsolve), typeof(small_constant)}(linsolve, small_constant)
 end
 
 alg_order(::SSPMPRK43) = 3
@@ -487,8 +496,7 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
     end
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    # small_constant = floatmin(uEltypeNoUnits)
-    small_constant = 1e-50
+    small_constant = alg.small_constant
     SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31,
                            α32, β10,
                            β20, β21, β30,
@@ -654,8 +662,7 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    # small_constant = floatmin(uEltypeNoUnits)
-    small_constant = 1e-50
+    small_constant = alg.small_constant
     tab = SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30,
                                  α31, α32,
                                  β10, β20, β21, β30, β31, β32, c3, small_constant)

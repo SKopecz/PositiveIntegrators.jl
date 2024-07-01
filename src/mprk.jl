@@ -364,10 +364,12 @@ to avoid divisions by zero.
 struct MPRK22{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     linsolve::F
+    small_constant::T
 end
 
-function MPRK22(alpha; linsolve = LUFactorization())
-    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve)
+function MPRK22(alpha; linsolve = LUFactorization(),
+                small_constant = floatmin(typeof(alpha)))
+    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve, small_constant)
 end
 
 alg_order(::MPRK22) = 2
@@ -406,7 +408,8 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
 
     a21, b1, b2 = get_constant_parameters(alg)
-    MPRK22ConstantCache(a21, b1, b2, floatmin(uEltypeNoUnits))
+    small_constant = alg.small_constant
+    MPRK22ConstantCache(a21, b1, b2, small_constant)
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
@@ -515,7 +518,8 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, b1, b2 = get_constant_parameters(alg)
-    tab = MPRK22ConstantCache(a21, b1, b2, floatmin(uEltypeNoUnits))
+    small_constant = alg.small_constant
+    tab = MPRK22ConstantCache(a21, b1, b2, small_constant)
     tmp = zero(u)
     P = p_prototype(u, f)
     # We use P2 to store the last evaluation of the PDS 
@@ -725,10 +729,12 @@ struct MPRK43I{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     beta::T
     linsolve::F
+    small_constant::T
 end
 
-function MPRK43I(alpha, beta; linsolve = LUFactorization())
-    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve)
+function MPRK43I(alpha, beta; linsolve = LUFactorization(),
+                 small_constant = floatmin(typeof(alpha)))
+    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant)
 end
 
 alg_order(::MPRK43I) = 3
@@ -873,8 +879,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
         throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
     end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
+    small_constant = alg.small_constant
     MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                        beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+                        beta1, beta2, q1, q2, small_constant)
 end
 
 function initialize!(integrator, cache::MPRK43ConstantCache)
@@ -1031,8 +1038,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
+    small_constant = alg.small_constant
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+                              beta1, beta2, q1, q2, small_constant)
     tmp = zero(u)
     tmp2 = zero(u)
     P = p_prototype(u, f)
