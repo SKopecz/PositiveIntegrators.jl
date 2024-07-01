@@ -417,6 +417,8 @@ alg_order(::SSPMPRK43) = 3
 isfsal(::SSPMPRK43) = false
 
 function get_constant_parameters(alg::SSPMPRK43)
+    # parameters from original paper    
+
     n1 = 2.569046025732011E-01
     n2 = 7.430953974267989E-01
     z = 6.288938077828750E-01
@@ -425,6 +427,9 @@ function get_constant_parameters(alg::SSPMPRK43)
     η3 = 1.868649805549811E-01
     η4 = 2.224876040351123
     s = 5.721964308755304
+
+    η5 = η3 * (η1 + η2)
+    η6 = η4 * (η1 + η2)
 
     α10 = 1.0
     α20 = 9.2600312554031827E-01
@@ -441,7 +446,8 @@ function get_constant_parameters(alg::SSPMPRK43)
 
     c3 = β20 + α21 * β10 + β21
 
-    return n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30,
+    return n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20,
+           β21, β30,
            β31, β32, c3
 end
 
@@ -453,6 +459,8 @@ struct SSPMPRK43ConstantCache{T} <: OrdinaryDiffEqConstantCache
     η2::T
     η3::T
     η4::T
+    η5::T
+    η6::T
     s::T
     α10::T
     α20::T
@@ -478,8 +486,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
     end
-    n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10,
+    n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31,
+                           α32, β10,
                            β20, β21, β30,
                            β31, β32, c3, floatmin(uEltypeNoUnits))
 end
@@ -489,7 +498,7 @@ end
 
 function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
-    @unpack n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache
+    @unpack n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache
 
     f = integrator.f
 
@@ -557,10 +566,10 @@ function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = 
     if f isa PDSFunction
         dtmp = η3 * d + η4 * d2
 
-        rhs = η1 * uprev + η2 * u2 + dt * diag(Ptmp)
+        # see (3.25 f) in original paper
+        rhs = η1 * uprev + η2 * u2 + dt * (η5 * diag(P) + η6 * diag(P2))
 
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
-
     else
         rhs = η1 * uprev + η2 * u2
         M = build_mprk_matrix(Ptmp, σ, dt)
@@ -642,8 +651,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    tab = SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32,
+    n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    tab = SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30,
+                                 α31, α32,
                                  β10, β20, β21, β30, β31, β32, c3, floatmin(uEltypeNoUnits))
     tmp = zero(u)
     tmp2 = zero(u)
@@ -681,7 +691,7 @@ end
 function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, D, D2, D3, σ, ρ, linsolve = cache
-    @unpack n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache.tab
+    @unpack n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache.tab
 
     # We use P3 to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system
@@ -744,7 +754,8 @@ function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
     # tmp holds the right hand side of the linear system
     @.. broadcast=false tmp=η1 * uprev + η2 * tmp2
     @inbounds for i in eachindex(tmp)
-        tmp[i] += dt * P3[i, i]
+        # see (3.25 f) in original paper
+        tmp[i] += dt * (η5 * P[i, i] + η6 * P2[i, i])
     end
 
     build_mprk_matrix!(P3, P3, σ, dt, D3)
