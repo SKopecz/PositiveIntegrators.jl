@@ -818,10 +818,11 @@ to avoid divisions by zero.
 struct MPRK43II{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
     gamma::T
     linsolve::F
+    small_constant::T
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization())
-    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve)
+function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = floatmin())
+    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve, small_constant)
 end
 
 alg_order(::MPRK43II) = 3
