@@ -59,9 +59,6 @@ export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
 # production-destruction systems
 include("proddest.jl")
 
-abstract type MPRKCache <: OrdinaryDiffEqMutableCache end
-abstract type MPRKConstantCache <: OrdinaryDiffEqConstantCache end
-
 # modified Patankar-Runge-Kutta (MPRK) methods
 include("mprk.jl")
 
