@@ -552,14 +552,12 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt,
-                                               adaptive = false)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt,
-                                               adaptive = false)
-                    sol_dense_ip = solve(prob_dense_ip, alg; dt, adaptive = false)
-                    sol_dense_op = solve(prob_dense_op, alg; dt, adaptive = false)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt, adaptive = false)
-                    sol_sparse_op = solve(prob_sparse_op, alg; dt, adaptive = false)
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
+                    sol_dense_op = solve(prob_dense_op, alg; dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
 
                     @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
                     @test sol_dense_ip.t ≈ sol_dense_op.t
@@ -676,17 +674,17 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                 p_prototype = P_sparse)
 
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
-                                               dt, adaptive = false)
+                                               dt)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
-                                               dt, adaptive = false)
+                                               dt)
                     sol_dense_ip = solve(prob_dense_ip, alg;
-                                         dt, adaptive = false)
+                                         dt)
                     sol_dense_op = solve(prob_dense_op, alg;
-                                         dt, adaptive = false)
+                                         dt)
                     sol_sparse_ip = solve(prob_sparse_ip, alg;
-                                          dt, adaptive = false)
+                                          dt)
                     sol_sparse_op = solve(prob_sparse_op, alg;
-                                          dt, adaptive = false)
+                                          dt)
 
                     @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
                     @test sol_dense_ip.t ≈ sol_dense_op.t
