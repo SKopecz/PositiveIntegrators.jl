@@ -552,12 +552,14 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
-                    sol_dense_op = solve(prob_dense_op, alg; dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt,
+                                               adaptive = false)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt,
+                                               adaptive = false)
+                    sol_dense_ip = solve(prob_dense_ip, alg; dt, adaptive = false)
+                    sol_dense_op = solve(prob_dense_op, alg; dt, adaptive = false)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt, adaptive = false)
+                    sol_sparse_op = solve(prob_sparse_op, alg; dt, adaptive = false)
 
                     @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
                     @test sol_dense_ip.t ≈ sol_dense_op.t
@@ -570,6 +572,89 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     @test sol_sparse_ip.u ≈ sol_sparse_op.u
                     @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
                     @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
+                end
+            end
+        end
+
+        @testset "Different matrix types (conservative, adaptive)" begin
+            prod_1! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                return nothing
+            end
+
+            prod_2! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            prod_3! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            tspan = (0.0, 1.0)
+            dt = 0.25
+
+            rtol = sqrt(eps(Float32))
+
+            @testset "$alg" for alg in (MPE(),
+                                        MPRK22(0.5), MPRK22(1.0),
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK43())
+                for prod! in (prod_1!, prod_2!, prod_3!)
+                    prod = (u, p, t) -> begin
+                        P = similar(u, (length(u), length(u)))
+                        prod!(P, u, p, t)
+                        return P
+                    end
+                    prob_tridiagonal_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                                 p_prototype = P_tridiagonal)
+                    prob_tridiagonal_op = ConservativePDSProblem(prod, u0, tspan;
+                                                                 p_prototype = P_tridiagonal)
+                    prob_dense_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                           p_prototype = P_dense)
+                    prob_dense_op = ConservativePDSProblem(prod, u0, tspan;
+                                                           p_prototype = P_dense)
+                    prob_sparse_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                            p_prototype = P_sparse)
+                    prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
+                                                            p_prototype = P_sparse)
+
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
+                    sol_dense_op = solve(prob_dense_op, alg; dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
+
+                    @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
+                    @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
+                    @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_dense_ip.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_sparse_ip.t; rtol)
+
+                    @test isapprox(sol_tridiagonal_ip.u, sol_tridiagonal_op.u; rtol)
+                    @test isapprox(sol_dense_ip.u, sol_dense_op.u; rtol)
+                    @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_dense_ip.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_sparse_ip.u; rtol)
                 end
             end
         end
@@ -674,17 +759,17 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                 p_prototype = P_sparse)
 
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
-                                               dt)
+                                               dt, adaptive = false)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
-                                               dt)
+                                               dt, adaptive = false)
                     sol_dense_ip = solve(prob_dense_ip, alg;
-                                         dt)
+                                         dt, adaptive = false)
                     sol_dense_op = solve(prob_dense_op, alg;
-                                         dt)
+                                         dt, adaptive = false)
                     sol_sparse_ip = solve(prob_sparse_ip, alg;
-                                          dt)
+                                          dt, adaptive = false)
                     sol_sparse_op = solve(prob_sparse_op, alg;
-                                          dt)
+                                          dt, adaptive = false)
 
                     @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
                     @test sol_dense_ip.t ≈ sol_dense_op.t
@@ -697,6 +782,134 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     @test sol_sparse_ip.u ≈ sol_sparse_op.u
                     @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
                     @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
+                end
+            end
+        end
+
+        @testset "Different matrix types (nonconservative, adaptive)" begin
+            prod_1! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                for i in 1:length(u)
+                    P[i, i] = i * u[i]
+                end
+                return nothing
+            end
+            dest_1! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = (i + 1) * u[i]
+                end
+                return nothing
+            end
+
+            prod_2! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                for i in 1:length(u)
+                    P[i, i] = (i - 1) * u[i]
+                end
+                return nothing
+            end
+            dest_2! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = i * u[i]
+                end
+                return nothing
+            end
+
+            prod_3! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                for i in 1:length(u)
+                    P[i, i] = (i + 1) * u[i]
+                end
+                return nothing
+            end
+            dest_3! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = (i - 1) * u[i]
+                end
+                return nothing
+            end
+
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            D = u0
+            tspan = (0.0, 1.0)
+            dt = 0.25
+
+            rtol = sqrt(eps(Float32))
+            @testset "$alg" for alg in (MPE(),
+                                        MPRK22(0.5), MPRK22(1.0),
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+                for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
+                                          (dest_1!, dest_2!, dest_3!))
+                    prod! = prod_3!
+                    dest! = dest_3!
+                    prod = (u, p, t) -> begin
+                        P = similar(u, (length(u), length(u)))
+                        prod!(P, u, p, t)
+                        return P
+                    end
+                    dest = (u, p, t) -> begin
+                        D = similar(u)
+                        dest!(D, u, p, t)
+                        return D
+                    end
+                    prob_tridiagonal_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                                     p_prototype = P_tridiagonal)
+                    prob_tridiagonal_op = PDSProblem(prod, dest, u0, tspan;
+                                                     p_prototype = P_tridiagonal)
+                    prob_dense_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                               p_prototype = P_dense)
+                    prob_dense_op = PDSProblem(prod, dest, u0, tspan;
+                                               p_prototype = P_dense)
+                    prob_sparse_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                                p_prototype = P_sparse)
+                    prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
+                                                p_prototype = P_sparse)
+
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
+                                               dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
+                                               dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg;
+                                         dt)
+                    sol_dense_op = solve(prob_dense_op, alg;
+                                         dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg;
+                                          dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg;
+                                          dt)
+
+                    @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
+                    @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
+                    @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_dense_ip.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_sparse_ip.t; rtol)
+
+                    @test isapprox(sol_tridiagonal_ip.u, sol_tridiagonal_op.u; rtol)
+                    @test isapprox(sol_dense_ip.u, sol_dense_op.u; rtol)
+                    @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_dense_ip.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_sparse_ip.u; rtol)
                 end
             end
         end
