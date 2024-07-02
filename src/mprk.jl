@@ -149,8 +149,15 @@ struct MPE{F, T} <: OrdinaryDiffEqAlgorithm
     small_constant::T
 end
 
-function MPE(; linsolve = LUFactorization(), small_constant = floatmin())
-    MPE(linsolve, small_constant)
+function MPE(; linsolve = LUFactorization(), small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPE(linsolve, small_constant_function)
 end
 
 alg_order(::MPE) = 1
