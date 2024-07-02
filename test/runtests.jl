@@ -13,7 +13,9 @@ using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 using Aqua: Aqua
 
 """
-    experimental_order_of_convergence(prob, alg, dts; test_time = nothing)
+    experimental_order_of_convergence(prob, alg, dts;
+                                      test_time = nothing,
+                                      only_first_index = false)
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the errors at `test_time`. If`test_time` is not specified the error is computed 
