@@ -383,7 +383,9 @@ function MPRK22(alpha; linsolve = LUFactorization(),
     else # assume small_constant isa Function
         small_constant_function = small_constant
     end
-    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve, small_constant_function)
+    MPRK22{typeof(alpha), typeof(linsolve), typeof(small_constant_function)}(alpha,
+                                                                             linsolve,
+                                                                             small_constant_function)
 end
 
 alg_order(::MPRK22) = 2
@@ -753,7 +755,9 @@ function MPRK43I(alpha, beta; linsolve = LUFactorization(),
     else # assume small_constant isa Function
         small_constant_function = small_constant
     end
-    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant_function)
+    MPRK43I{typeof(alpha), typeof(linsolve), typeof(small_constant_function)}(alpha, beta,
+                                                                              linsolve,
+                                                                              small_constant_function)
 end
 
 alg_order(::MPRK43I) = 3
@@ -848,7 +852,9 @@ function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
     else # assume small_constant isa Function
         small_constant_function = small_constant
     end
-    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve, small_constant_function)
+    MPRK43II{typeof(gamma), typeof(linsolve), typeof(small_constant_function)}(gamma,
+                                                                               linsolve,
+                                                                               small_constant_function)
 end
 
 alg_order(::MPRK43II) = 3
