@@ -494,9 +494,8 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     u = sol.u
     integrator.stats.nsolve += 1
 
-    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation
-    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
-    # TODO: Find first order approximation if a21≠ 1.0.
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -634,9 +633,8 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
-    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation
-    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
-    # TODO: Find first order approximation if a21≠ 1.0.
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
@@ -694,9 +692,8 @@ function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step =
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
-    # If a21 = 1.0, then σ is the MPE approximation, i.e. a first order approximation    
-    # of the solution, and can be used for error estimation. Moreover, MPE is suited for stiff problems.
-    # TODO: Find first order approximation if a21≠ 1.0.
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
