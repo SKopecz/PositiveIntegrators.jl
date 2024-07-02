@@ -715,7 +715,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                 alg = MPRK22(1.0)
                 for prob in problems
                     prob = problems[1]
-                    orders = experimental_order_of_convergence(prob, alg, dts)
+                    orders = experimental_orders_of_convergence_convergence(prob, alg, dts)
                     @test check_order(orders, PositiveIntegrators.alg_order(alg))
 
                     test_times = [
@@ -723,13 +723,15 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                         1.23456789, 1 + 1 / pi, 1 + exp(-1),
                     ]
                     for test_time in test_times
-                        orders = experimental_order_of_convergence(prob, alg, dts;
-                                                                   test_time)
+                        orders = experimental_orders_of_convergence_convergence(prob, alg,
+                                                                                dts;
+                                                                                test_time)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
                                           atol = 0.2)
-                        orders = experimental_order_of_convergence(prob, alg, dts;
-                                                                   test_time,
-                                                                   only_first_index = true)
+                        orders = experimental_orders_of_convergence_convergence(prob, alg,
+                                                                                dts;
+                                                                                test_time,
+                                                                                only_first_index = true)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
                                           atol = 0.2)
                     end
@@ -747,7 +749,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in algs
                 alg = MPRK22(1.0)
                 for prob in problems
-                    orders = experimental_order_of_convergence(prob, alg, dts)
+                    orders = experimental_orders_of_convergence_convergence(prob, alg, dts)
                     @test check_order(orders, PositiveIntegrators.alg_order(alg))
 
                     test_times = [
@@ -755,13 +757,15 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                         1.23456789, 1 + 1 / pi, 1 + exp(-1),
                     ]
                     for test_time in test_times
-                        orders = experimental_order_of_convergence(prob, alg, dts;
-                                                                   test_time)
+                        orders = experimental_orders_of_convergence_convergence(prob, alg,
+                                                                                dts;
+                                                                                test_time)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
                                           atol = 0.2)
-                        orders = experimental_order_of_convergence(prob, alg, dts;
-                                                                   test_time,
-                                                                   only_first_index = true)
+                        orders = experimental_orders_of_convergence_convergence(prob, alg,
+                                                                                dts;
+                                                                                test_time,
+                                                                                only_first_index = true)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
                                           atol = 0.2)
                     end
@@ -778,7 +782,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                     MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
             for alg in algs, prob in problems
-                orders = experimental_order_of_convergence(prob, alg, dts)
+                orders = experimental_orders_of_convergence_convergence(prob, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
             end
         end
@@ -792,7 +796,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                     MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
             for alg in algs, prob in problems
-                orders = experimental_order_of_convergence(prob, alg, dts)
+                orders = experimental_orders_of_convergence_convergence(prob, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
             end
         end
