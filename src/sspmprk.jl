@@ -68,7 +68,7 @@ function get_constant_parameters(alg::SSPMPRK22)
     s = (b20 + b21 + a21 * b10^2) / (b10 * (b20 + b21))
 
     # This should never happen
-    if !all((a21, a10, a20, b10, b20, b21) .≥ 0)
+    if any(<(0), (a21, a10, a20, b10, b20, b21))
         throw(ArgumentError("SSPMPRK22 requires nonnegative SSP coefficients."))
     end
     return a21, a10, a20, b10, b20, b21, s
