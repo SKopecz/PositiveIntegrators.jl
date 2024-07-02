@@ -133,7 +133,7 @@ The modified Patankar-Euler method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter` small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
 to avoid divisions by zero.
 
 ## References
@@ -175,7 +175,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
-    MPEConstantCache(convert(uEltypeNoUnits, alg.small_constant))
+    MPEConstantCache(alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
@@ -237,7 +237,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     P = p_prototype(u, f)
     σ = zero(u)
-    tab = MPEConstantCache(alg.small_constant)
+    tab = MPEConstantCache(alg.small_constant_function(uEltypeNoUnits))
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
