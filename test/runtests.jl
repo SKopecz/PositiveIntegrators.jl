@@ -64,7 +64,7 @@ end
 Compute the experimental orders of convergence for given `errors` and
 time step sizes `dts`.
 """
-function experimental_order_of_convergence(errors, dts)
+function experimental_orders_of_convergence(errors, dts)
     Base.require_one_based_indexing(errors, dts)
     @assert length(errors) == length(dts)
     orders = zeros(eltype(errors), length(errors) - 1)
