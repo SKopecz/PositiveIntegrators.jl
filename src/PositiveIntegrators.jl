@@ -48,6 +48,7 @@ export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22, MPRK43I, MPRK43II
+export SSPMPRK22, SSPMPRK43
 
 export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
@@ -60,6 +61,11 @@ include("proddest.jl")
 
 # modified Patankar-Runge-Kutta (MPRK) methods
 include("mprk.jl")
+
+# modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
+include("sspmprk.jl")
+
+include("interpolation.jl")
 
 # predefined PDS problems
 include("PDSProblemLibrary.jl")
