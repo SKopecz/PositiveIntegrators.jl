@@ -1,6 +1,6 @@
 ### SSPMPRK #####################################################################################
 """
-    SSPMPRK22(α, β; [linsolve = ...])
+    SSPMPRK22(α, β; [linsolve = ..., small_constant = ...])
 
 A family of second-order modified Patankar-Runge-Kutta algorithms for 
 production-destruction systems. Each member of this family is a one-step, two-stage method which is
@@ -36,16 +36,25 @@ to avoid divisions by zero.
   ESAIM: Mathematical Modelling and Numerical Analysis 57 (2023):1063–1086
   [DOI: 10.1051/m2an/2023005](https://doi.org/10.1051/m2an/2023005)
 """
-struct SSPMPRK22{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPMPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     beta::T
     linsolve::F
-    small_constant::T
+    small_constant_function::T2
 end
 
 function SSPMPRK22(alpha, beta; linsolve = LUFactorization(),
-                   small_constant = floatmin(alpha))
-    SSPMPRK22{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant)
+                   small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    SSPMPRK22{typeof(alpha), typeof(linsolve), typeof(small_constant_function)}(alpha, beta,
+                                                                                linsolve,
+                                                                                small_constant_function)
 end
 
 alg_order(::SSPMPRK22) = 2
@@ -95,8 +104,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
 
     a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    small_constant = alg.small_constant
-    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, small_constant)
+    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s,
+                           alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::SSPMPRK22ConstantCache)
@@ -204,8 +213,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    small_constant = alg.small_constant
-    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, small_constant)
+    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s,
+                                 alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
     # We use P2 to store the last evaluation of the PDS 
@@ -378,7 +387,7 @@ function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_ste
 end
 
 """
-    SSPMPRK43([linsolve = ...])
+    SSPMPRK43([linsolve = ..., small_constant = ...])
 
 A third-order modified Patankar-Runge-Kutta algorithm for 
 production-destruction systems. This scheme is a one-step, two-stage method which is
@@ -415,11 +424,19 @@ to avoid divisions by zero.
 """
 struct SSPMPRK43{F, T} <: OrdinaryDiffEqAlgorithm
     linsolve::F
-    small_constant::T
+    small_constant_function::T
 end
 
 function SSPMPRK43(; linsolve = LUFactorization(), small_constant = 1e-50)
-    SSPMPRK43{typeof(linsolve), typeof(small_constant)}(linsolve, small_constant)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    SSPMPRK43{typeof(linsolve), typeof(small_constant_function)}(linsolve,
+                                                                 small_constant_function)
 end
 
 alg_order(::SSPMPRK43) = 3
@@ -496,11 +513,10 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
     end
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
     SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31,
                            α32, β10,
                            β20, β21, β30,
-                           β31, β32, c3, small_constant)
+                           β31, β32, c3, alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::SSPMPRK43ConstantCache)
@@ -662,10 +678,10 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
     tab = SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30,
                                  α31, α32,
-                                 β10, β20, β21, β30, β31, β32, c3, small_constant)
+                                 β10, β20, β21, β30, β31, β32, c3,
+                                 alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     tmp2 = zero(u)
     P = p_prototype(u, f)
