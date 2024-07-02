@@ -54,11 +54,7 @@ function interp_summary(::Type{cacheType},
 end
 
 function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPEConstantCache, MPECache, MPRK22ConstantCache,
-                                       MPRK22Cache,
-                                       MPRK43ConstantCache, MPRK43Cache,
-                                       SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                       SSPMPRK43ConstantCache, SSPMPRK43Cache},
+                          cache:: MPRKCaches,
                           idxs, # Optionally specialize for ::Nothing and others
                           T::Type{Val{0}},
                           differential_vars::Nothing)
