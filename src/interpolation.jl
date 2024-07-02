@@ -49,13 +49,7 @@ const MPRKCaches = Union{MPEConstantCache, MPECache, MPEConservativeCache,
                          SSPMPRK43ConstantCache, SSPMPRK43Cache, SSPMPRK43ConservativeCache}
 
 function interp_summary(::Type{cacheType},
-                        dense::Bool) where {
-                                            cacheType <:
-                                            Union{MPEConstantCache, MPECache,
-                                                  MPRK22ConstantCache, MPRK22Cache,
-                                                  MPRK43ConstantCache, MPRK43Cache,
-                                                  SSPMPRK22ConstantCache, SSPMPRK22Cache,
-                                                  SSPMPRK43ConstantCache, SSPMPRK43Cache}}
+                        dense::Bool) where {cacheType <: MPRKCaches}
     "1st order linear"
 end
 
