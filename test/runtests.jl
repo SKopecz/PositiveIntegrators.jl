@@ -13,7 +13,7 @@ using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 using Aqua: Aqua
 
 """
-    experimental_order_of_convergence(prob, alg, dts;
+    experimental_orders_of_convergence(prob, alg, dts;
                                       test_time = nothing,
                                       only_first_index = false)
 
@@ -25,8 +25,8 @@ Return the associated experimental orders of convergence.
 If `only_first_index == true`, only the first solution component is used
 to compute the error.
 """
-function experimental_order_of_convergence(prob, alg, dts; test_time = nothing,
-                                           only_first_index = false)
+function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
+                                            only_first_index = false)
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
     analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
@@ -57,11 +57,11 @@ function experimental_order_of_convergence(prob, alg, dts; test_time = nothing,
         end
     end
 
-    return experimental_order_of_convergence(errors, dts)
+    return experimental_orders_of_convergence(errors, dts)
 end
 
 """
-    experimental_order_of_convergence(errors, dts)
+    experimental_orders_of_convergence(errors, dts)
 
 Compute the experimental orders of convergence for given `errors` and
 time step sizes `dts`.
