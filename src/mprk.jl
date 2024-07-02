@@ -368,15 +368,22 @@ to avoid divisions by zero.
   Applied Numerical Mathematics 182 (2022): 117-147.
   [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
 """
-struct MPRK22{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     linsolve::F
-    small_constant::T
+    small_constant_function::T2
 end
 
 function MPRK22(alpha; linsolve = LUFactorization(),
-                small_constant = floatmin(typeof(alpha)))
-    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve, small_constant)
+                small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve, small_constant_function)
 end
 
 alg_order(::MPRK22) = 2
@@ -415,8 +422,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
 
     a21, b1, b2 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
-    MPRK22ConstantCache(a21, b1, b2, small_constant)
+    MPRK22ConstantCache(a21, b1, b2, alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
@@ -525,8 +531,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, b1, b2 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
-    tab = MPRK22ConstantCache(a21, b1, b2, small_constant)
+    tab = MPRK22ConstantCache(a21, b1, b2, alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
     # We use P2 to store the last evaluation of the PDS 
@@ -732,16 +737,23 @@ to avoid divisions by zero.
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
 """
-struct MPRK43I{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK43I{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     beta::T
     linsolve::F
-    small_constant::T
+    small_constant_function::T2
 end
 
 function MPRK43I(alpha, beta; linsolve = LUFactorization(),
-                 small_constant = floatmin(typeof(alpha)))
-    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant)
+                 small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve, small_constant_function)
 end
 
 alg_order(::MPRK43I) = 3
@@ -822,14 +834,21 @@ to avoid divisions by zero.
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
 """
-struct MPRK43II{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK43II{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     gamma::T
     linsolve::F
-    small_constant::T
+    small_constant_function::T2
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = floatmin())
-    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve, small_constant)
+function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve, small_constant_function)
 end
 
 alg_order(::MPRK43II) = 3
@@ -887,9 +906,8 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
         throw(ArgumentError("MPRK43 can only be applied to production-destruction systems"))
     end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
     MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                        beta1, beta2, q1, q2, small_constant)
+                        beta1, beta2, q1, q2, alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK43ConstantCache)
@@ -1046,9 +1064,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
-    small_constant = alg.small_constant
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                              beta1, beta2, q1, q2, small_constant)
+                              beta1, beta2, q1, q2,
+                              alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     tmp2 = zero(u)
     P = p_prototype(u, f)
