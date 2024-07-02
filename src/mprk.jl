@@ -146,7 +146,7 @@ to avoid divisions by zero.
 """
 struct MPE{F, T} <: OrdinaryDiffEqAlgorithm
     linsolve::F
-    small_constant::T
+    small_constant_function::T
 end
 
 function MPE(; linsolve = LUFactorization(), small_constant = nothing)
