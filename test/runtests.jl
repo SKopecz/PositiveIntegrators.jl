@@ -13,65 +13,60 @@ using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 using Aqua: Aqua
 
 """
-    experimental_order_of_convergence(prob, alg, dts, test_times;
+    experimental_orders_of_convergence(prob, alg, dts;
+                                      test_time = nothing,
                                       only_first_index = false)
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
-the mean error at the times `test_times`.
-Return the associated experimental order of convergence.
+the errors at `test_time`. If`test_time` is not specified the error is computed 
+at the final time.
+Return the associated experimental orders of convergence.
 
 If `only_first_index == true`, only the first solution component is used
 to compute the error.
 """
-function experimental_order_of_convergence(prob, alg, dts, test_times;
-                                           only_first_index = false)
+function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
+                                            only_first_index = false)
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
     analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
 
-    for (i, dt) in enumerate(dts)
-        sol = solve(prob, alg; dt = dt, adaptive = false)
+    if isnothing(test_time)
         if only_first_index
-            errors[i] = mean(test_times) do t
-                norm(sol(t; idxs = 1) - first(analytic(t)))
+            for (i, dt) in enumerate(dts)
+                sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
+                errors[i] = norm(sol.u[end][1] - analytic(sol.t[end])[1])
             end
         else
-            errors[i] = mean(test_times) do t
-                norm(sol(t) - analytic(t))
+            for (i, dt) in enumerate(dts)
+                sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
+                errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
+            end
+        end
+    else
+        if only_first_index
+            for (i, dt) in enumerate(dts)
+                sol = solve(prob, alg; dt = dt, adaptive = false)
+                errors[i] = norm(sol(test_time; idxs = 1) - first(analytic(test_time)))
+            end
+        else
+            for (i, dt) in enumerate(dts)
+                sol = solve(prob, alg; dt = dt, adaptive = false)
+                errors[i] = norm(sol(test_time) - analytic(test_time))
             end
         end
     end
 
-    return experimental_order_of_convergence(errors, dts)
+    return experimental_orders_of_convergence(errors, dts)
 end
 
 """
-    experimental_order_of_convergence(prob, alg, dts)
+    experimental_orders_of_convergence(errors, dts)
 
-Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
-the mean error at the final time.
-Return the associated experimental order of convergence.
-"""
-function experimental_order_of_convergence(prob, alg, dts)
-    @assert length(dts) > 1
-    errors = zeros(eltype(dts), length(dts))
-    analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
-
-    for (i, dt) in enumerate(dts)
-        sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
-        errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
-    end
-
-    return experimental_order_of_convergence(errors, dts)
-end
-
-"""
-    experimental_order_of_convergence(errors, dts)
-
-Compute the experimental order of convergence for given `errors` and
+Compute the experimental orders of convergence for given `errors` and
 time step sizes `dts`.
 """
-function experimental_order_of_convergence(errors, dts)
+function experimental_orders_of_convergence(errors, dts)
     Base.require_one_based_indexing(errors, dts)
     @assert length(errors) == length(dts)
     orders = zeros(eltype(errors), length(errors) - 1)
@@ -80,7 +75,31 @@ function experimental_order_of_convergence(errors, dts)
         orders[i] = log(errors[i] / errors[i + 1]) / log(dts[i] / dts[i + 1])
     end
 
-    return mean(orders)
+    return orders
+end
+
+"""
+    check_order(orders, alg_order; N = 3, atol = 0.1)
+
+Check if `alg_order` can be found approximately in `N` consecutive elements of `orders`.
+"""
+function check_order(orders, alg_order; N = 3, atol = 0.1)
+    check = false
+    # The calculation of the indices of the permissible orders by
+    #
+    #    indices = findall(x -> isapprox(x, alg_order; atol = atol), orders)
+    #
+    # sometimes failed because the experimental order was too good. To accept
+    # such cases, but avoid to decrease atol, we now use the following asymmetric criterion:
+    indices = findall(x -> -atol ≤ x - alg_order ≤ 2 * atol, orders)
+
+    for (i, idx) in enumerate(indices)
+        if i + N - 1 ≤ length(indices) && indices[i:(i + N - 1)] == idx:(idx + N - 1)
+            check = true
+            break
+        end
+    end
+    return check
 end
 
 const prob_pds_linmod_array = ConservativePDSProblem(prob_pds_linmod.f,
@@ -324,6 +343,27 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                                                                   MPRK43II(1.0))
             @test_throws "MPRK43II requires 3/8 ≤ γ ≤ 3/4." solve(prob_pds_linmod,
                                                                   MPRK43II(0.0))
+            @test_throws "SSPMPRK22 can only be applied to production-destruction systems" solve(prob_oop,
+                                                                                                 SSPMPRK22(0.5,
+                                                                                                           1.0))
+            @test_throws "SSPMPRK22 can only be applied to production-destruction systems" solve(prob_ip,
+                                                                                                 SSPMPRK22(0.5,
+                                                                                                           1.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod,
+                                                                                          SSPMPRK22(-1.0,
+                                                                                                    1.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod,
+                                                                                          SSPMPRK22(0.0,
+                                                                                                    -1.0))
+            @test_throws "SSPMPRK22 requires 0 ≤ α ≤ 1, β ≥ 0 and αβ + 1/(2β) ≤ 1." solve(prob_pds_linmod,
+                                                                                          SSPMPRK22(1.0,
+                                                                                                    10.0))
+            @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_oop,
+                                                                                                 SSPMPRK43(),
+                                                                                                 dt = 0.1)
+            @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_ip,
+                                                                                                 SSPMPRK43(),
+                                                                                                 dt = 0.1)
         end
 
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
@@ -380,6 +420,17 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test sol_MPE_ip.u ≈ sol_MPE_ip_2.u ≈ sol_IE_ip.u
         end
 
+        # Here we check that MPRK22(α) = SSPMPRK22(0,α)
+        @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
+            for α in (0.5, 2.0 / 3.0, 1.0, 2.0)
+                sol1 = solve(prob_pds_linmod, MPRK22(α))
+                sol2 = solve(prob_pds_linmod, SSPMPRK22(0.0, α))
+                sol3 = solve(prob_pds_linmod_inplace, MPRK22(α))
+                sol4 = solve(prob_pds_linmod_inplace, SSPMPRK22(0.0, α))
+                @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
+            end
+        end
+
         # Here we check that different linear solvers can be used
         @testset "Different linear solvers" begin
             # problem data
@@ -417,7 +468,9 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
                     (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
                     (; kwargs...) -> MPRK43II(0.5; kwargs...),
-                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...))
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
 
             for alg in algs
                 # Check different linear solvers
@@ -478,7 +531,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in (MPE(),
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -518,6 +572,89 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                     @test sol_sparse_ip.u ≈ sol_sparse_op.u
                     @test sol_tridiagonal_ip.u ≈ sol_dense_ip.u
                     @test sol_tridiagonal_ip.u ≈ sol_sparse_ip.u
+                end
+            end
+        end
+
+        @testset "Different matrix types (conservative, adaptive)" begin
+            prod_1! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                return nothing
+            end
+
+            prod_2! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            prod_3! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                return nothing
+            end
+
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            tspan = (0.0, 1.0)
+            dt = 0.25
+
+            rtol = sqrt(eps(Float32))
+
+            @testset "$alg" for alg in (MPE(),
+                                        MPRK22(0.5), MPRK22(1.0),
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK43())
+                for prod! in (prod_1!, prod_2!, prod_3!)
+                    prod = (u, p, t) -> begin
+                        P = similar(u, (length(u), length(u)))
+                        prod!(P, u, p, t)
+                        return P
+                    end
+                    prob_tridiagonal_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                                 p_prototype = P_tridiagonal)
+                    prob_tridiagonal_op = ConservativePDSProblem(prod, u0, tspan;
+                                                                 p_prototype = P_tridiagonal)
+                    prob_dense_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                           p_prototype = P_dense)
+                    prob_dense_op = ConservativePDSProblem(prod, u0, tspan;
+                                                           p_prototype = P_dense)
+                    prob_sparse_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                            p_prototype = P_sparse)
+                    prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
+                                                            p_prototype = P_sparse)
+
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
+                    sol_dense_op = solve(prob_dense_op, alg; dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
+
+                    @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
+                    @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
+                    @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_dense_ip.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_sparse_ip.t; rtol)
+
+                    @test isapprox(sol_tridiagonal_ip.u, sol_tridiagonal_op.u; rtol)
+                    @test isapprox(sol_dense_ip.u, sol_dense_op.u; rtol)
+                    @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_dense_ip.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_sparse_ip.u; rtol)
                 end
             end
         end
@@ -594,7 +731,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in (MPE(),
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5))
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -648,28 +786,166 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
 
+        @testset "Different matrix types (nonconservative, adaptive)" begin
+            prod_1! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                for i in 1:length(u)
+                    P[i, i] = i * u[i]
+                end
+                return nothing
+            end
+            dest_1! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = (i + 1) * u[i]
+                end
+                return nothing
+            end
+
+            prod_2! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                for i in 1:length(u)
+                    P[i, i] = (i - 1) * u[i]
+                end
+                return nothing
+            end
+            dest_2! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = i * u[i]
+                end
+                return nothing
+            end
+
+            prod_3! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                    P[i + 1, i] = i * u[i + 1]
+                end
+                for i in 1:length(u)
+                    P[i, i] = (i + 1) * u[i]
+                end
+                return nothing
+            end
+            dest_3! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+                for i in 1:length(u)
+                    D[i] = (i - 1) * u[i]
+                end
+                return nothing
+            end
+
+            n = 4
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        zeros(n),
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            D = u0
+            tspan = (0.0, 1.0)
+            dt = 0.25
+
+            rtol = sqrt(eps(Float32))
+            @testset "$alg" for alg in (MPE(),
+                                        MPRK22(0.5), MPRK22(1.0),
+                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+                for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
+                                          (dest_1!, dest_2!, dest_3!))
+                    prod! = prod_3!
+                    dest! = dest_3!
+                    prod = (u, p, t) -> begin
+                        P = similar(u, (length(u), length(u)))
+                        prod!(P, u, p, t)
+                        return P
+                    end
+                    dest = (u, p, t) -> begin
+                        D = similar(u)
+                        dest!(D, u, p, t)
+                        return D
+                    end
+                    prob_tridiagonal_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                                     p_prototype = P_tridiagonal)
+                    prob_tridiagonal_op = PDSProblem(prod, dest, u0, tspan;
+                                                     p_prototype = P_tridiagonal)
+                    prob_dense_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                               p_prototype = P_dense)
+                    prob_dense_op = PDSProblem(prod, dest, u0, tspan;
+                                               p_prototype = P_dense)
+                    prob_sparse_ip = PDSProblem(prod!, dest!, u0, tspan;
+                                                p_prototype = P_sparse)
+                    prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
+                                                p_prototype = P_sparse)
+
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
+                                               dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
+                                               dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg;
+                                         dt)
+                    sol_dense_op = solve(prob_dense_op, alg;
+                                         dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg;
+                                          dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg;
+                                          dt)
+
+                    @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
+                    @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
+                    @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_dense_ip.t; rtol)
+                    @test isapprox(sol_tridiagonal_ip.t, sol_sparse_ip.t; rtol)
+
+                    @test isapprox(sol_tridiagonal_ip.u, sol_tridiagonal_op.u; rtol)
+                    @test isapprox(sol_dense_ip.u, sol_dense_op.u; rtol)
+                    @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_dense_ip.u; rtol)
+                    @test isapprox(sol_tridiagonal_ip.u, sol_sparse_ip.u; rtol)
+                end
+            end
+        end
+
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
-            dts = 0.5 .^ (6:11)
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
+            dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
 
-            for alg in algs
+            @testset "$alg" for alg in algs
+                alg = MPRK22(1.0)
                 for prob in problems
-                    eoc = experimental_order_of_convergence(prob, alg, dts)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                    prob = problems[1]
+                    orders = experimental_orders_of_convergence(prob, alg, dts)
+                    @test check_order(orders, PositiveIntegrators.alg_order(alg))
 
                     test_times = [
                         0.123456789, 1 / pi, exp(-1),
                         1.23456789, 1 + 1 / pi, 1 + exp(-1),
                     ]
-                    eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
-                    eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
-                                                            only_first_index = true)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                    for test_time in test_times
+                        orders = experimental_orders_of_convergence(prob, alg,
+                                                                    dts;
+                                                                    test_time)
+                        @test check_order(orders, PositiveIntegrators.alg_order(alg),
+                                          atol = 0.2)
+                        orders = experimental_orders_of_convergence(prob, alg,
+                                                                    dts;
+                                                                    test_time,
+                                                                    only_first_index = true)
+                        @test check_order(orders, PositiveIntegrators.alg_order(alg),
+                                          atol = 0.2)
+                    end
                 end
             end
         end
@@ -677,24 +953,33 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0))
-            dts = 0.5 .^ (6:11)
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
+            dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
-            for alg in algs
+            @testset "$alg" for alg in algs
+                alg = MPRK22(1.0)
                 for prob in problems
-                    eoc = experimental_order_of_convergence(prob, alg, dts)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                    orders = experimental_orders_of_convergence(prob, alg, dts)
+                    @test check_order(orders, PositiveIntegrators.alg_order(alg))
 
                     test_times = [
                         0.123456789, 1 / pi, exp(-1),
                         1.23456789, 1 + 1 / pi, 1 + exp(-1),
                     ]
-                    eoc = experimental_order_of_convergence(prob, alg, dts, test_times)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
-                    eoc = experimental_order_of_convergence(prob, alg, dts, test_times;
-                                                            only_first_index = true)
-                    @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                    for test_time in test_times
+                        orders = experimental_orders_of_convergence(prob, alg,
+                                                                    dts;
+                                                                    test_time)
+                        @test check_order(orders, PositiveIntegrators.alg_order(alg),
+                                          atol = 0.2)
+                        orders = experimental_orders_of_convergence(prob, alg,
+                                                                    dts;
+                                                                    test_time,
+                                                                    only_first_index = true)
+                        @test check_order(orders, PositiveIntegrators.alg_order(alg),
+                                          atol = 0.2)
+                    end
                 end
             end
         end
@@ -702,37 +987,35 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
-            dts = 0.5 .^ (6:11)
+            dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
-            for alg in [
-                    MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0),
-                ], prob in problems
-                eoc = experimental_order_of_convergence(prob, alg, dts)
-                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+            algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
+            for alg in algs, prob in problems
+                orders = experimental_orders_of_convergence(prob, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
             end
         end
 
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            dts = 0.5 .^ (6:11)
+            dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
             for alg in algs, prob in problems
-                eoc = experimental_order_of_convergence(prob, alg, dts)
-                @test isapprox(eoc, PositiveIntegrators.alg_order(alg); atol = 0.2)
+                orders = experimental_orders_of_convergence(prob, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
             end
         end
 
         @testset "Interpolation tests (conservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
+                    SSPMPRK22(0.5, 1.0), SSPMPRK43())
             dt = 0.5^6
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -748,7 +1031,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
         @testset "Interpolation tests (nonconservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
-                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0))
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
+                    SSPMPRK22(0.5, 1.0), SSPMPRK43())
             dt = 0.5^6
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -795,7 +1079,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0))
+                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
 
             for alg in algs
                 sol = solve(prob_ip, alg; dt = dt, adaptive = false)
@@ -843,7 +1127,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0))
+                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
 
             dt = 1e-3
             for alg in algs

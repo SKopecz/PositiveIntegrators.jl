@@ -114,52 +114,9 @@ function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     return nothing
 end
 
-#####################################################################
-# Linear interpolations
-@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0+Θ * u1
-end
-
-@muladd @inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false Θm1 * u0[idxs]+Θ * u1[idxs]
-end
-
-@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing,
-                                             T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @.. broadcast=false out=Θm1 * u0 + Θ * u1
-    out
-end
-
-@muladd @inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{0}})
-    Θm1 = (1 - Θ)
-    @views @.. broadcast=false out=Θm1 * u0[idxs] + Θ * u1[idxs]
-    out
-end
-
-@inline function linear_interpolant(Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
-    @.. broadcast=false (u1 - u0)/dt
-end
-
-@inline function linear_interpolant(Θ, dt, u0, u1, idxs, T::Type{Val{1}})
-    @.. broadcast=false (u1[idxs] - u0[idxs])/dt
-end
-
-@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs::Nothing, T::Type{Val{1}})
-    @.. broadcast=false out=(u1 - u0) / dt
-    out
-end
-
-@inline function linear_interpolant!(out, Θ, dt, u0, u1, idxs, T::Type{Val{1}})
-    @views @.. broadcast=false out=(u1[idxs] - u0[idxs]) / dt
-    out
-end
-
 ### MPE #####################################################################################
 """
-    MPE([linsolve = ...])
+    MPE([linsolve = ..., small_constant = ...])
 
 The first-order modified Patankar-Euler algorithm for production-destruction systems. This one-step, one-stage method is
 first-order accurate, unconditionally positivity-preserving, and
@@ -176,6 +133,9 @@ The modified Patankar-Euler method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
+`floatmin` of the floating point type used.
 
 ## References
 
@@ -185,12 +145,20 @@ as keyword argument `linsolve`.
   Applied Numerical Mathematics 47.1 (2003): 1-30.
   [DOI: 10.1016/S0168-9274(03)00101-6](https://doi.org/10.1016/S0168-9274(03)00101-6)
 """
-struct MPE{F} <: OrdinaryDiffEqAlgorithm
+struct MPE{F, T} <: OrdinaryDiffEqAlgorithm
     linsolve::F
+    small_constant_function::T
 end
 
-function MPE(; linsolve = LUFactorization())
-    MPE(linsolve)
+function MPE(; linsolve = LUFactorization(), small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPE(linsolve, small_constant_function)
 end
 
 alg_order(::MPE) = 1
@@ -208,7 +176,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
-    MPEConstantCache(floatmin(uEltypeNoUnits))
+    MPEConstantCache(alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPEConstantCache)
@@ -270,7 +238,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     P = p_prototype(u, f)
     σ = zero(u)
-    tab = MPEConstantCache(floatmin(uEltypeNoUnits))
+    tab = MPEConstantCache(alg.small_constant_function(uEltypeNoUnits))
 
     if f isa ConservativePDSFunction
         # We use P to store the evaluation of the PDS 
@@ -356,48 +324,9 @@ function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = fa
     integrator.stats.nsolve += 1
 end
 
-# interpolation specializations
-function interp_summary(::Type{cacheType},
-                        dense::Bool) where {
-                                            cacheType <: Union{MPEConstantCache, MPECache}}
-    "1st order linear"
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPEConstantCache, MPECache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{0}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPEConstantCache, MPECache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{0}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPEConstantCache, MPECache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{1}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPEConstantCache, MPECache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{1}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
-
 ### MPRK22 #####################################################################################
 """
-    MPRK22(α; [linsolve = ...])
+    MPRK22(α; [linsolve = ..., small_constant = ...])
 
 A family of second-order modified Patankar-Runge-Kutta algorithms for 
 production-destruction systems. Each member of this family is an one-step, two-stage method which is
@@ -416,6 +345,9 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
+`floatmin` of the floating point type used.
 
 ## References
 
@@ -438,13 +370,24 @@ as keyword argument `linsolve`.
   Applied Numerical Mathematics 182 (2022): 117-147.
   [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
 """
-struct MPRK22{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     linsolve::F
+    small_constant_function::T2
 end
 
-function MPRK22(alpha; linsolve = LUFactorization())
-    MPRK22{typeof(alpha), typeof(linsolve)}(alpha, linsolve)
+function MPRK22(alpha; linsolve = LUFactorization(),
+                small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK22{typeof(alpha), typeof(linsolve), typeof(small_constant_function)}(alpha,
+                                                                             linsolve,
+                                                                             small_constant_function)
 end
 
 alg_order(::MPRK22) = 2
@@ -483,7 +426,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
 
     a21, b1, b2 = get_constant_parameters(alg)
-    MPRK22ConstantCache(a21, b1, b2, floatmin(uEltypeNoUnits))
+    MPRK22ConstantCache(a21, b1, b2, alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK22ConstantCache)
@@ -553,9 +496,8 @@ function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = fal
     u = sol.u
     integrator.stats.nsolve += 1
 
-    # copied from perform_step for HeunConstantCache
-    # If a21 = 1.0, then σ is the MPE approximation and thus suited for stiff problems.
-    # If a21 ≠ 1.0, σ might be a bad choice to estimate errors.
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     tmp = u - σ
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -592,7 +534,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, b1, b2 = get_constant_parameters(alg)
-    tab = MPRK22ConstantCache(a21, b1, b2, floatmin(uEltypeNoUnits))
+    tab = MPRK22ConstantCache(a21, b1, b2, alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
     # We use P2 to store the last evaluation of the PDS 
@@ -693,6 +635,8 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
@@ -750,6 +694,8 @@ function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step =
     integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
+    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
+    # Otherwise, this is not clear.
     @.. broadcast=false σ=u - σ
 
     # Now tmp stores error residuals
@@ -761,7 +707,7 @@ end
 
 ### MPRK43 #####################################################################################
 """
-    MPRK43I(α, β; [linsolve = ...])
+    MPRK43I(α, β; [linsolve = ..., small_constant = ...])
 
 A family of third-order modified Patankar-Runge-Kutta schemes for
 production-destruction systems, which is based on the two-parameter family of third order explicit Runge--Kutta schemes.
@@ -781,6 +727,9 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
+`floatmin` of the floating point type used.
 
 ## References
 
@@ -790,14 +739,25 @@ as keyword argument `linsolve`.
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
 """
-struct MPRK43I{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK43I{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     alpha::T
     beta::T
     linsolve::F
+    small_constant_function::T2
 end
 
-function MPRK43I(alpha, beta; linsolve = LUFactorization())
-    MPRK43I{typeof(alpha), typeof(linsolve)}(alpha, beta, linsolve)
+function MPRK43I(alpha, beta; linsolve = LUFactorization(),
+                 small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK43I{typeof(alpha), typeof(linsolve), typeof(small_constant_function)}(alpha, beta,
+                                                                              linsolve,
+                                                                              small_constant_function)
 end
 
 alg_order(::MPRK43I) = 3
@@ -846,7 +806,7 @@ function get_constant_parameters(alg::MPRK43I)
 end
 
 """
-    MPRK43II(γ; [linsolve = ...])
+    MPRK43II(γ; [linsolve = ..., small_constant = ...])
 
 A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
 production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with 
@@ -867,6 +827,9 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
+`floatmin` of the floating point type used.
 
 ## References
 
@@ -876,13 +839,23 @@ as keyword argument `linsolve`.
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
 """
-struct MPRK43II{T, F} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct MPRK43II{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     gamma::T
     linsolve::F
+    small_constant_function::T2
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization())
-    MPRK43II{typeof(gamma), typeof(linsolve)}(gamma, linsolve)
+function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
+    if isnothing(small_constant)
+        small_constant_function = floatmin
+    elseif small_constant isa Number
+        small_constant_function = Returns(small_constant)
+    else # assume small_constant isa Function
+        small_constant_function = small_constant
+    end
+    MPRK43II{typeof(gamma), typeof(linsolve), typeof(small_constant_function)}(gamma,
+                                                                               linsolve,
+                                                                               small_constant_function)
 end
 
 alg_order(::MPRK43II) = 3
@@ -941,7 +914,7 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
     end
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                        beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+                        beta1, beta2, q1, q2, alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPRK43ConstantCache)
@@ -1099,7 +1072,8 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2 = get_constant_parameters(alg)
     tab = MPRK43ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3,
-                              beta1, beta2, q1, q2, floatmin(uEltypeNoUnits))
+                              beta1, beta2, q1, q2,
+                              alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     tmp2 = zero(u)
     P = p_prototype(u, f)
@@ -1338,48 +1312,3 @@ function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step =
 end
 
 ########################################################################################
-
-# interpolation specializations
-function interp_summary(::Type{cacheType},
-                        dense::Bool) where {
-                                            cacheType <:
-                                            Union{MPRK22ConstantCache, MPRK22Cache,
-                                                  MPRK43ConstantCache, MPRK43Cache}}
-    "1st order linear"
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                       MPRK43ConstantCache, MPRK43Cache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{0}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                        MPRK43ConstantCache, MPRK43Cache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{0}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant(Θ, dt, u0, u1, k,
-                          cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                       MPRK43ConstantCache, MPRK43Cache},
-                          idxs, # Optionally specialize for ::Nothing and others
-                          T::Type{Val{1}},
-                          differential_vars::Nothing)
-    linear_interpolant(Θ, dt, u0, u1, idxs, T)
-end
-
-function _ode_interpolant!(out, Θ, dt, u0, u1, k,
-                           cache::Union{MPRK22ConstantCache, MPRK22Cache,
-                                        MPRK43ConstantCache, MPRK43Cache},
-                           idxs, # Optionally specialize for ::Nothing and others
-                           T::Type{Val{1}},
-                           differential_vars::Nothing)
-    linear_interpolant!(out, Θ, dt, u0, u1, idxs, T)
-end
