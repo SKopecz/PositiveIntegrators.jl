@@ -20,7 +20,7 @@ open(joinpath(@__DIR__, "src", "license.md"), "w") do io
     # Point to source license file
     println(io, """
     ```@meta
-    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE.md"
+    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE"
     ```
     """)
     # Write the modified contents
