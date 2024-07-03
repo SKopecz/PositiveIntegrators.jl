@@ -617,7 +617,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @testset "$alg" for alg in (MPE(),
                                         MPRK22(0.5), MPRK22(1.0),
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK43())
+                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1144,6 +1145,25 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
+    # Here we check that the implemented schemes can solve the predefined PDS.
+    @testset "PDS problem library" begin
+        algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+        #TODO: Add prob_pds_stratreac
+        probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator, prob_pds_npzd,
+                 prob_pds_sir)
+        @testset "$alg" for alg in algs
+            for prob in probs
+                tspan = prob.tspan
+                dt = (tspan[2] - tspan[1]) / 10
+                sol = solve(prob, alg; dt = dt)
+                @test Int(sol.retcode) == 1
+            end
+        end
+    end
+
+    #=
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
     @testset "Examples" begin
@@ -1167,4 +1187,5 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
     end
+    =#
 end;
