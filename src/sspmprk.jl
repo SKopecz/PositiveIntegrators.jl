@@ -77,11 +77,13 @@ function get_constant_parameters(alg::SSPMPRK22)
 
     s = (b20 + b21 + a21 * b10^2) / (b10 * (b20 + b21))
 
+    τ = 1 + (a21 * b10^2) / (b20 + b21)
+
     # This should never happen
     if any(<(0), (a21, a10, a20, b10, b20, b21))
         throw(ArgumentError("SSPMPRK22 requires nonnegative SSP coefficients."))
     end
-    return a21, a10, a20, b10, b20, b21, s
+    return a21, a10, a20, b10, b20, b21, s, τ
 end
 
 struct SSPMPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
@@ -92,6 +94,7 @@ struct SSPMPRK22ConstantCache{T} <: OrdinaryDiffEqConstantCache
     b20::T
     b21::T
     s::T
+    τ::T
     small_constant::T
 end
 
@@ -104,8 +107,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         throw(ArgumentError("SSPMPRK22 can only be applied to production-destruction systems"))
     end
 
-    a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s,
+    a21, a10, a20, b10, b20, b21, s, τ = get_constant_parameters(alg)
+    SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, τ,
                            alg.small_constant_function(uEltypeNoUnits))
 end
 
@@ -114,7 +117,7 @@ end
 
 function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
-    @unpack a21, a10, a20, b10, b20, b21, s, small_constant = cache
+    @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache
 
     f = integrator.f
 
@@ -175,10 +178,17 @@ function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = 
     u = sol.u
     integrator.stats.nsolve += 1
 
+    # Unless τ = 1, σ is not a first order approximation, since
+    # σ = uprev + τ * dt *(P^n − D^n) + O(dt^2), see (2.7) in
+    # https://doi.org/10.1007/s10915-018-0852-1.
+    # But we can compute a 1st order approximation σ2, as follows.
+    # σ2 may become negative, but still can be used for error estimation.
+    σ2 = (σ - uprev) / τ + uprev
+
     # If a21 = 0 or b10 = 0, then σ is a first order approximation of the solution and
     # can be used for error estimation. 
     # TODO: Find first order approximation, if a21*b10 ≠ 0.
-    tmp = u - σ
+    tmp = u - σ2
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -213,8 +223,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    a21, a10, a20, b10, b20, b21, s = get_constant_parameters(alg)
-    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s,
+    a21, a10, a20, b10, b20, b21, s, τ = get_constant_parameters(alg)
+    tab = SSPMPRK22ConstantCache(a21, a10, a20, b10, b20, b21, s, τ,
                                  alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
@@ -253,7 +263,7 @@ end
 function perform_step!(integrator, cache::SSPMPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, D, D2, σ, linsolve = cache
-    @unpack a21, a10, a20, b10, b20, b21, s, small_constant = cache.tab
+    @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache.tab
 
     # We use P2 to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system
@@ -311,12 +321,14 @@ function perform_step!(integrator, cache::SSPMPRK22Cache, repeat_step = false)
     u .= linres
     integrator.stats.nsolve += 1
 
-    # If a21 = 0 or b10 = 0, then σ is a first order approximation of the solution and
-    # can be used for error estimation. 
-    # TODO: Find first order approximation, if a21*b10 ≠ 0.
+    # Unless τ = 1, σ is not a first order approximation, since
+    # σ = uprev + τ * dt *(P^n − D^n) + O(dt^2), see (2.7) in
+    # https://doi.org/10.1007/s10915-018-0852-1.
+    # But we can compute a 1st order approximation as σ2 = (σ - uprev) / τ + uprev.
+    # σ2 may become negative, but still can be used for error estimation.
 
     # Now σ stores the error estimate
-    @.. broadcast=false σ=u - σ
+    @.. broadcast=false σ=u - (σ - uprev) / τ - uprev
 
     # Now tmp stores error residuals
     calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
@@ -374,11 +386,14 @@ function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_ste
     u .= linres
     integrator.stats.nsolve += 1
 
-    # If a21 = 0 or b10 = 0, then σ is a first order approximation of the solution and
-    # can be used for error estimation. 
-    # TODO: Find first order approximation, if a21*b10 ≠ 0.
+    # Unless τ = 1, σ is not a first order approximation, since
+    # σ = uprev + τ * dt *(P^n − D^n) + O(dt^2), see (2.7) in
+    # https://doi.org/10.1007/s10915-018-0852-1.
+    # But we can compute a 1st order approximation as σ2 = (σ - uprev) / τ + uprev.
+    # σ2 may become negative, but still can be used for error estimation.
+
     # Now σ stores the error estimate
-    @.. broadcast=false σ=u - σ
+    @.. broadcast=false σ=u - (σ - uprev) / τ - uprev
 
     # Now tmp stores error residuals
     calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
