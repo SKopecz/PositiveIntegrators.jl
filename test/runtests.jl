@@ -1151,7 +1151,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                 MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
         #TODO: Add prob_pds_stratreac
         probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
-                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator, prob_pds_npzd,
+                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
+                 prob_pds_npzd,
                  prob_pds_sir)
         @testset "$alg" for alg in algs
             for prob in probs
