@@ -340,7 +340,7 @@ end
 function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, σ, linsolve = cache
-    @unpack a21, a10, a20, b10, b20, b21, s, small_constant = cache.tab
+    @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache.tab
 
     # We use P2 to store the last evaluation of the PDS 
     # as well as to store the system matrix of the linear system
