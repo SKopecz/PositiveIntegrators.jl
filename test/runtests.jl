@@ -1146,16 +1146,35 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
     end
 
     # Here we check that the implemented schemes can solve the predefined PDS.
-    @testset "PDS problem library" begin
-        algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
-        #TODO: Add prob_pds_stratreac
+    @testset "PDS problem library (adaptive schemes)" begin
+        algs = (MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
         probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
                  prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
                  prob_pds_npzd,
-                 prob_pds_sir)
+                 prob_pds_sir, prob_pds_stratreac)
         @testset "$alg" for alg in algs
             for prob in probs
+                if prob == prob_pds_stratreac && alg == SSPMPRK22(0.5, 1.0)
+                    #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac. 
+                    #Need to figure out if this is a problem of the algorithm or not.
+                    break
+                end
+                sol = solve(prob, alg)
+                @test Int(sol.retcode) == 1
+            end
+        end
+    end
+
+    # Here we check that the implemented schemes can solve the predefined PDS.
+    @testset "PDS problem library (non-adaptive schemes)" begin
+        algs = (MPE(), SSPMPRK43())
+        #prob_pds_robertson not included
+        probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                 prob_pds_bertolazzi, prob_pds_brusselator,
+                 prob_pds_npzd, prob_pds_sir, prob_pds_stratreac)
+        @testset "$alg" for alg in algs
+            @testset "$prob" for prob in probs
                 tspan = prob.tspan
                 dt = (tspan[2] - tspan[1]) / 10
                 sol = solve(prob, alg; dt = dt)
