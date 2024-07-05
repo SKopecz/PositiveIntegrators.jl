@@ -1521,6 +1521,12 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
+    @testset "plot" begin
+        using Plots
+        sol = solve(prob_pds_linmod, MPRK22(1.0))
+        @test_nowarn plot(sol)
+    end
+
     #=
     # TODO: Do we want to keep the examples and test them or do we want
     #       to switch to real docs/tutorials instead?
