@@ -12,10 +12,12 @@ using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
 
+
 """
     experimental_orders_of_convergence(prob, alg, dts;
                                       test_time = nothing,
-                                      only_first_index = false)
+                                      only_first_index = false,
+                                      ref_alg = TRBDF2(autodiff = false))
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the errors at `test_time`. If`test_time` is not specified the error is computed 
@@ -23,36 +25,74 @@ at the final time.
 Return the associated experimental orders of convergence.
 
 If `only_first_index == true`, only the first solution component is used
-to compute the error.
+to compute the error. If no analytic solution is available 
 """
 function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
-                                            only_first_index = false)
+                                            only_first_index = false,
+                                            ref_alg = TRBDF2(autodiff = false))
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
-    analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
 
-    if isnothing(test_time)
-        if only_first_index
-            for (i, dt) in enumerate(dts)
-                sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
-                errors[i] = norm(sol.u[end][1] - analytic(sol.t[end])[1])
+    # use analytic solution
+    if !(isnothing(prob.f.analytic))
+        analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
+        if isnothing(test_time)
+            if only_first_index
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false,
+                                save_everystep = false)
+                    errors[i] = norm(sol.u[end][1] - analytic(sol.t[end])[1])
+                end
+            else
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false,
+                                save_everystep = false)
+                    errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
+                end
             end
         else
-            for (i, dt) in enumerate(dts)
-                sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
-                errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
+            if only_first_index
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false)
+                    errors[i] = norm(sol(test_time; idxs = 1) - first(analytic(test_time)))
+                end
+            else
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false)
+                    errors[i] = norm(sol(test_time) - analytic(test_time))
+                end
             end
         end
-    else
-        if only_first_index
-            for (i, dt) in enumerate(dts)
-                sol = solve(prob, alg; dt = dt, adaptive = false)
-                errors[i] = norm(sol(test_time; idxs = 1) - first(analytic(test_time)))
+    else # need reference solution        
+        if isnothing(test_time)
+            dt0 = (prob.tspan[2] - prob.tspan[1]) / 1e5
+            refsol = solve(prob, ref_alg; dt = dt0, adaptive = false,
+                           save_everystep = false)
+            if only_first_index
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false,
+                                save_everystep = false)
+                    errors[i] = norm(sol.u[end][1] - refsol.u[end][1])
+                end
+            else
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false,
+                                save_everystep = false)
+                    errors[i] = norm(sol.u[end] - refsol.u[end])
+                end
             end
         else
-            for (i, dt) in enumerate(dts)
-                sol = solve(prob, alg; dt = dt, adaptive = false)
-                errors[i] = norm(sol(test_time) - analytic(test_time))
+            refsol = solve(prob, ref_alg; dt = dt0, adaptive = false)
+            if only_first_index
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false)
+                    errors[i] = norm(sol(test_time; idxs = 1) - refsol(test_time; idxs = 1))
+                end
+            else
+                for (i, dt) in enumerate(dts)
+                    sol = solve(prob, alg; dt = dt, adaptive = false)
+                    errors[i] = norm(sol(test_time) - refsol(test_time))
+                end
             end
         end
     end
@@ -1030,6 +1070,74 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             end
         end
 
+        @testset "Check convergence order (nonautonomous conservative PDS)" begin
+            prod! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                P[1, 2] = sin(t)^2 * u[2]
+                P[2, 1] = cos(2 * t)^2 * u[1]
+                return nothing
+            end
+            prod = (u, p, t) -> begin
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return P
+            end
+            u0 = [1.0; 0.0]
+            tspan = (0.0, 1.0)
+            prob_oop = ConservativePDSProblem(prod, u0, tspan) #out-of-place
+            prob_ip = ConservativePDSProblem(prod!, u0, tspan) #in-place
+        
+            dts = 0.5 .^ (4:15)
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in algs
+                orders = experimental_orders_of_convergence(prob_oop, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
+                orders = experimental_orders_of_convergence(prob_ip, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
+            end
+        end
+        
+        @testset "Check convergence order (nonautonomous nonconservative PDS)" begin
+            prod! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                P[1, 2] = sin(t)^2 * u[2]
+                P[2, 1] = cos(2 * t)^2 * u[1]
+                P[2, 2] = cos(t)^2 * u[2]
+                return nothing
+            end
+            dest! = (d, u, p, t) -> begin
+                fill!(d, zero(eltype(d)))
+                d[1] = sin(2 * t)^2 * u[1]
+                d[2] = sin(0.5 * t)^2 * u[2]
+                return nothing
+            end
+            prod = (u, p, t) -> begin
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return P
+            end
+            dest = (u, p, t) -> begin
+                d = similar(u, (length(u),))
+                dest!(d, u, p, t)
+                return d
+            end
+            u0 = [1.0; 0.0]
+            tspan = (0.0, 1.0)
+            prob_oop = PDSProblem(prod, dest, u0, tspan) #out-of-place
+            prob_ip = PDSProblem(prod!, dest!, u0, tspan) #in-place
+        
+            dts = 0.5 .^ (4:15)
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in algs
+                orders = experimental_orders_of_convergence(prob_oop, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
+                orders = experimental_orders_of_convergence(prob_ip, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
+            end
+        end
+
         @testset "Interpolation tests (nonconservative)" begin
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
                     MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
@@ -1145,7 +1253,8 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         end
     end
 
-    # Here we check that the implemented schemes can solve the predefined PDS.
+    # Here we check that the implemented schemes can solve the predefined PDS
+    # (at least for specific parameters)
     @testset "PDS problem library (adaptive schemes)" begin
         algs = (MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                 MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
@@ -1154,7 +1263,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                  prob_pds_npzd,
                  prob_pds_sir, prob_pds_stratreac)
         @testset "$alg" for alg in algs
-            for prob in probs
+            @testset "$i" for (i, prob) in enumerate(probs)
                 if prob == prob_pds_stratreac && alg == SSPMPRK22(0.5, 1.0)
                     #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac. 
                     #Need to figure out if this is a problem of the algorithm or not.
