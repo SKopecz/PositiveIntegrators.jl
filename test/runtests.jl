@@ -12,7 +12,6 @@ using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
 
-
 """
     experimental_orders_of_convergence(prob, alg, dts;
                                       test_time = nothing,
@@ -1086,7 +1085,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             tspan = (0.0, 1.0)
             prob_oop = ConservativePDSProblem(prod, u0, tspan) #out-of-place
             prob_ip = ConservativePDSProblem(prod!, u0, tspan) #in-place
-        
+
             dts = 0.5 .^ (4:15)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                     MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
@@ -1097,7 +1096,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
             end
         end
-        
+
         @testset "Check convergence order (nonautonomous nonconservative PDS)" begin
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1126,7 +1125,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             tspan = (0.0, 1.0)
             prob_oop = PDSProblem(prod, dest, u0, tspan) #out-of-place
             prob_ip = PDSProblem(prod!, dest!, u0, tspan) #in-place
-        
+
             dts = 0.5 .^ (4:15)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                     MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
