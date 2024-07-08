@@ -115,7 +115,8 @@ end
 function initialize!(integrator, cache::SSPMPRK22ConstantCache)
 end
 
-@muladd function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK22ConstantCache,
+                               repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache
 
@@ -337,7 +338,8 @@ end
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
-@muladd function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK22ConservativeCache,
+                               repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, σ, linsolve = cache
     @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache.tab
@@ -539,7 +541,8 @@ end
 function initialize!(integrator, cache::SSPMPRK43ConstantCache)
 end
 
-@muladd function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK43ConstantCache,
+                               repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache
 
@@ -850,7 +853,8 @@ end
     =#
 end
 
-@muladd function perform_step!(integrator, cache::SSPMPRK43ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK43ConservativeCache,
+                               repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, σ, ρ, linsolve = cache
     @unpack n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache.tab

@@ -646,7 +646,8 @@ end
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
-@muladd function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK22ConservativeCache,
+                               repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, σ, linsolve = cache
     @unpack a21, b1, b2, small_constant = cache.tab
@@ -1225,7 +1226,8 @@ end
     integrator.EEst = integrator.opts.internalnorm(tmp2, t)
 end
 
-@muladd function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK43ConservativeCache,
+                               repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, σ, linsolve = cache
     @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
