@@ -24,7 +24,8 @@ at the final time.
 Return the associated experimental orders of convergence.
 
 If `only_first_index == true`, only the first solution component is used
-to compute the error. If no analytic solution is available 
+to compute the error. If no analytic solution is available, a reference
+solution is computed using `ref_alg`.
 """
 function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             only_first_index = false,
