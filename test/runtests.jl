@@ -184,6 +184,51 @@ end
 const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [0.9, 0.1],
                                                            (0.0, 2.0), [5.0, 1.0];
                                                            analytic = f_analytic)
+
+# Function definitions for testset "Linear advection"
+# Functions are defined outside the testset to avoid failing allocation tests,
+# see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
+# number of nodes
+N = 1000
+u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end]
+tspan = (0.0, 1.0)
+# in-place syntax for f
+function fdupwind!(du, u, p, t)
+    N = length(u)
+    dx = 1 / N
+    du[1] = -(u[1] - u[N]) / dx
+    for i in 2:N
+        du[i] = -(u[i] - u[i - 1]) / dx
+    end
+end
+fdupwind_f = ODEProblem(fdupwind!, u0, tspan)
+# in-place sytanx for PDS
+function fdupwindP!(P, u, p, t)
+    P .= 0.0
+    N = length(u)
+    dx = 1 / N
+    P[1, N] = u[N] / dx
+    for i in 2:N
+        P[i, i - 1] = u[i - 1] / dx
+    end
+    return nothing
+end
+function fdupwindP!(P::SparseMatrixCSC, u, p, t)
+    N = length(u)
+    dx = 1 / N
+    values = nonzeros(P)
+    for col in axes(P, 2)
+        for idx in nzrange(P, col)
+            values[idx] = u[col] / dx
+        end
+    end
+    return nothing
+end
+function fdupwindD!(D, u, p, t)
+    D .= 0.0
+    return nothing
+end
+
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
@@ -463,49 +508,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test 0.95 < alloc1 / alloc3 < 1.05
         end
 
-        # Function definitions for testset "Linear advection"
-        # Functions are defined outside the testset to avoid failing allocation tests,
-        # see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
-        # number of nodes
-        N = 1000
-        u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end]
-        tspan = (0.0, 1.0)
-        # in-place syntax for f
-        function fdupwind!(du, u, p, t)
-            N = length(u)
-            dx = 1 / N
-            du[1] = -(u[1] - u[N]) / dx
-            for i in 2:N
-                du[i] = -(u[i] - u[i - 1]) / dx
-            end
-        end
-        fdupwind_f = ODEProblem(fdupwind!, u0, tspan)
-        # in-place sytanx for PDS
-        function fdupwindP!(P, u, p, t)
-            P .= 0.0
-            N = length(u)
-            dx = 1 / N
-            P[1, N] = u[N] / dx
-            for i in 2:N
-                P[i, i - 1] = u[i - 1] / dx
-            end
-            return nothing
-        end
-        function fdupwindP!(P::SparseMatrixCSC, u, p, t)
-            N = length(u)
-            dx = 1 / N
-            values = nonzeros(P)
-            for col in axes(P, 2)
-                for idx in nzrange(P, col)
-                    values[idx] = u[col] / dx
-                end
-            end
-            return nothing
-        end
-        function fdupwindD!(D, u, p, t)
-            D .= 0.0
-            return nothing
-        end
         @testset "Linear advection" begin
             # Linear advection discretized with finite differences and upwind, periodic boundary conditions            
             # problem with dense matrices
