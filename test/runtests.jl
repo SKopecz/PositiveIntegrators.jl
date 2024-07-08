@@ -32,6 +32,31 @@ function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             ref_alg = TRBDF2(autodiff = false))
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
+    
+    if !(isnothing(prob.f.analytic))
+        # there is an analytic solution
+        if isnothing(test_time)
+            # we compare the results at the final time
+            reference_solution = prob.f.analytic(prob.u0, prob.p, last(prob.tspan))
+        else
+            # we compare the results at the given time
+            reference_solution = prob.f.analytic(prob.u0, prob.p, test_time)
+        end
+    else
+        # we compute a reference solution numerically
+        if isnothing(test_time)
+            # we compare the results at the final time
+            tspan = prob.tspan
+        else 
+            # we compare the results at the given time
+            tspan = (first(prob.tspan), test_time)
+        end
+        dt0 = (tspan[end] - tspan[begin]) / 1e5
+        refsol = solve(prob, ref_alg; 
+                       dt = dt0, adaptive = false,
+                       save_everystep = false)
+        reference_solution = refsol.u[end]
+   end
 
     # use analytic solution
     if !(isnothing(prob.f.analytic))
@@ -368,7 +393,7 @@ end
         end
     end
 
-    # Here we check that solutions of equivalten ODEProblems, PDSProblems or 
+    # Here we check that solutions of equivalent ODEProblems, PDSProblems or 
     # ConservativePDS Problems are approximately equal. 
     # We also check that solvers from OrdinaryDiffEq can solve PDSProblems and 
     # ConservativePDSProblems.
@@ -716,21 +741,21 @@ end
 
         # Here we check that MPRK22(α) = SSPMPRK22(0,α)
         @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
-            # conservative PDS
             for α in (0.5, 2.0 / 3.0, 1.0, 2.0)
+                # conservative PDS
                 sol1 = solve(prob_pds_linmod, MPRK22(α))
                 sol2 = solve(prob_pds_linmod, SSPMPRK22(0.0, α))
                 sol3 = solve(prob_pds_linmod_inplace, MPRK22(α))
                 sol4 = solve(prob_pds_linmod_inplace, SSPMPRK22(0.0, α))
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
 
+                # nonconservative PDS
                 sol1 = solve(prob_pds_linmod_nonconservative, MPRK22(α))
                 sol2 = solve(prob_pds_linmod_nonconservative, SSPMPRK22(0.0, α))
                 sol3 = solve(prob_pds_linmod_nonconservative_inplace, MPRK22(α))
                 sol4 = solve(prob_pds_linmod_nonconservative_inplace, SSPMPRK22(0.0, α))
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
             end
-            # nonconservative PDS
         end
 
         # Here we check that different linear solvers can be used
