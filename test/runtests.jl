@@ -32,7 +32,7 @@ function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             ref_alg = TRBDF2(autodiff = false))
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
-    
+
     if !(isnothing(prob.f.analytic))
         # there is an analytic solution
         if isnothing(test_time)
@@ -47,78 +47,30 @@ function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
         if isnothing(test_time)
             # we compare the results at the final time
             tspan = prob.tspan
-        else 
+        else
             # we compare the results at the given time
             tspan = (first(prob.tspan), test_time)
         end
         dt0 = (tspan[end] - tspan[begin]) / 1e5
-        refsol = solve(prob, ref_alg; 
+        refsol = solve(prob, ref_alg;
                        dt = dt0, adaptive = false,
                        save_everystep = false)
         reference_solution = refsol.u[end]
-   end
+    end
 
-    # use analytic solution
-    if !(isnothing(prob.f.analytic))
-        analytic = t -> prob.f.analytic(prob.u0, prob.p, t)
+    for (i, dt) in enumerate(dts)
         if isnothing(test_time)
-            if only_first_index
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false,
-                                save_everystep = false)
-                    errors[i] = norm(sol.u[end][1] - analytic(sol.t[end])[1])
-                end
-            else
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false,
-                                save_everystep = false)
-                    errors[i] = norm(sol.u[end] - analytic(sol.t[end]))
-                end
-            end
+            sol = solve(prob, alg; dt = dt, adaptive = false, save_everystep = false)
+            numerical_solution = sol.u[end]
         else
-            if only_first_index
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false)
-                    errors[i] = norm(sol(test_time; idxs = 1) - first(analytic(test_time)))
-                end
-            else
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false)
-                    errors[i] = norm(sol(test_time) - analytic(test_time))
-                end
-            end
+            sol = solve(prob, alg; dt = dt, adaptive = false)
+            numerical_solution = sol(test_time)
         end
-    else # need reference solution        
-        if isnothing(test_time)
-            dt0 = (prob.tspan[2] - prob.tspan[1]) / 1e5
-            refsol = solve(prob, ref_alg; dt = dt0, adaptive = false,
-                           save_everystep = false)
-            if only_first_index
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false,
-                                save_everystep = false)
-                    errors[i] = norm(sol.u[end][1] - refsol.u[end][1])
-                end
-            else
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false,
-                                save_everystep = false)
-                    errors[i] = norm(sol.u[end] - refsol.u[end])
-                end
-            end
+
+        if only_first_index
+            errors[i] = norm(first(numerical_solution) - first(reference_solution))
         else
-            refsol = solve(prob, ref_alg; dt = dt0, adaptive = false)
-            if only_first_index
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false)
-                    errors[i] = norm(sol(test_time; idxs = 1) - refsol(test_time; idxs = 1))
-                end
-            else
-                for (i, dt) in enumerate(dts)
-                    sol = solve(prob, alg; dt = dt, adaptive = false)
-                    errors[i] = norm(sol(test_time) - refsol(test_time))
-                end
-            end
+            errors[i] = norm(numerical_solution - reference_solution)
         end
     end
 
@@ -215,7 +167,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 # see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
 #
 # in-place syntax for f
-function linear_advection_fd_upwind!(du, u, p, t)
+function linear_advection_fd_upwind_f!(du, u, p, t)
     N = length(u)
     dx = 1 / N
     du[1] = -(u[1] - u[N]) / dx
@@ -224,7 +176,7 @@ function linear_advection_fd_upwind!(du, u, p, t)
     end
 end
 # in-place sytanx for PDS
-function linear_advection_fd_upwdind_P!(P, u, p, t)
+function linear_advection_fd_upwind_P!(P, u, p, t)
     P .= 0.0
     N = length(u)
     dx = 1 / N
@@ -534,8 +486,8 @@ end
             u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end] # initial values
             tspan = (0.0, 1.0)
             # Linear advection discretized with finite differences and upwind, periodic boundary conditions            
-            linear_advection_fd_upwind_f = ODEProblem(linear_advection_fd_upwind!, u0,
-                                                      tspan)
+            linear_advection_fd_upwind_ODE = ODEProblem(linear_advection_fd_upwind_f!, u0,
+                                                        tspan)
             # problem with dense matrices
             linear_advection_fd_upwind_PDS_dense = PDSProblem(linear_advection_fd_upwind_P!,
                                                               linear_advection_fd_upwind_D!,
@@ -557,13 +509,14 @@ end
             linear_advection_fd_upwind_ConsPDS_sparse = ConservativePDSProblem(linear_advection_fd_upwind_P!,
                                                                                u0, tspan;
                                                                                p_prototype = p_prototype)
-            linear_advection_fd_upwind_ConsPDS_sparse_2 = ConservativePDSProblem{true}(linear_advection__fd_upwind_P!,
+            linear_advection_fd_upwind_ConsPDS_sparse_2 = ConservativePDSProblem{true}(linear_advection_fd_upwind_P!,
                                                                                        u0,
                                                                                        tspan;
                                                                                        p_prototype = p_prototype)
 
             # solutions
-            sol_linear_advection_fd_upwind_f = solve(linear_advection_fd_upwind_f, Tsit5())
+            sol_linear_advection_fd_upwind_ODE = solve(linear_advection_fd_upwind_ODE,
+                                                       Tsit5())
             sol_linear_advection_fd_upwind_PDS_dense = solve(linear_advection_fd_upwind_PDS_dense,
                                                              Tsit5())
             sol_linear_advection_fd_upwind_PDS_sparse = solve(linear_advection_fd_upwind_PDS_sparse,
@@ -576,13 +529,13 @@ end
                                                                     Tsit5())
 
             # check equality of solutions
-            @test sol_linear_advection_fd_upwind_f.t ≈
+            @test sol_linear_advection_fd_upwind_ODE.t ≈
                   sol_linear_advection_fd_upwind_PDS_dense.t ≈
                   sol_linear_advection_fd_upwind_PDS_sparse.t ≈
                   sol_linear_advection_fd_upwind_PDS_sparse_2.t ≈
                   sol_linear_advection_fd_upwind_ConsPDS_sparse.t ≈
                   sol_linear_advection_fd_upwind_ConsPDS_sparse_2.t
-            @test sol_linear_advection_fd_upwind_f.u ≈
+            @test sol_linear_advection_fd_upwind_ODE.u ≈
                   sol_linear_advection_fd_upwind_PDS_dense.u ≈
                   sol_linear_advection_fd_upwind_PDS_sparse.u ≈
                   sol_linear_advection_fd_upwind_PDS_sparse_2.u ≈
@@ -590,7 +543,7 @@ end
                   sol_linear_advection_fd_upwind_ConsPDS_sparse_2.u
 
             # Check that we really do not use too many additional allocations
-            alloc1 = @allocated(solve(linear_advection_fd_upwind_f, Tsit5()))
+            alloc1 = @allocated(solve(linear_advection_fd_upwind_ODE, Tsit5()))
             alloc2 = @allocated(solve(linear_advection_fd_upwind_PDS_dense, Tsit5()))
             alloc3 = @allocated(solve(linear_advection_fd_upwind_PDS_sparse, Tsit5()))
             alloc4 = @allocated(solve(linear_advection_fd_upwind_PDS_sparse_2, Tsit5()))
@@ -603,8 +556,6 @@ end
             @test 0.95 < alloc1 / alloc6 < 1.05
         end
     end
-
-    @show "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
     @testset "PDS Solvers" begin
         # Here we check that MPRK schemes require a PDSProblem or ConservativePDSProblem.
