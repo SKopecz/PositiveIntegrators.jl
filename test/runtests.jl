@@ -372,7 +372,7 @@ end
         end
     end
 
-    # Here we check that solutions of equivalten ODEProblems, PDSProblems or 
+    # Here we check that solutions of equivalent ODEProblems, PDSProblems or 
     # ConservativePDS Problems are approximately equal. 
     # We also check that solvers from OrdinaryDiffEq can solve PDSProblems and 
     # ConservativePDSProblems.
