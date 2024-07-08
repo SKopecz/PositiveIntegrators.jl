@@ -2,16 +2,16 @@
 """
     SSPMPRK22(α, β; [linsolve = ..., small_constant = ...])
 
-A family of second-order modified Patankar-Runge-Kutta algorithms for 
+A family of second-order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is a one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameters `α` and `β` are described by Huang and Shu (2019) and
-studied by Huang, Izgin, Kopecz, Meister and Shu (2023). 
-The difference to [`MPRK22`](@ref) is that this method is based on the SSP formulation of 
+studied by Huang, Izgin, Kopecz, Meister and Shu (2023).
+The difference to [`MPRK22`](@ref) is that this method is based on the SSP formulation of
 an explicit second-order Runge-Kutta method. This family of schemes contains the [`MPRK22`](@ref) family,
 where `MPRK22(α) = SSMPRK22(0, α)` applies.
 
-The scheme was introduced by Huang and Shu for conservative production-destruction systems. 
+The scheme was introduced by Huang and Shu for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 analogous to [`MPE`](@ref).
 
@@ -21,14 +21,14 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
 ## References
 
 - Juntao Huang and Chi-Wang Shu.
-  "Positivity-Preserving Time Discretizations for Production–Destruction Equations 
+  "Positivity-Preserving Time Discretizations for Production–Destruction Equations
   with Applications to Non-equilibrium Flows."
   Journal of Scientific Computing 78 (2019): 1811–1839
   [DOI: 10.1007/s10915-018-0852-1](https://doi.org/10.1007/s10915-018-0852-1)
@@ -115,7 +115,7 @@ end
 function initialize!(integrator, cache::SSPMPRK22ConstantCache)
 end
 
-function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache
 
@@ -186,7 +186,7 @@ function perform_step!(integrator, cache::SSPMPRK22ConstantCache, repeat_step = 
     σ2 = (σ - uprev) / τ + uprev
 
     # If a21 = 0 or b10 = 0, then σ is a first order approximation of the solution and
-    # can be used for error estimation. 
+    # can be used for error estimation.
     # TODO: Find first order approximation, if a21*b10 ≠ 0.
     tmp = u - σ2
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
@@ -228,7 +228,7 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                                  alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     P2 = p_prototype(u, f)
     σ = zero(u)
@@ -250,7 +250,7 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                        zero(u), # D
                        zero(u), # D2
                        σ,
-                       tab, #MPRK22ConstantCache 
+                       tab, #MPRK22ConstantCache
                        linsolve)
     else
         throw(ArgumentError("SSPMPRK22 can only be applied to production-destruction systems"))
@@ -260,12 +260,12 @@ end
 function initialize!(integrator, cache::Union{SSPMPRK22Cache, SSPMPRK22ConservativeCache})
 end
 
-function perform_step!(integrator, cache::SSPMPRK22Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, D, D2, σ, linsolve = cache
     @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache.tab
 
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
     f.p(P, uprev, p, t) # evaluate production terms
@@ -337,12 +337,12 @@ function perform_step!(integrator, cache::SSPMPRK22Cache, repeat_step = false)
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
-function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK22ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, σ, linsolve = cache
     @unpack a21, a10, a20, b10, b20, b21, s, τ, small_constant = cache.tab
 
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
@@ -405,15 +405,15 @@ end
 """
     SSPMPRK43([linsolve = ..., small_constant = ...])
 
-A third-order modified Patankar-Runge-Kutta algorithm for 
+A third-order modified Patankar-Runge-Kutta algorithm for
 production-destruction systems. This scheme is a one-step, two-stage method which is
 third-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The scheme is described by Huang, Zhao and Shu (2019) and
-studied by Huang, Izgin, Kopecz, Meister and Shu (2023). 
-The difference to [`MPRK43I`](@ref) or [`MPRK43II`](@ref) is that this method is based on the SSP formulation of 
-an explicit third-order Runge-Kutta method. 
+studied by Huang, Izgin, Kopecz, Meister and Shu (2023).
+The difference to [`MPRK43I`](@ref) or [`MPRK43II`](@ref) is that this method is based on the SSP formulation of
+an explicit third-order Runge-Kutta method.
 
-The scheme was introduced by Huang, Zhao and Shu for conservative production-destruction systems. 
+The scheme was introduced by Huang, Zhao and Shu for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 analogous to [`MPE`](@ref).
 
@@ -423,14 +423,14 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
 ## References
 
 - Juntao Huang, Weifeng Zhao and Chi-Wang Shu.
-  "A Third-Order Unconditionally Positivity-Preserving Scheme for 
+  "A Third-Order Unconditionally Positivity-Preserving Scheme for
   Production–Destruction Equations with Applications to Non-equilibrium Flows."
   Journal of Scientific Computing 79 (2019): 1015–1056
   [DOI: 10.1007/s10915-018-0881-9](https://doi.org/10.1007/s10915-018-0881-9)
@@ -460,7 +460,7 @@ alg_order(::SSPMPRK43) = 3
 isfsal(::SSPMPRK43) = false
 
 function get_constant_parameters(alg::SSPMPRK43)
-    # parameters from original paper    
+    # parameters from original paper
 
     n1 = 2.569046025732011E-01
     n2 = 7.430953974267989E-01
@@ -539,7 +539,7 @@ end
 function initialize!(integrator, cache::SSPMPRK43ConstantCache)
 end
 
-function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK43ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache
 
@@ -703,7 +703,7 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp2 = zero(u)
     P = p_prototype(u, f)
     P2 = p_prototype(u, f)
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     P3 = p_prototype(u, f)
     σ = zero(u)
@@ -732,12 +732,12 @@ end
 function initialize!(integrator, cache::Union{SSPMPRK43ConservativeCache, SSPMPRK43Cache})
 end
 
-function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, D, D2, D3, σ, ρ, linsolve = cache
     @unpack n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache.tab
 
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
     f.p(P, uprev, p, t) # evaluate production terms
@@ -850,12 +850,12 @@ function perform_step!(integrator, cache::SSPMPRK43Cache, repeat_step = false)
     =#
 end
 
-function perform_step!(integrator, cache::SSPMPRK43ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::SSPMPRK43ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, σ, ρ, linsolve = cache
     @unpack n1, n2, z, η1, η2, η3, η4, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3, small_constant = cache.tab
 
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
     @.. broadcast=false P3=β10 * P

@@ -25,7 +25,7 @@ function build_mprk_matrix(P, sigma, dt, d = nothing)
 end
 
 # in-place for dense arrays
-function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
+@muladd function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
@@ -45,7 +45,7 @@ function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
     # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
     if !isnothing(d)
         @inbounds for i in eachindex(d)
-            M[i, i] += dt * d[i]
+            M[i, i] = M[i, i] + dt * d[i]
         end
     end
 
@@ -72,7 +72,7 @@ function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
 end
 
 # optimized versions for Tridiagonal matrices
-function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
+@muladd function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M.dl, M.d, M.du,
@@ -122,7 +122,7 @@ The first-order modified Patankar-Euler algorithm for production-destruction sys
 first-order accurate, unconditionally positivity-preserving, and
 linearly implicit.
 
-The scheme was introduced by Burchard et al for conservative production-destruction systems. 
+The scheme was introduced by Burchard et al for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 
 ``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``.
@@ -133,7 +133,7 @@ The modified Patankar-Euler method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
@@ -182,7 +182,7 @@ end
 function initialize!(integrator, cache::MPEConstantCache)
 end
 
-function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPEConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack small_constant = cache
 
@@ -241,7 +241,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = MPEConstantCache(alg.small_constant_function(uEltypeNoUnits))
 
     if f isa ConservativePDSFunction
-        # We use P to store the evaluation of the PDS 
+        # We use P to store the evaluation of the PDS
         # as well as to store the system matrix of the linear system
         # Right hand side of linear system is always uprev
         linprob = LinearProblem(P, _vec(uprev))
@@ -251,7 +251,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         MPEConservativeCache(P, σ, tab, linsolve)
     elseif f isa PDSFunction
         linsolve_rhs = zero(u)
-        # We use P to store the evaluation of the PDS 
+        # We use P to store the evaluation of the PDS
         # as well as to store the system matrix of the linear system
         linprob = LinearProblem(P, _vec(linsolve_rhs))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
@@ -266,13 +266,13 @@ end
 function initialize!(integrator, cache::Union{MPECache, MPEConservativeCache})
 end
 
-function perform_step!(integrator, cache::MPECache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPECache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack P, D, σ, linsolve, linsolve_rhs = cache
     @unpack small_constant = cache.tab
 
-    # We use P to store the evaluation of the PDS 
-    # as well as to store the system matrix of the linear system  
+    # We use P to store the evaluation of the PDS
+    # as well as to store the system matrix of the linear system
 
     # We require the users to set unused entries to zero!
 
@@ -298,13 +298,13 @@ function perform_step!(integrator, cache::MPECache, repeat_step = false)
     integrator.stats.nsolve += 1
 end
 
-function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack P, σ, linsolve = cache
     @unpack small_constant = cache.tab
 
-    # We use P to store the evaluation of the PDS 
-    # as well as to store the system matrix of the linear system  
+    # We use P to store the evaluation of the PDS
+    # as well as to store the system matrix of the linear system
 
     # We require the users to set unused entries to zero!
 
@@ -328,14 +328,14 @@ end
 """
     MPRK22(α; [linsolve = ..., small_constant = ...])
 
-A family of second-order modified Patankar-Runge-Kutta algorithms for 
+A family of second-order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is an one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
 implicit. The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
 Torlo, Öffner and Ranocha (2022).
 
-The scheme was introduced by Kopecz and Meister for conservative production-destruction systems. 
+The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 analogous to [`MPE`](@ref).
 
@@ -345,7 +345,7 @@ This modified Patankar-Runge-Kutta method requires the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
@@ -432,7 +432,7 @@ end
 function initialize!(integrator, cache::MPRK22ConstantCache)
 end
 
-function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK22ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack a21, b1, b2, small_constant = cache
 
@@ -537,7 +537,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     tab = MPRK22ConstantCache(a21, b1, b2, alg.small_constant_function(uEltypeNoUnits))
     tmp = zero(u)
     P = p_prototype(u, f)
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     P2 = p_prototype(u, f)
     σ = zero(u)
@@ -546,7 +546,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         # The right hand side of the linear system is always uprev. But using
         # tmp instead of uprev for the rhs we allow `alias_b=true`. uprev must
         # not be altered, since it is needed to compute the adaptive time step
-        # size. 
+        # size.
         linprob = LinearProblem(P2, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
@@ -563,7 +563,7 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                     zero(u), # D
                     zero(u), # D2
                     σ,
-                    tab, #MPRK22ConstantCache 
+                    tab, #MPRK22ConstantCache
                     linsolve)
     else
         throw(ArgumentError("MPRK22 can only be applied to production-destruction systems"))
@@ -573,12 +573,12 @@ end
 function initialize!(integrator, cache::Union{MPRK22Cache, MPRK22ConservativeCache})
 end
 
-function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, D, D2, σ, linsolve = cache
     @unpack a21, b1, b2, small_constant = cache.tab
 
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
     f.p(P, uprev, p, t) # evaluate production terms
@@ -646,7 +646,7 @@ function perform_step!(integrator, cache::MPRK22Cache, repeat_step = false)
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
-function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, P, P2, σ, linsolve = cache
     @unpack a21, b1, b2, small_constant = cache.tab
@@ -654,7 +654,7 @@ function perform_step!(integrator, cache::MPRK22ConservativeCache, repeat_step =
     # Set right hand side of linear system
     tmp .= uprev
 
-    # We use P2 to store the last evaluation of the PDS 
+    # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
@@ -714,10 +714,10 @@ production-destruction systems, which is based on the two-parameter family of th
 Each member of this family is a one-step method with four-stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well.
-The parameters `α` and `β` must be chosen such that the Runge--Kutta coefficients are nonnegative, 
-see Kopecz and Meister (2018) for details. 
+The parameters `α` and `β` must be chosen such that the Runge--Kutta coefficients are nonnegative,
+see Kopecz and Meister (2018) for details.
 
-The scheme was introduced by Kopecz and Meister for conservative production-destruction systems. 
+The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 analogous to [`MPE`](@ref).
 
@@ -727,14 +727,14 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
 ## References
 
 - Stefan Kopecz and Andreas Meister.
-  "Unconditionally positive and conservative third order modified Patankar–Runge–Kutta 
+  "Unconditionally positive and conservative third order modified Patankar–Runge–Kutta
    discretizations of production–destruction systems."
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
@@ -809,15 +809,15 @@ end
     MPRK43II(γ; [linsolve = ..., small_constant = ...])
 
 A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
-production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with 
+production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with
 non-negative Runge--Kutta coefficients.
 Each member of this family is a one-step method with four stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well. The parameter `γ` must satisfy
-`3/8 ≤ γ ≤ 3/4`. 
-Further details are given in Kopecz and Meister (2018).  
+`3/8 ≤ γ ≤ 3/4`.
+Further details are given in Kopecz and Meister (2018).
 
-The scheme was introduced by Kopecz and Meister for conservative production-destruction systems. 
+The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 analogous to [`MPE`](@ref).
 
@@ -827,14 +827,14 @@ These modified Patankar-Runge-Kutta methods require the special structure of a
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
-You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators 
+You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
 ## References
 
 - Stefan Kopecz and Andreas Meister.
-  "Unconditionally positive and conservative third order modified Patankar–Runge–Kutta 
+  "Unconditionally positive and conservative third order modified Patankar–Runge–Kutta
    discretizations of production–destruction systems."
    BIT Numerical Mathematics 58 (2018): 691–728.
   [DOI: 10.1007/s10543-018-0705-1](https://doi.org/10.1007/s10543-018-0705-1)
@@ -920,7 +920,7 @@ end
 function initialize!(integrator, cache::MPRK43ConstantCache)
 end
 
-function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK43ConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache
 
@@ -1078,7 +1078,7 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
     tmp2 = zero(u)
     P = p_prototype(u, f)
     P2 = p_prototype(u, f)
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     P3 = p_prototype(u, f)
     σ = zero(u)
@@ -1087,7 +1087,7 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
         # The right hand side of the linear system is always uprev. But using
         # tmp instead of uprev for the rhs we allow `alias_b=true`. uprev must
         # not be altered, since it is needed to compute the adaptive time step
-        # size. 
+        # size.
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
@@ -1110,12 +1110,12 @@ end
 function initialize!(integrator, cache::Union{MPRK43Cache, MPRK43ConservativeCache})
 end
 
-function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, D, D2, D3, σ, linsolve = cache
     @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
 
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
     f.p(P, uprev, p, t) # evaluate production terms
@@ -1225,7 +1225,7 @@ function perform_step!(integrator, cache::MPRK43Cache, repeat_step = false)
     integrator.EEst = integrator.opts.internalnorm(tmp2, t)
 end
 
-function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, tmp2, P, P2, P3, σ, linsolve = cache
     @unpack a21, a31, a32, b1, b2, b3, c2, c3, beta1, beta2, q1, q2, small_constant = cache.tab
@@ -1233,7 +1233,7 @@ function perform_step!(integrator, cache::MPRK43ConservativeCache, repeat_step =
     # Set right hand side of linear system
     tmp .= uprev
 
-    # We use P3 to store the last evaluation of the PDS 
+    # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
     @.. broadcast=false P3=a21 * P
