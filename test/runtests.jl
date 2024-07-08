@@ -32,6 +32,31 @@ function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             ref_alg = TRBDF2(autodiff = false))
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
+    
+    if !(isnothing(prob.f.analytic))
+        # there is an analytic solution
+        if isnothing(test_time)
+            # we compare the results at the final time
+            reference_solution = prob.f.analytic(prob.u0, prob.p, last(prob.tspan))
+        else
+            # we compare the results at the given time
+            reference_solution = prob.f.analytic(prob.u0, prob.p, test_time)
+        end
+    else
+        # we compute a reference solution numerically
+        if isnothing(test_time)
+            # we compare the results at the final time
+            tspan = prob.tspan
+        else 
+            # we compare the results at the given time
+            tspan = (first(prob.tspan), test_time)
+        end
+        dt0 = (tspan[end] - tspan[begin]) / 1e5
+        refsol = solve(prob, ref_alg; 
+                       dt = dt0, adaptive = false,
+                       save_everystep = false)
+        reference_solution = refsol.u[end]
+   end
 
     # use analytic solution
     if !(isnothing(prob.f.analytic))
