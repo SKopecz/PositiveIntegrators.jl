@@ -1299,12 +1299,13 @@ end
             dt = 0.5^6
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
+            deriv = -22.0 / (5.0 * exp(3.0))
             for alg in algs
                 for prob in problems
                     sol = solve(prob, alg; dt, adaptive = false)
                     # check derivative of interpolation
-                    @test_nowarn sol(0.5, Val{1})
-                    @test_nowarn sol(0.5, Val{1}; idxs = 1)
+                    @test isapprox(sol(0.5, Val{1}), [deriv; -deriv], atol = 5e-2)
+                    @test isapprox(sol(0.5, Val{1}; idxs = 1), deriv, atol = 5e-2)
                 end
             end
         end
