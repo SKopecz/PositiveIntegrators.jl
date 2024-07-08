@@ -1535,6 +1535,57 @@ end
         end
     end
 
+    #Here we check the different possibilities to define small_constant.
+    @testset "Different possibilities to set small_constant" begin
+        # For this problem u[1] decreases montonically to 0 very fast.
+        u0 = [0.9, 0.1]
+        tspan = (0.0, 100.0)
+        p = 1000.0
+        function prod!(P, u, p, t)
+            λ = p
+            fill!(P, zero(eltype(P)))
+            P[2, 1] = λ * u[1]
+        end
+        function dest!(D, u, p, t)
+            fill!(D, zero(eltype(D)))
+        end
+        function prod(u, p, t)
+            P = similar(u, (length(u), length(u)))
+            prod!(P, u, p, t)
+            return P
+        end
+        function dest(u, p, t)
+            d = similar(u)
+            dest!(d, u, p, t)
+            return d
+        end
+        prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
+        prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
+        prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
+        prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
+
+        probs = (prob_ip, prob_ip_2, prob_oop, prob_oop_2,
+                 prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
+                 prob_pds_npzd,
+                 prob_pds_sir, prob_pds_stratreac)
+
+        algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                (; kwargs...) -> SSPMPRK43(; kwargs...))
+        for alg in algs
+            for prob in probs
+                sol1 = solve(prob_pds_linmod, alg(), dt = 0.1)
+                sol2 = solve(prob_pds_linmod, alg(small_constant = floatmin(Float64)),
+                             dt = 0.1)
+                sol3 = solve(prob_pds_linmod, alg(small_constant = floatmin), dt = 0.1)
+                @test sol1 ≈ sol2 ≈ sol3
+            end
+        end
+    end
+
     @testset "plot" begin
         using Plots
         sol = solve(prob_pds_linmod, MPRK22(1.0))
