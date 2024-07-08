@@ -6,7 +6,6 @@ using SparseArrays: SparseArrays, AbstractSparseMatrix
 using StaticArrays: SVector, MVector, SMatrix, StaticArray, @SVector, @SMatrix
 
 using FastBroadcast: @..
-using Kwonly: @add_kwonly
 using MuladdMacro: @muladd
 using SimpleUnPack: @unpack
 
