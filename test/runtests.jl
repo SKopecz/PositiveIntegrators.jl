@@ -404,6 +404,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test 0.95 < alloc1 / alloc4 < 1.05
             @test 0.95 < alloc1 / alloc5 < 1.05
         end
+
         @testset "Lotka-Volterra" begin
             # Lotka-Volterra (nonconservative)
             u0 = [0.9, 0.1]
@@ -461,48 +462,52 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test 0.95 < alloc1 / alloc2 < 1.05
             @test 0.95 < alloc1 / alloc3 < 1.05
         end
+
+        # Function definitions for testset "Linear advection"
+        # Functions are defined outside the testset to avoid failing allocation tests,
+        # see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
+        # number of nodes
+        N = 1000
+        u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end]
+        tspan = (0.0, 1.0)
+        # in-place syntax for f
+        function fdupwind!(du, u, p, t)
+            N = length(u)
+            dx = 1 / N
+            du[1] = -(u[1] - u[N]) / dx
+            for i in 2:N
+                du[i] = -(u[i] - u[i - 1]) / dx
+            end
+        end
+        fdupwind_f = ODEProblem(fdupwind!, u0, tspan)
+        # in-place sytanx for PDS
+        function fdupwindP!(P, u, p, t)
+            P .= 0.0
+            N = length(u)
+            dx = 1 / N
+            P[1, N] = u[N] / dx
+            for i in 2:N
+                P[i, i - 1] = u[i - 1] / dx
+            end
+            return nothing
+        end
+        function fdupwindP!(P::SparseMatrixCSC, u, p, t)
+            N = length(u)
+            dx = 1 / N
+            values = nonzeros(P)
+            for col in axes(P, 2)
+                for idx in nzrange(P, col)
+                    values[idx] = u[col] / dx
+                end
+            end
+            return nothing
+        end
+        function fdupwindD!(D, u, p, t)
+            D .= 0.0
+            return nothing
+        end
         @testset "Linear advection" begin
-            # Linear advection discretized with finite differences and upwind, periodic boundary conditions
-            # number of nodes
-            N = 1000
-            u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end]
-            tspan = (0.0, 1.0)
-            # in-place syntax for f
-            function fdupwind!(du, u, p, t)
-                N = length(u)
-                dx = 1 / N
-                du[1] = -(u[1] - u[N]) / dx
-                for i in 2:N
-                    du[i] = -(u[i] - u[i - 1]) / dx
-                end
-            end
-            fdupwind_f = ODEProblem(fdupwind!, u0, tspan)
-            # in-place sytanx for PDS
-            function fdupwindP!(P, u, p, t)
-                P .= 0.0
-                N = length(u)
-                dx = 1 / N
-                P[1, N] = u[N] / dx
-                for i in 2:N
-                    P[i, i - 1] = u[i - 1] / dx
-                end
-                return nothing
-            end
-            function fdupwindP!(P::SparseMatrixCSC, u, p, t)
-                N = length(u)
-                dx = 1 / N
-                values = nonzeros(P)
-                for col in axes(P, 2)
-                    for idx in nzrange(P, col)
-                        values[idx] = u[col] / dx
-                    end
-                end
-                return nothing
-            end
-            function fdupwindD!(D, u, p, t)
-                D .= 0.0
-                return nothing
-            end
+            # Linear advection discretized with finite differences and upwind, periodic boundary conditions            
             # problem with dense matrices
             fdupwind_PDS_dense = PDSProblem(fdupwindP!, fdupwindD!, u0, tspan)
             # problem with sparse matrices
@@ -537,8 +542,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
                   sol_fdupwind_ConsPDS_sparse.u ≈ sol_fdupwind_ConsPDS_sparse_2.u
 
             # Check that we really do not use too many additional allocations
-            #TODO: The tests below should pass.
-            #=
             alloc1 = @allocated(solve(fdupwind_f, Tsit5()))
             alloc2 = @allocated(solve(fdupwind_PDS_dense, Tsit5()))
             alloc3 = @allocated(solve(fdupwind_PDS_sparse, Tsit5()))
@@ -550,7 +553,6 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
             @test 0.95 < alloc1 / alloc4 < 1.05
             @test 0.95 < alloc1 / alloc5 < 1.05
             @test 0.95 < alloc1 / alloc6 < 1.05
-            =#
         end
     end
 
@@ -1527,30 +1529,4 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
         sol = solve(prob_pds_linmod, MPRK22(1.0))
         @test_nowarn plot(sol)
     end
-
-    #=
-    # TODO: Do we want to keep the examples and test them or do we want
-    #       to switch to real docs/tutorials instead?
-    @testset "Examples" begin
-        # dummy test to make sure the testset errors if the process
-        # errors out
-        @test true
-
-        if VERSION >= v"1.10"
-            cmd = Base.julia_cmd()
-            examples_dir = abspath(joinpath(pkgdir(PositiveIntegrators), "examples"))
-            examples = ["01_example_proddest.jl",
-                "02_example_mpe.jl",
-                "03_example_mprk22.jl",
-                "04_example_problemlibrary.jl"]
-
-            @testset "Example $ex" for ex in examples
-                @info "Testing examples" ex
-                example = joinpath(examples_dir, ex)
-                @test isfile(example)
-                @time run(`$cmd --project=$(examples_dir) $(example)`)
-            end
-        end
-    end
-    =#
 end;
