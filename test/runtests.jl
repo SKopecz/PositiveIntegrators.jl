@@ -693,21 +693,21 @@ end
 
         # Here we check that MPRK22(α) = SSPMPRK22(0,α)
         @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
-            # conservative PDS
             for α in (0.5, 2.0 / 3.0, 1.0, 2.0)
+                # conservative PDS
                 sol1 = solve(prob_pds_linmod, MPRK22(α))
                 sol2 = solve(prob_pds_linmod, SSPMPRK22(0.0, α))
                 sol3 = solve(prob_pds_linmod_inplace, MPRK22(α))
                 sol4 = solve(prob_pds_linmod_inplace, SSPMPRK22(0.0, α))
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
 
+                # nonconservative PDS
                 sol1 = solve(prob_pds_linmod_nonconservative, MPRK22(α))
                 sol2 = solve(prob_pds_linmod_nonconservative, SSPMPRK22(0.0, α))
                 sol3 = solve(prob_pds_linmod_nonconservative_inplace, MPRK22(α))
                 sol4 = solve(prob_pds_linmod_nonconservative_inplace, SSPMPRK22(0.0, α))
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
             end
-            # nonconservative PDS
         end
 
         # Here we check that different linear solvers can be used
