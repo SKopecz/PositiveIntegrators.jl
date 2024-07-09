@@ -1510,7 +1510,9 @@ end
                         # Not successful on Julia 1.9
                         break
                     end
-                    sol = solve(prob, alg)
+                    # later versions of OrdinaryDiffEq.jl use dtmin = 0 by default,
+                    # see https://github.com/SciML/OrdinaryDiffEq.jl/pull/2098
+                    sol = solve(prob, alg; dtmin = 0.0)
                     @test Int(sol.retcode) == 1
                 end
             end
@@ -1579,7 +1581,8 @@ end
                     sol2 = solve(prob_pds_linmod, alg(small_constant = floatmin(Float64)),
                                  dt = 0.1)
                     sol3 = solve(prob_pds_linmod, alg(small_constant = floatmin), dt = 0.1)
-                    @test sol1 ≈ sol2 ≈ sol3
+                    @test sol1.t ≈ sol2.t ≈ sol3.t
+                    @test sol1.u ≈ sol2.u ≈ sol3.u
                 end
             end
         end
