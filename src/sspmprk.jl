@@ -157,13 +157,13 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P2 = f.p(u, p, t + a21 * dt)
+    P2 = f.p(u, p, t + b10 * dt)
     Ptmp = b20 * P + b21 * P2
     integrator.stats.nf += 1
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d2 = f.d(u, p, t + a21 * dt)  # evaluate nonconservative destruction terms
+        d2 = f.d(u, p, t + b10 * dt)  # evaluate nonconservative destruction terms
         dtmp = b20 * d + b21 * d2
         rhs = a20 * uprev + a21 * u + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
@@ -300,8 +300,8 @@ end
     end
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
-    f.d(D2, u, p, t + a21 * dt) # evaluate nonconservative destruction terms
+    f.p(P2, u, p, t + b10 * dt) # evaluate production terms
+    f.d(D2, u, p, t + b10 * dt) # evaluate nonconservative destruction terms
     integrator.stats.nf += 1
 
     @.. broadcast=false P2=b20 * P + b21 * P2
@@ -372,7 +372,7 @@ end
     end
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
+    f.p(P2, u, p, t + b10 * dt) # evaluate production terms
     integrator.stats.nf += 1
 
     @.. broadcast=false P2=b20 * P + b21 * P2

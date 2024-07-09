@@ -1012,13 +1012,13 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P3 = f.p(u, p, t + c2 * dt)
+    P3 = f.p(u, p, t + c3 * dt)
     Ptmp = b1 * P + b2 * P2 + b3 * P3
     integrator.stats.nf += 1
 
     # build linear system matrix
     if f isa PDSFunction
-        d3 = f.d(u, p, t + c2 * dt)  # evaluate nonconservative destruction terms
+        d3 = f.d(u, p, t + c3 * dt)  # evaluate nonconservative destruction terms
         dtmp = b1 * d + b2 * d2 + b3 * d3
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
