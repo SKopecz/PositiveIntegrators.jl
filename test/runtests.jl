@@ -1490,98 +1490,166 @@ end
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
             end
         end
-    end
 
-    # Here we check that the implemented schemes can solve the predefined PDS
-    # (at least for specific parameters)
-    @testset "PDS problem library (adaptive schemes)" begin
-        algs = (MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
-        probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
-                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
-                 prob_pds_npzd,
-                 prob_pds_sir, prob_pds_stratreac)
-        @testset "$alg" for alg in algs
-            @testset "$i" for (i, prob) in enumerate(probs)
-                if prob == prob_pds_stratreac && alg == SSPMPRK22(0.5, 1.0)
-                    #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac. 
-                    #Need to figure out if this is a problem of the algorithm or not.
-                    break
-                elseif prob == prob_pds_stratreac && alg == MPRK43I(0.5, 0.75)
-                    # Not successful on Julia 1.9
-                    break
+        # Here we check that the implemented schemes can solve the predefined PDS
+        # (at least for specific parameters)
+        @testset "PDS problem library (adaptive schemes)" begin
+            algs = (MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
+            probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                     prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
+                     prob_pds_npzd,
+                     prob_pds_sir, prob_pds_stratreac)
+            @testset "$alg" for alg in algs
+                @testset "$i" for (i, prob) in enumerate(probs)
+                    if prob == prob_pds_stratreac && alg == SSPMPRK22(0.5, 1.0)
+                        #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac. 
+                        #Need to figure out if this is a problem of the algorithm or not.
+                        break
+                    elseif prob == prob_pds_stratreac && alg == MPRK43I(0.5, 0.75)
+                        # Not successful on Julia 1.9
+                        break
+                    end
+                    sol = solve(prob, alg)
+                    @test Int(sol.retcode) == 1
                 end
-                sol = solve(prob, alg)
-                @test Int(sol.retcode) == 1
             end
         end
-    end
 
-    # Here we check that the implemented schemes can solve the predefined PDS.
-    @testset "PDS problem library (non-adaptive schemes)" begin
-        algs = (MPE(), SSPMPRK43())
-        #prob_pds_robertson not included
-        probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
-                 prob_pds_bertolazzi, prob_pds_brusselator,
-                 prob_pds_npzd, prob_pds_sir, prob_pds_stratreac)
-        @testset "$alg" for alg in algs
-            @testset "$prob" for prob in probs
-                tspan = prob.tspan
-                dt = (tspan[2] - tspan[1]) / 10
-                sol = solve(prob, alg; dt = dt)
-                @test Int(sol.retcode) == 1
+        # Here we check that the implemented schemes can solve the predefined PDS.
+        @testset "PDS problem library (non-adaptive schemes)" begin
+            algs = (MPE(), SSPMPRK43())
+            #prob_pds_robertson not included
+            probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                     prob_pds_bertolazzi, prob_pds_brusselator,
+                     prob_pds_npzd, prob_pds_sir, prob_pds_stratreac)
+            @testset "$alg" for alg in algs
+                @testset "$prob" for prob in probs
+                    tspan = prob.tspan
+                    dt = (tspan[2] - tspan[1]) / 10
+                    sol = solve(prob, alg; dt = dt)
+                    @test Int(sol.retcode) == 1
+                end
             end
         end
-    end
 
-    #Here we check the different possibilities to define small_constant.
-    @testset "Different possibilities to set small_constant" begin
-        # For this problem u[1] decreases montonically to 0 very fast.
-        u0 = [0.9, 0.1]
-        tspan = (0.0, 100.0)
-        p = 1000.0
-        function prod!(P, u, p, t)
-            λ = p
-            fill!(P, zero(eltype(P)))
-            P[2, 1] = λ * u[1]
-        end
-        function dest!(D, u, p, t)
-            fill!(D, zero(eltype(D)))
-        end
-        function prod(u, p, t)
-            P = similar(u, (length(u), length(u)))
-            prod!(P, u, p, t)
-            return P
-        end
-        function dest(u, p, t)
-            d = similar(u)
-            dest!(d, u, p, t)
-            return d
-        end
-        prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
-        prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
-        prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
-        prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
-
-        probs = (prob_ip, prob_ip_2, prob_oop, prob_oop_2,
-                 prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
-                 prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
-                 prob_pds_npzd,
-                 prob_pds_sir, prob_pds_stratreac)
-
-        algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
-                (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
-                (; kwargs...) -> MPRK43II(0.5; kwargs...),
-                (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
-                (; kwargs...) -> SSPMPRK43(; kwargs...))
-        for alg in algs
-            for prob in probs
-                sol1 = solve(prob_pds_linmod, alg(), dt = 0.1)
-                sol2 = solve(prob_pds_linmod, alg(small_constant = floatmin(Float64)),
-                             dt = 0.1)
-                sol3 = solve(prob_pds_linmod, alg(small_constant = floatmin), dt = 0.1)
-                @test sol1 ≈ sol2 ≈ sol3
+        #Here we check the different possibilities to define small_constant.
+        @testset "Different possibilities to set small_constant" begin
+            # For this problem u[1] decreases montonically to 0 very fast.
+            u0 = [0.9, 0.1]
+            tspan = (0.0, 100.0)
+            p = 1000.0
+            function prod!(P, u, p, t)
+                λ = p
+                fill!(P, zero(eltype(P)))
+                P[2, 1] = λ * u[1]
             end
+            function dest!(D, u, p, t)
+                fill!(D, zero(eltype(D)))
+            end
+            function prod(u, p, t)
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return P
+            end
+            function dest(u, p, t)
+                d = similar(u)
+                dest!(d, u, p, t)
+                return d
+            end
+            prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
+            prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
+            prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
+            prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
+
+            probs = (prob_ip, prob_ip_2, prob_oop, prob_oop_2,
+                     prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
+                     prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
+                     prob_pds_npzd,
+                     prob_pds_sir, prob_pds_stratreac)
+
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            for alg in algs
+                for prob in probs
+                    sol1 = solve(prob_pds_linmod, alg(), dt = 0.1)
+                    sol2 = solve(prob_pds_linmod, alg(small_constant = floatmin(Float64)),
+                                 dt = 0.1)
+                    sol3 = solve(prob_pds_linmod, alg(small_constant = floatmin), dt = 0.1)
+                    @test sol1 ≈ sol2 ≈ sol3
+                end
+            end
+        end
+
+        #Here we check if the RK methods on which the MPRK schemes are based integrate
+        # u'(t) = q * t^(q-1) exactly for q from 1 to the order of the method.
+        @testset "Exact solutions (RK)" begin
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
+                    MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
+                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg, $q" for alg in algs, q in 1:PositiveIntegrators.alg_order(alg)
+                f(t) = q * t^(q - 1)
+                function prod!(P, u, p, t)
+                    fill!(P, zero(eltype(P)))
+                    P[1, 1] = f(t)
+                end
+                function dest!(D, u, p, t)
+                    fill!(D, zero(eltype(D)))
+                end
+                function prod(u, p, t)
+                    P = similar(u, (length(u), length(u)))
+                    prod!(P, u, p, t)
+                    return P
+                end
+                function dest(u, p, t)
+                    d = similar(u)
+                    dest!(d, u, p, t)
+                    return d
+                end
+                u0 = [0.0; 2.0]
+                prob_oop = PDSProblem(prod, dest, u0, (0.0, 1.0))
+                sol_oop = solve(prob_oop, alg, dt = 0.1; adaptive = false)
+                @test first(last(sol_oop.u)) ≈ 1.0
+                prob_ip = PDSProblem(prod!, dest!, u0, (0.0, 1.0))
+                sol_ip = solve(prob_ip, alg, dt = 0.1; adaptive = false)
+                @test first(last(sol_ip.u)) ≈ 1.0
+            end
+        end
+
+        # Here we check that MPE integrates u'(t) = -(a0 * b1)/(b0 + b1  * t)^2 exactly.
+        # The solution is u(t) = a0/(b0 + b1 * t)
+        @testset "Exact solutions (MPE)" begin
+            alg = MPE()
+            u_exact(t) = 1 / (2 + 3 * t)
+            f(t) = -3 / (2 + 3 * t)^2
+            function prod!(P, u, p, t)
+                fill!(P, zero(eltype(P)))
+            end
+            function dest!(D, u, p, t)
+                fill!(D, zero(eltype(D)))
+                D[1, 1] = -f(t)
+            end
+            function prod(u, p, t)
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return P
+            end
+            function dest(u, p, t)
+                d = similar(u)
+                dest!(d, u, p, t)
+                return d
+            end
+            u0 = [0.5; 0.0]
+            prob_oop = PDSProblem(prod, dest, u0, (0.0, 1.0))
+            sol_oop = solve(prob_oop, alg, dt = 0.5; adaptive = false)
+            plot(sol_oop)
+            @test first(last(sol_oop.u)) ≈ u_exact(last(prob_oop.tspan))
+            prob_ip = PDSProblem(prod!, dest!, u0, (0.0, 1.0))
+            sol_ip = solve(prob_ip, alg, dt = 0.1; adaptive = false)
+            @test first(last(sol_ip.u)) ≈ u_exact(last(prob_ip.tspan))
         end
     end
 
