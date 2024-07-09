@@ -16,7 +16,11 @@ of various positive time integration schemes, allowing a fair comparison of the
 different schemes. The package extends [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl)
 by
 * adding a new problem type for production-destruction systems
-* adding the algorithms of first and second order modified Patankar-Runge-Kutta (MPRK) schemes
+* adding the algorithms of positivity-preserving time integration methods such as
+  modified Patankar-Runge-Kutta (MPRK) schemes
+
+Please find more information online in the 
+[documentation](https://skopecz.github.io/PositiveIntegrators.jl/stable).
 
 
 ## Installation
