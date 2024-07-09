@@ -1,11 +1,10 @@
 name = "PositiveIntegrators"
 uuid = "d1b20bf0-b083-4985-a874-dc5121669aa5"
 authors = ["Stefan Kopecz, Hendrik Ranocha, and contributors"]
-version = "0.1.11"
+version = "0.1.15"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
-Kwonly = "18d08c8c-0732-55ee-a446-91a51d7b4206"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -19,7 +18,6 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 
 [compat]
 FastBroadcast = "0.2, 0.3"
-Kwonly = "0.1"
 LinearAlgebra = "1.7"
 LinearSolve = "2"
 MuladdMacro = "0.2"
