@@ -1,0 +1,49 @@
+name: Downgrade
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+# Cancel redundant CI tests automatically
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  downgrade_test:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    name: Downgrade ${{ matrix.os }} - Julia ${{ matrix.version }} - ${{ github.event_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1'
+          - '1.9'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+      - run: julia -e 'using InteractiveUtils; versioninfo(verbose=true)'
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: LinearAlgebra,SparseArrays
+          projects: ., test
+      - uses: julia-actions/julia-buildpkg@v1
+        env:
+          PYTHON: ""
+          GKSwstype: "100" # for Plots/GR
+      - name: Run tests without coverage
+        uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: false
+        env:
+          PYTHON: ""
+          GKSwstype: "100" # for Plots/GR
