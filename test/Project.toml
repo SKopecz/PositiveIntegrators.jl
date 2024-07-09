@@ -11,8 +11,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Aqua = "0.7, 0.8"
-LinearSolve = "2"
-OrdinaryDiffEq = "6"
+LinearSolve = "2.21"
+OrdinaryDiffEq = "6.59"
 Plots = "1.4"
 StaticArrays = "1.5"
 Statistics = "1"
