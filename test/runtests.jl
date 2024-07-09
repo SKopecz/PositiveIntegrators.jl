@@ -1645,7 +1645,6 @@ end
             u0 = [0.5; 0.0]
             prob_oop = PDSProblem(prod, dest, u0, (0.0, 1.0))
             sol_oop = solve(prob_oop, alg, dt = 0.5; adaptive = false)
-            plot(sol_oop)
             @test first(last(sol_oop.u)) ≈ u_exact(last(prob_oop.tspan))
             prob_ip = PDSProblem(prod!, dest!, u0, (0.0, 1.0))
             sol_ip = solve(prob_ip, alg, dt = 0.1; adaptive = false)
