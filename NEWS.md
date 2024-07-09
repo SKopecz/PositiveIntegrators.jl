@@ -8,6 +8,10 @@ for human readability.
 
 ## Changes in the v0.1 lifecycle
 
+### Added
+
+- MPRK methods `MPRK43I` and `MPRK43II` of Kopecz and Meister
+- SSP MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang and Shu
 
 ## Initial release v0.1.0
 
