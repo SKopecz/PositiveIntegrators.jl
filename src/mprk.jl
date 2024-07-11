@@ -122,13 +122,14 @@ The first-order modified Patankar-Euler algorithm for production-destruction sys
 first-order accurate, unconditionally positivity-preserving, and
 linearly implicit.
 
-The scheme was introduced by Burchard et al for conservative production-destruction systems.
+The scheme was introduced by Burchard et al. for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
 
-``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``.
+``u_i^{n+1} = u_i^n + Δt \\sum_{j, j≠i} \\biggl(p_{ij}^n \\frac{u_j^{n+1}}{u_j^n}-d_{ij}^n \\frac{u_i^{n+1}}{u_i^n}\\biggr) + {\\Delta}t p_{ii}^n - Δt d_{ii}^n\\frac{u_i^{n+1}}{u_i^n}``,
 
-The modified Patankar-Euler method requires the special structure of a
-[`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
+where ``p_{ij}^n = p_{ij}(t^n,\\mathbf u^n)`` and ``d_{ij}^n = d_{ij}(t^n,\\mathbf u^n)``.
+
+The modified Patankar-Euler method requires the special structure of a [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
 
 You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
@@ -136,6 +137,8 @@ as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
+
+The current implementation only supports fixed time steps. 
 
 ## References
 
@@ -329,14 +332,18 @@ end
     MPRK22(α; [linsolve = ..., small_constant = ...])
 
 A family of second-order modified Patankar-Runge-Kutta algorithms for
-production-destruction systems. Each member of this family is an one-step, two-stage method which is
+production-destruction systems. Each member of this family is an adaptive, one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
-implicit. The parameter `α` is described by Kopecz and Meister (2018) and
+implicit. In this implementation the stage-values are conservative as well. 
+The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
-Torlo, Öffner and Ranocha (2022).
+Torlo, Öffner and Ranocha (2022).  
+
+This method supports adaptive time stepping, using the Patankar-weight denominators 
+``σ_i``, see Kopecz and Meister (2018), as first order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
-For nonconservative production–destruction systems we use the straight forward extension
+For nonconservative production–destruction systems we use a straight forward extension
 analogous to [`MPE`](@ref).
 
 This modified Patankar-Runge-Kutta method requires the special structure of a
@@ -712,11 +719,14 @@ end
 
 A family of third-order modified Patankar-Runge-Kutta schemes for
 production-destruction systems, which is based on the two-parameter family of third order explicit Runge--Kutta schemes.
-Each member of this family is a one-step method with four-stages which is
+Each member of this family is an adaptive, one-step method with four-stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well.
 The parameters `α` and `β` must be chosen such that the Runge--Kutta coefficients are nonnegative,
 see Kopecz and Meister (2018) for details.
+
+These methods support adaptive time stepping, using the Patankar-weight denominators 
+``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
@@ -809,14 +819,17 @@ end
 """
     MPRK43II(γ; [linsolve = ..., small_constant = ...])
 
-A family of third-order modified Patankar-Runge-Kutta schemes for (conservative)
+A family of third-order modified Patankar-Runge-Kutta schemes for
 production-destruction systems, which is based on the one-parameter family of third order explicit Runge--Kutta schemes with
 non-negative Runge--Kutta coefficients.
-Each member of this family is a one-step method with four stages which is
+Each member of this family is an adaptive, one-step method with four stages which is
 third-order accurate, unconditionally positivity-preserving, conservative and linearly
 implicit. In this implementation the stage-values are conservative as well. The parameter `γ` must satisfy
 `3/8 ≤ γ ≤ 3/4`.
 Further details are given in Kopecz and Meister (2018).
+
+This method supports adaptive time stepping, using the Patankar-weight denominators 
+``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
 For nonconservative production–destruction systems we use the straight forward extension
