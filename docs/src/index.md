@@ -78,8 +78,8 @@ To solve this PDS together with initial values ``u_1(0)=u_2(0)=2`` on the time d
 ```@example LotkaVolterra
 using PositiveIntegrators # load PDSProblem
 
-P(u, p, t) = [2*u[1]  0.0; u[1]*u[2]  0.0] # Production matrix
-d(u, p, t) = [0.0; u[2]] # Destruction vector
+P(u, p, t) = [2*u[1]  0; u[1]*u[2]  0] # Production matrix
+d(u, p, t) = [0; u[2]] # Destruction vector
 
 u0 = [2.0; 2.0] # initial values
 tspan = (0.0, 10.0) # time span
@@ -88,12 +88,10 @@ tspan = (0.0, 10.0) # time span
 prob = PDSProblem(P, d, u0, tspan)
 nothing #hide
 ```
-Now that the problem has been created, we can solve it with any of the methods of [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Here we use the method `Tsit5()`. Please note that [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) currently only provides methods for positive and conservative PDS, see below.
+Now that the problem has been created, we can solve it with any method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl). In the following, we use the method `MPRK22(1.0)`. In addition, we could also use any method provided by [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/), but these might possibly generate negative approximations.
 
 ```@example LotkaVolterra
-using OrdinaryDiffEq  #load Tsit5
-
-sol = solve(prob, Tsit5())
+sol = solve(prob, MPRK22(1.0))
 nothing # hide
 ```
 Finally, we can use [Plots.jl](https://docs.juliaplots.org/stable/) to visualize the solution.
@@ -119,7 +117,6 @@ This shows that the sum of the state variables of a conservative PDS remains con
 \sum_{i=1}^N y_i(t) = \sum_{i=1}^N y_i(0)
 ```
 for all times ``t>0``.
-Moreover, a conservative PDS is completely defined by the square matrix ``\mathbf P=(p_{ij})_{i,j=1,\dots,N}``. There is no need to store an additional vector of destruction terms since ``d_{ij} = p_{ji}`` for all ``i,j=1,\dots,N``.
 
 One specific example of a conservative PDS is the SIR model
 ```math
@@ -165,7 +162,7 @@ tspan = (0.0, 100.0); # time span
 prob = ConservativePDSProblem(P, u0, tspan)
 nothing # hide
 ```
-Since the SIR model is not only conservative but also positive, we can use any MPRK scheme from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`.
+Since the SIR model is not only conservative but also positive, we can use any scheme from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`.
 Please note that any method from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used as well, but might possibly generate negative approximations.
 
 ```@example SIR
@@ -176,9 +173,10 @@ Finally, we can use [Plots.jl](https://docs.juliaplots.org/stable/) to visualize
 ```@example SIR
 using Plots
 
-plot(sol, legend=:right)
+plot(sol, label = ["S" "I" "R"], legend=:right)
+plot!(sol, idxs = ((t, S, I, R) -> (t, S + I + R), 0, 1, 2, 3), label = "S+I+R") #Plot S+I+R over time.
 ```
-
+We see that there is always a nonnegative number of people in each compartment, while the population ``S+I+R`` remains constant over time.
 
 ## Referencing
 
