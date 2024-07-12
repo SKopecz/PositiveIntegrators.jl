@@ -7,45 +7,49 @@ We will explore several ways to represent such large systems and assess their ef
 
 One example of the occurrence of a PDS with a large number of equations is the space discretization of a partial differential equation. In this tutorial we want to solve the linear advection equation
 
-$$\partial_t u(t,x)=-a\partial_x u(t,x),\quad u(0,x)=u_0(x)$$
+```math
+\partial_t u(t,x)=-a\partial_x u(t,x),\quad u(0,x)=u_0(x)
+```
 
-with $a>0$, $t≥ 0$, $x\in[0,1]$ and periodic boundary conditions. To keep things as simple as possible, we 
-discretize the space domain as $0=x_0<x_1\dots <x_{N-1}<x_N=1$ with $x_i = i Δ x$ for $i=0,\dots,N$ and $Δx=1/N$. An upwind discretization of the spatial derivative yields the ODE system
+with ``a>0``, ``t≥ 0``, ``x\in[0,1]`` and periodic boundary conditions. To keep things as simple as possible, we 
+discretize the space domain as ``0=x_0<x_1\dots <x_{N-1}<x_N=1`` with ``x_i = i Δ x`` for ``i=0,\dots,N`` and ``Δx=1/N``. An upwind discretization of the spatial derivative yields the ODE system
 
-$$\begin{aligned}
+```math
+\begin{aligned}
 &\partial_t u_1(t) =-\frac{a}{Δx}\bigl(u_1(t)-u_{N}(t)\bigr),\\
 &\partial_t u_i(t) =-\frac{a}{Δx}\bigl(u_i(t)-u_{i-1}(t)\bigr),\quad i=2,\dots,N,
 \end{aligned}
-$$ 
+```
 
-where $u_i(t)$ is an approximation of $u(t,x_i)$ for $i=1,\dots, N$.
-This system can also be written as $\partial_t \mathbf u(t)=\mathbf A\mathbf u(t)$ with $\mathbf u(t)=(u_1(t),\dots,u_N(t))$ and 
+where ``u_i(t)`` is an approximation of ``u(t,x_i)`` for ``i=1,\dots, N``.
+This system can also be written as ``\partial_t \mathbf u(t)=\mathbf A\mathbf u(t)`` with ``\mathbf u(t)=(u_1(t),\dots,u_N(t))`` and 
 
-$$
+```math
 \mathbf A= \frac{a}{Δ x}\begin{bmatrix}-1&0&\dots&0&1\\1&-1&\ddots&&0\\0&\ddots&\ddots&\ddots&\vdots\\ \vdots&\ddots&\ddots&\ddots&0\\0&\dots&0&1&-1\end{bmatrix}.
-$$
+```
 
-In particular the matrix $\mathbf A$ shows, that there is a single production term and a single destruction term per equation. 
-Furthermore, the system is conservative as $\mathbf A$ has column sum zero.
-To be precise, the production matrix $\mathbf P = (p_{i,j})$ of this conservative PDS is given by
+In particular the matrix ``\mathbf A`` shows, that there is a single production term and a single destruction term per equation. 
+Furthermore, the system is conservative as ``\mathbf A`` has column sum zero.
+To be precise, the production matrix ``\mathbf P = (p_{i,j})`` of this conservative PDS is given by
 
-$$\begin{aligned}
+```math
+\begin{aligned}
 &p_{1,N}(t,\mathbf u(t)) = \frac{a}{Δ x}u_N(t),\\
 &p_{i,i-1}(t,\mathbf u(t)) = \frac{a}{Δ x}u_{i-1}(t),\quad i=2,\dots,N.
 \end{aligned}
-$$
+```
 
-Since the PDS is conservative, we have $d_{i,j}=p_{j,i}$ and the system is fully determined by the production matrix $\mathbf P$.
+Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``\mathbf P``.
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a `ConservativePDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use $a=1$, $N=1000$ and the time domain $t\in[0,1]$. Moreover, we choose the step function
+Now we are ready to define a `ConservativePDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use ``a=1``, ``N=1000`` and the time domain ``t\in[0,1]``. Moreover, we choose the step function
 
-$$
+```math
 u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
-$$
+```
 
-as initial condition. Due to the periodic boundary conditions and the transport velocity $a=1$, the solution at time $t=1$ is identical to the initial distribution, i.e. $u(1,x) = u_0(x)$.
+as initial condition. Due to the periodic boundary conditions and the transport velocity ``a=1``, the solution at time ``t=1`` is identical to the initial distribution, i.e. ``u(1,x) = u_0(x)``.
 
 ```@setup LinearAdvection
 import Pkg; Pkg.add("PositiveIntegrators"); Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots")
