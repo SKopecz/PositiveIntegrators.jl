@@ -9,7 +9,7 @@ One example of the occurrence of a PDS with a large number of equations is the s
 
 $$\partial_t u(t,x)=-a\partial_x u(t,x),\quad u(0,x)=u_0(x)$$
 
-with $a>0$, $t≥ 0$, $x\in[0,1]$ and periodic boundary condtions. To keep things as simple as possible, we 
+with $a>0$, $t≥ 0$, $x\in[0,1]$ and periodic boundary conditions. To keep things as simple as possible, we 
 discretize the space domain as $0=x_0<x_1\dots <x_{N-1}<x_N=1$ with $x_i = i Δ x$ for $i=0,\dots,N$ and $Δx=1/N$. An upwind discretization of the spatial derivative yields the ODE system
 
 $$\begin{aligned}
@@ -45,7 +45,7 @@ $$
 u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
 $$
 
-as initial condition. Due to the peridoic boundary conditions and the transport velocity $a=1$, the solution at time $t=1$ is identical to the inital distribution, i.e. $u(1,x) = u_0(x)$.
+as initial condition. Due to the periodic boundary conditions and the transport velocity $a=1$, the solution at time $t=1$ is identical to the initial distribution, i.e. $u(1,x) = u_0(x)$.
 
 ```@setup LinearAdvection
 import Pkg; Pkg.add("PositiveIntegrators"); Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots")
