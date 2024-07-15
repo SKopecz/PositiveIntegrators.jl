@@ -58,7 +58,7 @@ import Pkg; Pkg.add("PositiveIntegrators"); Pkg.add("OrdinaryDiffEq");  Pkg.add(
 N = 100 # number of subintervals
 dx = 1/N; # mesh width
 x = LinRange(dx, 1.0, N) # discretization points x_1,...,x_N = x_0
-u0 = 0.0 .+ (0.4 .≤ x .≤ 0.6) .* 1.0 # initial solution
+u0 = @. 0.0 + (0.4 ≤ x ≤ 0.6) * 1.0 # initial solution
 tspan = (0.0, 1.0) # time domain
 
 nothing #hide
