@@ -51,9 +51,6 @@ u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
 
 as initial condition. Due to the periodic boundary conditions and the transport velocity ``a=1``, the solution at time ``t=1`` is identical to the initial distribution, i.e. ``u(1,x) = u_0(x)``.
 
-```@setup LinearAdvection
-import Pkg; Pkg.add("PositiveIntegrators"); Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots"); Pkg.add("BenchmarkTools")
-```
 ```@example LinearAdvection
 N = 100 # number of subintervals
 dx = 1/N; # mesh width
@@ -105,6 +102,8 @@ p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
 prob_sparse = ConservativePDSProblem(lin_adv_P!, u0, tspan; p_prototype=p_prototype)
 
 sol_sparse = solve(prob_sparse, MPRK43I(1.0, 0.5); save_everystep = false)
+
+nothing #hide
 ```
 
 ```@example LinearAdvection
@@ -115,5 +114,8 @@ plot!(x, last(sol_sparse.u))
 ```@example LinearAdvection
 using BenchmarkTools
 @benchmark solve(prob, MPRK43I(1.0, 0.5); save_everystep = false)
+```
+
+```@example LinearAdvection
 @benchmark solve(prob_sparse, MPRK43I(1.0, 0.5); save_everystep = false)
 ```
