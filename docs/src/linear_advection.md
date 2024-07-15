@@ -100,7 +100,7 @@ plot!(x, last(sol.u))
 
 ```@example LinearAdvection
 p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
-                                  N - 1 => ones(eltype(u0), 1))
+                      N - 1 => ones(eltype(u0), 1))
 prob_sparse = ConservativePDSProblem(lin_adv_P!, u0, tspan; p_prototype=p_prototype)
 
 sol_sparse = solve(prob_sparse, MPRK43I(1.0, 0.5); save_everystep = false)
