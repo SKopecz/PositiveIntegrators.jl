@@ -28,7 +28,7 @@ This system can also be written as ``\partial_t \mathbf u(t)=\mathbf A\mathbf u(
 \mathbf A= \frac{a}{Δ x}\begin{bmatrix}-1&0&\dots&0&1\\1&-1&\ddots&&0\\0&\ddots&\ddots&\ddots&\vdots\\ \vdots&\ddots&\ddots&\ddots&0\\0&\dots&0&1&-1\end{bmatrix}.
 ```
 
-In particular the matrix ``\mathbf A`` shows, that there is a single production term and a single destruction term per equation. 
+In particular the matrix ``\mathbf A`` shows that there is a single production term and a single destruction term per equation. 
 Furthermore, the system is conservative as ``\mathbf A`` has column sum zero.
 To be precise, the production matrix ``\mathbf P = (p_{i,j})`` of this conservative PDS is given by
 
