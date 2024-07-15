@@ -73,7 +73,9 @@ makedocs(modules = [PositiveIntegrators],
          # Explicitly specify documentation structure
          pages = [
              "Home" => "index.md",
-             "Tutorials" => "linear_advection.md",
+             "Tutorials" => [
+                 "Linear Advection" => "linear_advection.md",
+             ],
              "API reference" => "api_reference.md",
              "Contributing" => "contributing.md",
              "Code of conduct" => "code_of_conduct.md",
