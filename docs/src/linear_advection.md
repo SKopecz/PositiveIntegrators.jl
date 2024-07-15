@@ -52,8 +52,8 @@ u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
 as initial condition. Due to the periodic boundary conditions and the transport velocity ``a=1``, the solution at time ``t=1`` is identical to the initial distribution, i.e. ``u(1,x) = u_0(x)``.
 
 ```@example LinearAdvection
-N = 100 # number of subintervals
-dx = 1/N; # mesh width
+N = 1000 # number of subintervals
+dx = 1/N # mesh width
 x = LinRange(dx, 1.0, N) # discretization points x_1,...,x_N = x_0
 u0 = @. 0.0 + (0.4 ≤ x ≤ 0.6) * 1.0 # initial solution
 tspan = (0.0, 1.0) # time domain
