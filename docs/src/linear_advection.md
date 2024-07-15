@@ -115,6 +115,11 @@ plot(x,u0)
 plot!(x, last(sol_sparse.u))
 ```
 
+### Performance comparison
+
+Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
+to compare the performance of the different implementations.
+
 ```@example LinearAdvection
 using BenchmarkTools
 @benchmark solve(prob, MPRK43I(1.0, 0.5); save_everystep = false)
