@@ -91,8 +91,8 @@ nothing #hide
 ```@example LinearAdvection
 using Plots
 
-plot(x,u0)
-plot!(x, last(sol.u))
+plot(x, u0; label = "u0", xguide = "x", yguide = "u")
+plot!(x, last(sol.u); label = "u")
 ```
 
 ```@example LinearAdvection
