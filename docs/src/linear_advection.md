@@ -95,6 +95,10 @@ plot(x, u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol.u); label = "u")
 ```
 
+### Using sparse matrices
+
+TODO: Some text
+
 ```@example LinearAdvection
 using SparseArrays
 p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
