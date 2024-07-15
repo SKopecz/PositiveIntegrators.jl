@@ -670,7 +670,7 @@ end
     integrator.u = u
 end
 
-struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43Cache{uType, PType, DType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
