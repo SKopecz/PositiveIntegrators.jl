@@ -99,6 +99,7 @@ plot!(x, last(sol.u))
 ```
 
 ```@example LinearAdvection
+using SparseArrays
 p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
                       N - 1 => ones(eltype(u0), 1))
 prob_sparse = ConservativePDSProblem(lin_adv_P!, u0, tspan; p_prototype=p_prototype)
