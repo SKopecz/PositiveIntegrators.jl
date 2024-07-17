@@ -201,13 +201,13 @@ end
     integrator.u = u
 end
 
-struct SSPMPRK22Cache{uType, PType, tabType, F} <:
+struct SSPMPRK22Cache{uType, PType, DType, tabType, F} <:
        OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
-    D::uType
-    D2::uType
+    D::DType
+    D2::DType
     σ::uType
     tab::tabType
     linsolve::F
@@ -251,10 +251,9 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        SSPMPRK22Cache(tmp, P, P2,
-                       zero(u), # D
-                       zero(u), # D2
-                       σ,
+        D = d_prototype(u, f)
+        D2 = d_prototype(u, f)
+        SSPMPRK22Cache(tmp, P, P2, D, D2, σ,
                        tab, #MPRK22ConstantCache
                        linsolve)
     else
@@ -671,15 +670,15 @@ end
     integrator.u = u
 end
 
-struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43Cache{uType, PType, DType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
     P2::PType
     P3::PType
-    D::uType
-    D2::uType
-    D3::uType
+    D::DType
+    D2::DType
+    D3::DType
     σ::uType
     ρ::uType
     tab::tabType
@@ -724,9 +723,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                         assumptions = LinearSolve.OperatorAssumptions(true))
         SSPMPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, ρ, tab, linsolve)
     elseif f isa PDSFunction
-        D = zero(u)
-        D2 = zero(u)
-        D3 = zero(u)
+        D = d_prototype(u, f)
+        D2 = d_prototype(u, f)
+        D3 = d_prototype(u, f)
 
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,

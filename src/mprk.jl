@@ -9,6 +9,8 @@ end
 p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
 p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
 p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
+d_prototype(u, f) = zeros(eltype(u), length(u))
+d_prototype(u, f::PDSFunction) = zero(f.d_prototype)
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -218,9 +220,9 @@ end
     integrator.u = u
 end
 
-struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPECache{PType, DType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
     P::PType
-    D::uType
+    D::DType
     σ::uType
     tab::tabType
     linsolve_rhs::uType  # stores rhs of linear system
@@ -253,6 +255,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
 
         MPEConservativeCache(P, σ, tab, linsolve)
     elseif f isa PDSFunction
+        D = d_prototype(u, f)
         linsolve_rhs = zero(u)
         # We use P to store the evaluation of the PDS
         # as well as to store the system matrix of the linear system
@@ -260,7 +263,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(P, zero(u), σ, tab, linsolve_rhs, linsolve)
+        MPECache(P, D, σ, tab, linsolve_rhs, linsolve)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
@@ -513,13 +516,13 @@ end
     integrator.u = u
 end
 
-struct MPRK22Cache{uType, PType, tabType, F} <:
+struct MPRK22Cache{uType, PType, DType, tabType, F} <:
        OrdinaryDiffEqMutableCache
     tmp::uType
     P::PType
     P2::PType
-    D::uType
-    D2::uType
+    D::DType
+    D2::DType
     σ::uType
     tab::tabType
     linsolve::F
@@ -562,14 +565,13 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                                 tab, #MPRK22ConstantCache
                                 linsolve)
     elseif f isa PDSFunction
+        D = d_prototype(u, f)
+        D2 = d_prototype(u, f)
         linprob = LinearProblem(P2, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPRK22Cache(tmp, P, P2,
-                    zero(u), # D
-                    zero(u), # D2
-                    σ,
+        MPRK22Cache(tmp, P, P2, D, D2, σ,
                     tab, #MPRK22ConstantCache
                     linsolve)
     else
@@ -1054,15 +1056,15 @@ end
     integrator.u = u
 end
 
-struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPRK43Cache{uType, PType, DType, tabType, F} <: OrdinaryDiffEqMutableCache
     tmp::uType
     tmp2::uType
     P::PType
     P2::PType
     P3::PType
-    D::uType
-    D2::uType
-    D3::uType
+    D::DType
+    D2::DType
+    D3::DType
     σ::uType
     tab::tabType
     linsolve::F
@@ -1107,9 +1109,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                         assumptions = LinearSolve.OperatorAssumptions(true))
         MPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, tab, linsolve)
     elseif f isa PDSFunction
-        D = zero(u)
-        D2 = zero(u)
-        D3 = zero(u)
+        D = d_prototype(u, f)
+        D2 = d_prototype(u, f)
+        D3 = d_prototype(u, f)
 
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,

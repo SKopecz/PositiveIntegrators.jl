@@ -20,10 +20,10 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
-- `d_prototype`: If `D` is given in in-place form, `d_prototype` is used to store evaluations of `D`.
+- `d_prototype`: If `D` is given in in-place form, `d_prototype` or copies thereof are used to store evaluations of `D`.
   If `d_prototype` is not specified explicitly and `D` is in-place, then `d_prototype` will be internally
 set to `zeros(eltype(u0), (length(u0),))`.
 
@@ -177,7 +177,7 @@ The function `P` can be given either in the out-of-place form with signature
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
