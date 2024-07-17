@@ -1263,6 +1263,84 @@ end
             end
         end
 
+        # Here we check that the types of p_prototype and d_prototype actually 
+        # define the types of the Ps and Ds inside the algorithm caches.
+        # We test sparse, tridiagonal and dense matrices as well as sparse and 
+        # dense vectors
+        @testset "Prototype type check" begin
+            #prod and dest functions
+            prod_inner! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                return nothing
+            end
+            prod_sparse! = (P, u, p, t) -> begin
+                @test P isa SparseMatrixCSC
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            prod_tridiagonal! = (P, u, p, t) -> begin
+                @test P isa Tridiagonal
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            prod_dense! = (P, u, p, t) -> begin
+                @test P isa Matrix
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            dest_sparse! = (D, u, p, t) -> begin
+                @test D isa SparseVector
+                fill!(D, zero(eltype(D)))
+            end
+            dest_dense! = (D, u, p, t) -> begin
+                @test D isa Vector
+                fill!(D, zero(eltype(D)))
+            end
+            #prototypes
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        [0.0, 0.0, 0.0, 0.0],
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            D_sparse = spzeros(4)
+            D_dense = Vector(D_sparse)
+            # problem definition
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            tspan = (0.0, 1.0)
+            dt = 0.5
+            ## conservative PDS
+            prob_default = ConservativePDSProblem(prod_dense!, u0, tspan)
+            prob_tridiagonal = ConservativePDSProblem(prod_tridiagonal!, u0, tspan;
+                                                      p_prototype = P_tridiagonal)
+            prob_dense = ConservativePDSProblem(prod_dense!, u0, tspan;
+                                                p_prototype = P_dense)
+            prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
+                                                 p_prototype = P_sparse)
+            ## nonconservative PDS                                         
+            prob_default2 = PDSProblem(prod_dense!, dest_dense!, u0, tspan)
+            prob_tridiagonal2 = PDSProblem(prod_tridiagonal!, dest_dense!, u0, tspan;
+                                           p_prototype = P_tridiagonal)
+            prob_dense2 = PDSProblem(prod_dense!, dest_dense!, u0, tspan;
+                                     p_prototype = P_dense,
+                                     d_prototype = D_dense)
+            prob_sparse2 = PDSProblem(prod_sparse!, dest_sparse!, u0, tspan;
+                                      p_prototype = P_sparse,
+                                      d_prototype = D_sparse)
+            for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
+                        MPRK43I(0.5, 0.75),
+                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0),
+                        SSPMPRK43())
+                for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
+                             prob_default2,
+                             prob_tridiagonal2, prob_dense2, prob_sparse2)
+                    solve(prob, alg; dt, adaptive = false)
+                end
+            end
+        end
+
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
