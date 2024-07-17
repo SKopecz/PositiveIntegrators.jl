@@ -260,7 +260,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(P, zero(u), σ, tab, linsolve_rhs, linsolve)
+        MPECache(P, similar(u), σ, tab, linsolve_rhs, linsolve)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
@@ -567,8 +567,8 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPRK22Cache(tmp, P, P2,
-                    zero(u), # D
-                    zero(u), # D2
+                    similar(u), # D
+                    similar(u), # D2
                     σ,
                     tab, #MPRK22ConstantCache
                     linsolve)
@@ -1107,9 +1107,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                         assumptions = LinearSolve.OperatorAssumptions(true))
         MPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, tab, linsolve)
     elseif f isa PDSFunction
-        D = zero(u)
-        D2 = zero(u)
-        D3 = zero(u)
+        D = similar(u)
+        D2 = similar(u)
+        D3 = similar(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
