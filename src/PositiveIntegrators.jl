@@ -3,7 +3,7 @@ module PositiveIntegrators
 # 1. Load dependencies
 using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, diagind, mul!
 using SparseArrays: SparseArrays, AbstractSparseMatrix,
-                    nonzeros, nzrange, rowvals, spdiagm
+                    issparse, nonzeros, nzrange, rowvals, spdiagm
 using StaticArrays: SVector, MVector, SMatrix, StaticArray, @SVector, @SMatrix
 
 using FastBroadcast: @..
