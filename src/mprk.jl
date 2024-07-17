@@ -7,8 +7,18 @@ end
 
 #####################################################################
 p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
-p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
-p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
+p_prototype(u, f::ConservativePDSFunction) = _p_prototype(f.p_prototype)
+p_prototype(u, f::PDSFunction) = _p_prototype(f.p_prototype)
+
+_p_prototype(prototype) = zero(prototype)
+function _p_prototype(prototype::AbstractSparseMatrix)
+    # We need to ensure that we store all structural nonzeros that
+    # are required for the linear system. In particular, we need to
+    # store the diagonal entries.
+    p = copy(prototype)
+    fill!(nonzeros(p), one(eltype(p)))
+    return p + spdiagm(0 => ones(eltype(p), size(p, 1)))
+end
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -71,7 +81,7 @@ end
     return nothing
 end
 
-# optimized versions for Tridiagonal matrices
+# optimized version for Tridiagonal matrices
 @muladd function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
     # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
@@ -79,7 +89,6 @@ end
                                     P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
-
     if !isnothing(d)
         Base.require_one_based_indexing(d)
         @assert length(σ) == length(d)
@@ -114,6 +123,98 @@ end
     return nothing
 end
 
+# optimized version for sparse matrices
+@muladd function build_mprk_matrix!(M::AbstractSparseMatrix, P::AbstractSparseMatrix,
+                                    σ, dt, d = nothing)
+    # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
+    # M[i,j] = -dt * P[i,j] / sigma[j]
+    Base.require_one_based_indexing(M, P, σ)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(σ)
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(σ) == length(d)
+    end
+
+    M_rows = rowvals(M)
+    M_vals = nonzeros(M)
+    P_rows = rowvals(P)
+    P_vals = nonzeros(P)
+    n = size(M, 2)
+
+    # Diagonal entries
+    for j in 1:n
+        for idx_M in nzrange(M, j)
+            # First, we look for the index corresponding to the
+            # diagonal entry of M
+            i = M_rows[idx_M]
+            if i != j
+                continue
+            end
+
+            # Next, we sum over all production terms in the
+            # i-th column of P
+            val = zero(eltype(P))
+            for idx_P in nzrange(P, i)
+                val += P_vals[idx_P]
+            end
+
+            # Finally, we set the diagonal entry of M
+            σi = σ[i]
+            if isnothing(d)
+                M_vals[idx_M] = (σi + dt * val) / σi
+            else
+                M_vals[idx_M] = (σi + dt * d[i] + dt * val) / σi
+            end
+        end
+    end
+
+    # Fill remaining entries
+    for j in 1:n
+        iter_M = iterate(nzrange(M, j))
+        iter_P = iterate(nzrange(P, j))
+
+        while iter_M !== nothing
+            idx_M = first(iter_M)
+            i = M_rows[idx_M]
+
+            if iter_P === nothing
+                # If there are no more nonzeros in P, we set the
+                # entry in M to zero unless we are on the diagonal,
+                # where we do nothing since we have already set the
+                # diagonal entries.
+                if i != j
+                    M_vals[idx_M] = zero(eltype(P))
+                end
+            else
+                idx_P = first(iter_P)
+                i_P = P_rows[idx_P]
+                if i_P < i
+                    throw(ArgumentError("The production matrix has more non-zero entries than the MPRK matrix."))
+                elseif i_P == i
+                    # P has a nonzero entry at this position
+                    if i != j
+                        M_vals[idx_M] = -dt * P_vals[idx_P] / σ[j]
+                    end
+                    iter_P = iterate(nzrange(P, j), last(iter_P))
+                else
+                    # P has a zero entry at this position
+                    if i != j
+                        M_vals[idx_M] = zero(eltype(P))
+                    end
+                end
+            end
+
+            iter_M = iterate(nzrange(M, j), last(iter_M))
+
+            if (iter_M === nothing) && (iter_P !== nothing)
+                throw(ArgumentError("The production matrix has more non-zero entries than the MPRK matrix."))
+            end
+        end
+    end
+
+    return nothing
+end
+
 ### MPE #####################################################################################
 """
     MPE([linsolve = ..., small_constant = ...])
@@ -138,7 +239,7 @@ You can also choose the parameter `small_constant` which is added to all Patanka
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
-The current implementation only supports fixed time steps. 
+The current implementation only supports fixed time steps.
 
 ## References
 
@@ -334,12 +435,12 @@ end
 A family of second-order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is an adaptive, one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
-implicit. In this implementation the stage-values are conservative as well. 
+implicit. In this implementation the stage-values are conservative as well.
 The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
-Torlo, Öffner and Ranocha (2022).  
+Torlo, Öffner and Ranocha (2022).
 
-This method supports adaptive time stepping, using the Patankar-weight denominators 
+This method supports adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as first order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
@@ -725,7 +826,7 @@ implicit. In this implementation the stage-values are conservative as well.
 The parameters `α` and `β` must be chosen such that the Runge--Kutta coefficients are nonnegative,
 see Kopecz and Meister (2018) for details.
 
-These methods support adaptive time stepping, using the Patankar-weight denominators 
+These methods support adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
@@ -828,7 +929,7 @@ implicit. In this implementation the stage-values are conservative as well. The 
 `3/8 ≤ γ ≤ 3/4`.
 Further details are given in Kopecz and Meister (2018).
 
-This method supports adaptive time stepping, using the Patankar-weight denominators 
+This method supports adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
