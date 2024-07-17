@@ -134,3 +134,17 @@ using BenchmarkTools
 ```@example LinearAdvection
 @benchmark solve(prob_sparse, MPRK43I(1.0, 0.5); save_everystep = false)
 ```
+
+
+## Package versions
+
+These results were obtained using the following versions.
+```@example LinearAdvection
+using InteractiveUtils
+versioninfo()
+
+using Pkg
+Pkg.status(["PositiveIntegrators", "LinearSolve", "OrdinaryDiffEq"],
+           mode=PKGMODE_MANIFEST)
+nothing # hide
+```
