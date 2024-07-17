@@ -495,17 +495,14 @@ end
             # problem with sparse matrices
             p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
                                   N - 1 => ones(eltype(u0), 1))
-            d_prototype = zero(u0)
             linear_advection_fd_upwind_PDS_sparse = PDSProblem(linear_advection_fd_upwind_P!,
                                                                linear_advection_fd_upwind_D!,
                                                                u0, tspan;
-                                                               p_prototype = p_prototype,
-                                                               d_prototype = d_prototype)
+                                                               p_prototype = p_prototype)
             linear_advection_fd_upwind_PDS_sparse_2 = PDSProblem{true}(linear_advection_fd_upwind_P!,
                                                                        linear_advection_fd_upwind_D!,
                                                                        u0, tspan;
-                                                                       p_prototype = p_prototype,
-                                                                       d_prototype = d_prototype)
+                                                                       p_prototype = p_prototype)
             linear_advection_fd_upwind_ConsPDS_sparse = ConservativePDSProblem(linear_advection_fd_upwind_P!,
                                                                                u0, tspan;
                                                                                p_prototype = p_prototype)
@@ -1193,8 +1190,8 @@ end
             end
         end
 
-        # Here we check that the types of p_prototype and d_prototype actually 
-        # define the types of the Ps and Ds inside the algorithm caches.
+        # Here we check that the type of p_prototype actually 
+        # defines the types of the Ps inside the algorithm caches.
         # We test sparse, tridiagonal and dense matrices as well as sparse and 
         # dense vectors
         @testset "Prototype type check" begin
