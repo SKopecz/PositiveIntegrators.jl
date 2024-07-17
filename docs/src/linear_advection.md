@@ -1,7 +1,7 @@
 # Tutorial: Solution of the linear advection equation
 
-This tutorial is about the efficient solution of production-destruction systems (PDS) with a large number of differential equations. 
-We will explore several ways to represent such large systems and assess their efficiency. 
+This tutorial is about the efficient solution of production-destruction systems (PDS) with a large number of differential equations.
+We will explore several ways to represent such large systems and assess their efficiency.
 
 ## Definition of the production-destruction system
 
@@ -11,7 +11,7 @@ One example of the occurrence of a PDS with a large number of equations is the s
 \partial_t u(t,x)=-a\partial_x u(t,x),\quad u(0,x)=u_0(x)
 ```
 
-with ``a>0``, ``t≥ 0``, ``x\in[0,1]`` and periodic boundary conditions. To keep things as simple as possible, we 
+with ``a>0``, ``t≥ 0``, ``x\in[0,1]`` and periodic boundary conditions. To keep things as simple as possible, we
 discretize the space domain as ``0=x_0<x_1\dots <x_{N-1}<x_N=1`` with ``x_i = i Δ x`` for ``i=0,\dots,N`` and ``Δx=1/N``. An upwind discretization of the spatial derivative yields the ODE system
 
 ```math
@@ -22,13 +22,13 @@ discretize the space domain as ``0=x_0<x_1\dots <x_{N-1}<x_N=1`` with ``x_i = i 
 ```
 
 where ``u_i(t)`` is an approximation of ``u(t,x_i)`` for ``i=1,\dots, N``.
-This system can also be written as ``\partial_t \mathbf u(t)=\mathbf A\mathbf u(t)`` with ``\mathbf u(t)=(u_1(t),\dots,u_N(t))`` and 
+This system can also be written as ``\partial_t \mathbf u(t)=\mathbf A\mathbf u(t)`` with ``\mathbf u(t)=(u_1(t),\dots,u_N(t))`` and
 
 ```math
 \mathbf A= \frac{a}{Δ x}\begin{bmatrix}-1&0&\dots&0&1\\1&-1&\ddots&&0\\0&\ddots&\ddots&\ddots&\vdots\\ \vdots&\ddots&\ddots&\ddots&0\\0&\dots&0&1&-1\end{bmatrix}.
 ```
 
-In particular the matrix ``\mathbf A`` shows that there is a single production term and a single destruction term per equation. 
+In particular the matrix ``\mathbf A`` shows that there is a single production term and a single destruction term per equation.
 Furthermore, the system is conservative as ``\mathbf A`` has column sum zero.
 To be precise, the production matrix ``\mathbf P = (p_{i,j})`` of this conservative PDS is given by
 
@@ -67,11 +67,15 @@ As mentioned above, we will try different approaches to solve this PDS and compa
 
 ### Standard in-place implementation
 
+By default, we will use dense matrices to store the production terms
+and to setup/solve the linear systems arising in MPRK methods. Of course,
+this is not efficient for large and sparse systems like in this case.
+
 ```@example LinearAdvection
 using PositiveIntegrators # load ConservativePDSProblem
 
 function lin_adv_P!(P, u, p, t)
-    P .= 0.0
+    fill!(P, 0.0)
     N = length(u)
     dx = 1 / N
     P[1, N] = u[N] / dx
@@ -97,7 +101,9 @@ plot!(x, last(sol.u); label = "u")
 
 ### Using sparse matrices
 
-TODO: Some text
+To use different matrix types for the production terms and linear systems,
+you can use the keyword argument `p_prototype` of
+[`ConservativePDSProblem`](@ref) and [`PDSProblem`](@ref).
 
 ```@example LinearAdvection
 using SparseArrays

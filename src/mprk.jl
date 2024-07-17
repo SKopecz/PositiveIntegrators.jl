@@ -1465,7 +1465,7 @@ end
         nz_P = nonzeros(P)
         nz_P2 = nonzeros(P2)
         nz_P3 = nonzeros(P3)
-        @.. broadcast=false nz_P3=a31 * nz_P  + a32 * nz_P2
+        @.. broadcast=false nz_P3=a31 * nz_P + a32 * nz_P2
     else
         @.. broadcast=false P3=a31 * P + a32 * P2
     end
@@ -1492,7 +1492,7 @@ end
         nz_P = nonzeros(P)
         nz_P2 = nonzeros(P2)
         nz_P3 = nonzeros(P3)
-        @.. broadcast=false nz_P3=beta1 * nz_P  + beta2 * nz_P2
+        @.. broadcast=false nz_P3=beta1 * nz_P + beta2 * nz_P2
     else
         @.. broadcast=false P3=beta1 * P + beta2 * P2
     end
@@ -1516,7 +1516,7 @@ end
         nz_P = nonzeros(P)
         nz_P2 = nonzeros(P2)
         nz_P3 = nonzeros(P3)
-        @.. broadcast=false nz_P3=b1 * nz_P  + b2 * nz_P2 + b3 * nz_P3
+        @.. broadcast=false nz_P3=b1 * nz_P + b2 * nz_P2 + b3 * nz_P3
     else
         @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
     end

@@ -3,9 +3,9 @@ abstract type AbstractPDSProblem end
 
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
-                       p_prototype = nothing,
-                       d_prototype = nothing,
-                       analytic = nothing)
+               p_prototype = nothing,
+               d_prototype = nothing,
+               analytic = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
 `P` denotes the production matrix.
