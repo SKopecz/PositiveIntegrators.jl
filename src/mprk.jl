@@ -83,7 +83,7 @@ end
 
 # optimized version for Tridiagonal matrices
 @muladd function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
-    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠ P[j,i]) / sigma[i]
+    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠i P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M.dl, M.d, M.du,
                                     P.dl, P.d, P.du, σ)
@@ -126,7 +126,7 @@ end
 # optimized version for sparse matrices
 @muladd function build_mprk_matrix!(M::AbstractSparseMatrix, P::AbstractSparseMatrix,
                                     σ, dt, d = nothing)
-    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠ P[j,i]) / sigma[i]
+    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠i P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M, P, σ)
     @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(σ)
