@@ -135,6 +135,17 @@ using BenchmarkTools
 @benchmark solve(prob_sparse, MPRK43I(1.0, 0.5); save_everystep = false)
 ```
 
+By default, we use an LU factorization for the linear systems. At the time of
+writing, Julia uses [SparseArrays.jl](https://github.com/JuliaSparse/SparseArrays.jl)
+defaulting to UMFPACK from SuiteSparse in this case. However, the linear systems
+do not necessarily have the structure for which UMFPACK is optimized for. Thus,
+it is often possible to gain performance by switching to KLU instead.
+
+```@example LinearAdvection
+using LinearSolve
+@benchmark solve(prob_sparse, MPRK43I(1.0, 0.5; linsolve = KLUFactorization()); save_everystep = false)
+```
+
 
 ## Package versions
 
@@ -142,9 +153,10 @@ These results were obtained using the following versions.
 ```@example LinearAdvection
 using InteractiveUtils
 versioninfo()
+println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "LinearSolve", "OrdinaryDiffEq"],
+Pkg.status(["PositiveIntegrators", "SparseArrays", "KLU", "LinearSolve", "OrdinaryDiffEq"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```
