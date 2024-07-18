@@ -35,7 +35,7 @@ The system can be written as a conservative PDS with production terms
 
 ```math
 \begin{aligned}
-&p_{i,i-1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i-1}(t),\quad i=2,\dots,N,
+&p_{i,i-1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i-1}(t),\quad i=2,\dots,N, \\
 &p_{i,i+1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i-1}(t),\quad i=1,\dots,N-1,
 \end{aligned}
 ```
