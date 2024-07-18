@@ -11,8 +11,8 @@ The difference to [`MPRK22`](@ref) is that this method is based on the SSP formu
 an explicit second-order Runge-Kutta method. This family of schemes contains the [`MPRK22`](@ref) family,
 where `MPRK22(α) = SSMPRK22(0, α)` applies.
 
-This method supports adaptive time stepping, using the first order approximations 
-``(σ_i - u_i^n) / τ + u_i^n`` with ``τ=1+(α_{21}β_{10}^2)/(β_{20}+β_{21})``, 
+This method supports adaptive time stepping, using the first order approximations
+``(σ_i - u_i^n) / τ + u_i^n`` with ``τ=1+(α_{21}β_{10}^2)/(β_{20}+β_{21})``,
 see (2.7) in Huang and Shu (2019), to estimate the error.
 
 The scheme was introduced by Huang and Shu for conservative production-destruction systems.
@@ -240,7 +240,9 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     if f isa ConservativePDSFunction
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P2),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK22ConservativeCache(tmp, P, P2, σ,
@@ -248,7 +250,9 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                                    linsolve)
     elseif f isa PDSFunction
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P2),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK22Cache(tmp, P, P2,
@@ -433,7 +437,7 @@ You can also choose the parameter `small_constant` which is added to all Patanka
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
-The current implementation only supports fixed time steps. 
+The current implementation only supports fixed time steps.
 
 ## References
 
@@ -720,7 +724,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     if f isa ConservativePDSFunction
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P3),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
         SSPMPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, ρ, tab, linsolve)
     elseif f isa PDSFunction
@@ -729,7 +735,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         D3 = zero(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P3),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK43Cache(tmp, tmp2, P, P2, P3, D, D2, D3, σ, ρ, tab, linsolve)

@@ -138,7 +138,7 @@ You can also choose the parameter `small_constant` which is added to all Patanka
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
 `floatmin` of the floating point type used.
 
-The current implementation only supports fixed time steps. 
+The current implementation only supports fixed time steps.
 
 ## References
 
@@ -248,7 +248,9 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         # as well as to store the system matrix of the linear system
         # Right hand side of linear system is always uprev
         linprob = LinearProblem(P, _vec(uprev))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPEConservativeCache(P, σ, tab, linsolve)
@@ -257,7 +259,9 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
         # We use P to store the evaluation of the PDS
         # as well as to store the system matrix of the linear system
         linprob = LinearProblem(P, _vec(linsolve_rhs))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPECache(P, zero(u), σ, tab, linsolve_rhs, linsolve)
@@ -334,12 +338,12 @@ end
 A family of second-order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is an adaptive, one-step, two-stage method which is
 second-order accurate, unconditionally positivity-preserving, and linearly
-implicit. In this implementation the stage-values are conservative as well. 
+implicit. In this implementation the stage-values are conservative as well.
 The parameter `α` is described by Kopecz and Meister (2018) and
 studied by Izgin, Kopecz and Meister (2022) as well as
-Torlo, Öffner and Ranocha (2022).  
+Torlo, Öffner and Ranocha (2022).
 
-This method supports adaptive time stepping, using the Patankar-weight denominators 
+This method supports adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as first order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
@@ -555,7 +559,9 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
         # not be altered, since it is needed to compute the adaptive time step
         # size.
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P2),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPRK22ConservativeCache(tmp, P, P2, σ,
@@ -563,7 +569,9 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                                 linsolve)
     elseif f isa PDSFunction
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P2),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPRK22Cache(tmp, P, P2,
@@ -725,7 +733,7 @@ implicit. In this implementation the stage-values are conservative as well.
 The parameters `α` and `β` must be chosen such that the Runge--Kutta coefficients are nonnegative,
 see Kopecz and Meister (2018) for details.
 
-These methods support adaptive time stepping, using the Patankar-weight denominators 
+These methods support adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
@@ -828,7 +836,7 @@ implicit. In this implementation the stage-values are conservative as well. The 
 `3/8 ≤ γ ≤ 3/4`.
 Further details are given in Kopecz and Meister (2018).
 
-This method supports adaptive time stepping, using the Patankar-weight denominators 
+This method supports adaptive time stepping, using the Patankar-weight denominators
 ``σ_i``, see Kopecz and Meister (2018), as second order approximations to estimate the error.
 
 The scheme was introduced by Kopecz and Meister for conservative production-destruction systems.
@@ -1103,7 +1111,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
         # not be altered, since it is needed to compute the adaptive time step
         # size.
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P3),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
         MPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, tab, linsolve)
     elseif f isa PDSFunction
@@ -1112,7 +1122,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
         D3 = zero(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve;
+                        alias_A = !issparse(P3),
+                        alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPRK43Cache(tmp, tmp2, P, P2, P3, D, D2, D3, σ, tab, linsolve)
