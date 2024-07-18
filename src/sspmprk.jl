@@ -252,8 +252,8 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK22Cache(tmp, P, P2,
-                       zero(u), # D
-                       zero(u), # D2
+                       similar(u), # D
+                       similar(u), # D2
                        σ,
                        tab, #MPRK22ConstantCache
                        linsolve)
@@ -760,9 +760,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
                         assumptions = LinearSolve.OperatorAssumptions(true))
         SSPMPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, ρ, tab, linsolve)
     elseif f isa PDSFunction
-        D = zero(u)
-        D2 = zero(u)
-        D3 = zero(u)
+        D = similar(u)
+        D2 = similar(u)
+        D3 = similar(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,

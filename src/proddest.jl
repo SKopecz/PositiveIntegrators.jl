@@ -3,9 +3,8 @@ abstract type AbstractPDSProblem end
 
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
-               p_prototype = nothing,
-               d_prototype = nothing,
-               analytic = nothing)
+                       p_prototype = nothing,
+                       analytic = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
 `P` denotes the production matrix.
@@ -20,13 +19,9 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
-- `d_prototype`: If `D` is given in in-place form, `d_prototype` is used to store evaluations of `D`.
-  If `d_prototype` is not specified explicitly and `D` is in-place, then `d_prototype` will be internally
-set to `zeros(eltype(u0), (length(u0),))`.
-
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
     Specifying the analytic solution can be useful for plotting and convergence tests.
 
@@ -86,7 +81,6 @@ end
 # (arbitrary functions)
 function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
                          p_prototype = nothing,
-                         d_prototype = nothing,
                          analytic = nothing,
                          kwargs...) where {iip}
 
@@ -94,10 +88,9 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     if isnothing(p_prototype) && iip
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
-    # d_prototype is used to store evaluations of D, if D is in-place.
-    if isnothing(d_prototype) && iip
-        d_prototype = zeros(eltype(u0), (length(u0),))
-    end
+    # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store 
+    # evaluations of D.
+    d_prototype = similar(u0)
 
     PD = PDSFunction{iip}(P, D; p_prototype = p_prototype, d_prototype = d_prototype,
                           analytic = analytic)
@@ -177,7 +170,7 @@ The function `P` can be given either in the out-of-place form with signature
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
