@@ -1508,7 +1508,10 @@ end
 
     # Same as linres = P3 \ tmp
     linsolve.A = P3
+    @show linsolve.A
+    @show linsolve.b
     linres = solve!(linsolve)
+    @show linres
     integrator.stats.nsolve += 1
 
     σ .= linres
