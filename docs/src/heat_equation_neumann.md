@@ -142,7 +142,7 @@ nothing #hide
 ```
 
 ```@example HeatEquationNeumann
-plot(x,u0; label = "u0", xguide = "x", yguide = "u")
+plot(x, u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol_sparse.u); label = "u")
 ```
 
