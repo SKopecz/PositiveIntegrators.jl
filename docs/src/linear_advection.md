@@ -1,4 +1,4 @@
-# Tutorial: Solution of the linear advection equation
+# [Tutorial: Solution of the linear advection equation](@id tutorial-linear-advection)
 
 This tutorial is about the efficient solution of production-destruction systems (PDS) with a large number of differential equations. 
 We will explore several ways to represent such large systems and assess their efficiency. 
