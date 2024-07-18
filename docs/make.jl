@@ -76,6 +76,7 @@ makedocs(modules = [PositiveIntegrators],
              "Tutorials" => [
                  "Linear Advection" => "linear_advection.md",
              ],
+             "Troubleshooting, FAQ" => "faq.md",
              "API reference" => "api_reference.md",
              "Contributing" => "contributing.md",
              "Code of conduct" => "code_of_conduct.md",
