@@ -1443,7 +1443,7 @@ end
 
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=uprev + small_constant
-    @show σ
+    @show ("1",σ)
 
     build_mprk_matrix!(P3, P3, σ, dt)
 
@@ -1452,7 +1452,7 @@ end
     linres = solve!(linsolve)
 
     u .= linres
-    @show u
+    @show ("2",u)
     if !(q1 ≈ q2)
         tmp2 .= u #u2 in out-of-place version
     end
@@ -1460,7 +1460,7 @@ end
 
     @.. broadcast=false σ=σ^(1 - q1) * u^q1
     @.. broadcast=false σ=σ + small_constant
-    @show σ
+    @show ("3",σ)
 
     f.p(P2, u, p, t + c2 * dt) # evaluate production terms
     if issparse(P)
@@ -1483,13 +1483,13 @@ end
     linres = solve!(linsolve)
 
     u .= linres
-    @show u
+    @show ("4",u)
     integrator.stats.nsolve += 1
 
     if !(q1 ≈ q2)
         @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
         @.. broadcast=false σ=σ + small_constant
-        @show σ
+        @show ("5",σ)
     end
 
     if issparse(P)
@@ -1512,7 +1512,7 @@ end
     integrator.stats.nsolve += 1
 
     σ .= linres
-    @show σ
+    @show ("6",σ)
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=σ + small_constant
 
@@ -1537,7 +1537,7 @@ end
     linres = solve!(linsolve)
 
     u .= linres
-    @show u
+    @show ("7",u)
     integrator.stats.nsolve += 1
 
     # Now tmp stores the error estimate
