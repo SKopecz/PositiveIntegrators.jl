@@ -1192,8 +1192,7 @@ end
 
         # Here we check that the type of p_prototype actually 
         # defines the types of the Ps inside the algorithm caches.
-        # We test sparse, tridiagonal and dense matrices as well as sparse and 
-        # dense vectors
+        # We test sparse, tridiagonal, and dense matrices.
         @testset "Prototype type check" begin
             #prod and dest functions
             prod_inner! = (P, u, p, t) -> begin
