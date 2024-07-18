@@ -192,7 +192,7 @@ systems do not necessarily have the structure for which UMFPACK is optimized
  for. Thus, it is often possible to gain performance by switching to KLU
  instead.
 
-```@example LinearAdvection
+```@example HeatEquation
 using LinearSolve
 @benchmark solve(prob_sparse, MPRK22(1.0; linsolve = KLUFactorization()); save_everystep = false)
 ```
@@ -205,7 +205,7 @@ using LinearSolve
 ## Package versions
 
 These results were obtained using the following versions.
-```@example LinearAdvection
+```@example HeatEquation
 using InteractiveUtils
 versioninfo()
 println()
