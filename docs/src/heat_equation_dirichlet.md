@@ -47,8 +47,10 @@ and destruction terms ``d_{i,j} = p_{j,i}`` for ``i \ne j`` as well as the
 non-conservative destruction terms
 
 ```math
+\begin{aligned}
 d_{1,1}(t,\mathbf u(t)) &= \frac{\mu}{\Delta x^2} u_{1}(t), \\
 d_{N,N}(t,\mathbf u(t)) &= \frac{\mu}{\Delta x^2} u_{N}(t).
+\end{aligned}
 ```
 
 
