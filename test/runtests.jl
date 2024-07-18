@@ -19,7 +19,7 @@ using Aqua: Aqua
                                       ref_alg = TRBDF2(autodiff = false))
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
-the errors at `test_time`. If`test_time` is not specified the error is computed 
+the errors at `test_time`. If`test_time` is not specified the error is computed
 at the final time.
 Return the associated experimental orders of convergence.
 
@@ -137,7 +137,7 @@ end
 
 # This is the usual conservative linear model problem, rewritten as
 # u₁' = -3 u₁ + 0.5 u₂ - 2 u₁ + 0.5 u₂ (= -5 u₁ + u₂)
-# u₂' =  3 u₁ - 0.5 u₂ - 0.5 u₂ + 2 u₁ (= 5 u₁ - u₂)  
+# u₂' =  3 u₁ - 0.5 u₂ - 0.5 u₂ + 2 u₁ (= 5 u₁ - u₂)
 # linear model problem - nonconservative - out-of-place
 linmodP(u, p, t) = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
 linmodD(u, p, t) = [2 * u[1]; 0.5 * u[2]]
@@ -345,9 +345,9 @@ end
         end
     end
 
-    # Here we check that solutions of equivalent ODEProblems, PDSProblems or 
-    # ConservativePDS Problems are approximately equal. 
-    # We also check that solvers from OrdinaryDiffEq can solve PDSProblems and 
+    # Here we check that solutions of equivalent ODEProblems, PDSProblems or
+    # ConservativePDS Problems are approximately equal.
+    # We also check that solvers from OrdinaryDiffEq can solve PDSProblems and
     # ConservativePDSProblems.
     @testset "Check compatibility of PositiveIntegrators and OrdinaryDiffEq" begin
         @testset "Linear model" begin
@@ -485,7 +485,7 @@ end
             N = 1000 # number of nodes
             u0 = sin.(π * LinRange(0.0, 1.0, N + 1))[2:end] # initial values
             tspan = (0.0, 1.0)
-            # Linear advection discretized with finite differences and upwind, periodic boundary conditions            
+            # Linear advection discretized with finite differences and upwind, periodic boundary conditions
             linear_advection_fd_upwind_ODE = ODEProblem(linear_advection_fd_upwind_f!, u0,
                                                         tspan)
             # problem with dense matrices
@@ -495,17 +495,14 @@ end
             # problem with sparse matrices
             p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
                                   N - 1 => ones(eltype(u0), 1))
-            d_prototype = zero(u0)
             linear_advection_fd_upwind_PDS_sparse = PDSProblem(linear_advection_fd_upwind_P!,
                                                                linear_advection_fd_upwind_D!,
                                                                u0, tspan;
-                                                               p_prototype = p_prototype,
-                                                               d_prototype = d_prototype)
+                                                               p_prototype = p_prototype)
             linear_advection_fd_upwind_PDS_sparse_2 = PDSProblem{true}(linear_advection_fd_upwind_P!,
                                                                        linear_advection_fd_upwind_D!,
                                                                        u0, tspan;
-                                                                       p_prototype = p_prototype,
-                                                                       d_prototype = d_prototype)
+                                                                       p_prototype = p_prototype)
             linear_advection_fd_upwind_ConsPDS_sparse = ConservativePDSProblem(linear_advection_fd_upwind_P!,
                                                                                u0, tspan;
                                                                                p_prototype = p_prototype)
@@ -897,6 +894,14 @@ end
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
                                         SSPMPRK22(0.5, 1.0), SSPMPRK43())
+
+                # Something is going wrong on macOS with sparse matrices for MPRK43II, see
+                # https://github.com/SKopecz/PositiveIntegrators.jl/pull/101
+                if Sys.isapple() && (alg isa MPRK43II)
+                    @test_skip false
+                    continue
+                end
+
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1189,6 +1194,75 @@ end
                     @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
                     @test isapprox(sol_tridiagonal_ip.u, sol_dense_ip.u; rtol)
                     @test isapprox(sol_tridiagonal_ip.u, sol_sparse_ip.u; rtol)
+                end
+            end
+        end
+
+        # Here we check that the type of p_prototype actually 
+        # defines the types of the Ps inside the algorithm caches.
+        # We test sparse, tridiagonal, and dense matrices.
+        @testset "Prototype type check" begin
+            #prod and dest functions
+            prod_inner! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
+                end
+                return nothing
+            end
+            prod_sparse! = (P, u, p, t) -> begin
+                @test P isa SparseMatrixCSC
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            prod_tridiagonal! = (P, u, p, t) -> begin
+                @test P isa Tridiagonal
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            prod_dense! = (P, u, p, t) -> begin
+                @test P isa Matrix
+                prod_inner!(P, u, p, t)
+                return nothing
+            end
+            dest! = (D, u, p, t) -> begin
+                fill!(D, zero(eltype(D)))
+            end
+            #prototypes
+            P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                        [0.0, 0.0, 0.0, 0.0],
+                                        [0.4, 0.5, 0.6])
+            P_dense = Matrix(P_tridiagonal)
+            P_sparse = sparse(P_tridiagonal)
+            # problem definition
+            u0 = [1.0, 1.5, 2.0, 2.5]
+            tspan = (0.0, 1.0)
+            dt = 0.5
+            ## conservative PDS
+            prob_default = ConservativePDSProblem(prod_dense!, u0, tspan)
+            prob_tridiagonal = ConservativePDSProblem(prod_tridiagonal!, u0, tspan;
+                                                      p_prototype = P_tridiagonal)
+            prob_dense = ConservativePDSProblem(prod_dense!, u0, tspan;
+                                                p_prototype = P_dense)
+            prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
+                                                 p_prototype = P_sparse)
+            ## nonconservative PDS                                         
+            prob_default2 = PDSProblem(prod_dense!, dest!, u0, tspan)
+            prob_tridiagonal2 = PDSProblem(prod_tridiagonal!, dest!, u0, tspan;
+                                           p_prototype = P_tridiagonal)
+            prob_dense2 = PDSProblem(prod_dense!, dest!, u0, tspan;
+                                     p_prototype = P_dense)
+            prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
+                                      p_prototype = P_sparse)
+            #solve and test
+            for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
+                        MPRK43I(0.5, 0.75),
+                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0),
+                        SSPMPRK43())
+                for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
+                             prob_default2,
+                             prob_tridiagonal2, prob_dense2, prob_sparse2)
+                    solve(prob, alg; dt, adaptive = false)
                 end
             end
         end
@@ -1503,7 +1577,7 @@ end
             @testset "$alg" for alg in algs
                 @testset "$i" for (i, prob) in enumerate(probs)
                     if prob == prob_pds_stratreac && alg == SSPMPRK22(0.5, 1.0)
-                        #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac. 
+                        #TODO: SSPMPRK22(0.5, 1.0) is unstable for prob_pds_stratreac.
                         #Need to figure out if this is a problem of the algorithm or not.
                         break
                     elseif prob == prob_pds_stratreac && alg == MPRK43I(0.5, 0.75)

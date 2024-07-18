@@ -7,8 +7,18 @@ end
 
 #####################################################################
 p_prototype(u, f) = zeros(eltype(u), length(u), length(u))
-p_prototype(u, f::ConservativePDSFunction) = zero(f.p_prototype)
-p_prototype(u, f::PDSFunction) = zero(f.p_prototype)
+p_prototype(u, f::ConservativePDSFunction) = _p_prototype(f.p_prototype)
+p_prototype(u, f::PDSFunction) = _p_prototype(f.p_prototype)
+
+_p_prototype(prototype) = zero(prototype)
+function _p_prototype(prototype::AbstractSparseMatrix)
+    # We need to ensure that we store all structural nonzeros that
+    # are required for the linear system. In particular, we need to
+    # store the diagonal entries.
+    p = copy(prototype)
+    fill!(nonzeros(p), one(eltype(p)))
+    return p + spdiagm(0 => ones(eltype(p), size(p, 1)))
+end
 
 #####################################################################
 # out-of-place for dense and static arrays
@@ -26,7 +36,7 @@ end
 
 # in-place for dense arrays
 @muladd function build_mprk_matrix!(M, P, sigma, dt, d = nothing)
-    # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
+    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠i P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     # TODO: the performance of this can likely be improved
     Base.require_one_based_indexing(M, P, sigma)
@@ -71,15 +81,14 @@ end
     return nothing
 end
 
-# optimized versions for Tridiagonal matrices
+# optimized version for Tridiagonal matrices
 @muladd function build_mprk_matrix!(M::Tridiagonal, P::Tridiagonal, σ, dt, d = nothing)
-    # M[i,i] = (sigma[i] + dt * sum_j P[j,i]) / sigma[i]
+    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠i P[j,i]) / sigma[i]
     # M[i,j] = -dt * P[i,j] / sigma[j]
     Base.require_one_based_indexing(M.dl, M.d, M.du,
                                     P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
-
     if !isnothing(d)
         Base.require_one_based_indexing(d)
         @assert length(σ) == length(d)
@@ -109,6 +118,100 @@ end
 
     for i in eachindex(M.d, σ)
         M.d[i] /= σ[i]
+    end
+
+    return nothing
+end
+
+# optimized version for sparse matrices
+@muladd function build_mprk_matrix!(M::AbstractSparseMatrix, P::AbstractSparseMatrix,
+                                    σ, dt, d = nothing)
+    # M[i,i] = (sigma[i] + dt * d[i] + dt * sum_j≠i P[j,i]) / sigma[i]
+    # M[i,j] = -dt * P[i,j] / sigma[j]
+    Base.require_one_based_indexing(M, P, σ)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(σ)
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(σ) == length(d)
+    end
+
+    M_rows = rowvals(M)
+    M_vals = nonzeros(M)
+    P_rows = rowvals(P)
+    P_vals = nonzeros(P)
+    n = size(M, 2)
+
+    # Diagonal entries
+    for j in 1:n
+        for idx_M in nzrange(M, j)
+            # First, we look for the index corresponding to the
+            # diagonal entry of M
+            i = M_rows[idx_M]
+            if i != j
+                continue
+            end
+
+            # Next, we sum over all production terms in the
+            # i-th column of P except for the diagonal entry
+            val = zero(eltype(P))
+            for idx_P in nzrange(P, i)
+                if P_rows[idx_P] != i
+                    val += P_vals[idx_P]
+                end
+            end
+
+            # Finally, we set the diagonal entry of M
+            σi = σ[i]
+            if isnothing(d)
+                M_vals[idx_M] = (σi + dt * val) / σi
+            else
+                M_vals[idx_M] = (σi + dt * d[i] + dt * val) / σi
+            end
+        end
+    end
+
+    # Fill remaining entries
+    for j in 1:n
+        iter_M = iterate(nzrange(M, j))
+        iter_P = iterate(nzrange(P, j))
+
+        while iter_M !== nothing
+            idx_M = first(iter_M)
+            i = M_rows[idx_M]
+
+            if iter_P === nothing
+                # If there are no more nonzeros in P, we set the
+                # entry in M to zero unless we are on the diagonal,
+                # where we do nothing since we have already set the
+                # diagonal entries.
+                if i != j
+                    M_vals[idx_M] = zero(eltype(P))
+                end
+            else
+                idx_P = first(iter_P)
+                i_P = P_rows[idx_P]
+                if i_P < i
+                    throw(ArgumentError("The production matrix has more non-zero entries than the MPRK matrix."))
+                elseif i_P == i
+                    # P has a nonzero entry at this position
+                    if i != j
+                        M_vals[idx_M] = -dt * P_vals[idx_P] / σ[j]
+                    end
+                    iter_P = iterate(nzrange(P, j), last(iter_P))
+                else
+                    # P has a zero entry at this position
+                    if i != j
+                        M_vals[idx_M] = zero(eltype(P))
+                    end
+                end
+            end
+
+            iter_M = iterate(nzrange(M, j), last(iter_M))
+
+            if (iter_M === nothing) && (iter_P !== nothing)
+                throw(ArgumentError("The production matrix has more non-zero entries than the MPRK matrix."))
+            end
+        end
     end
 
     return nothing
@@ -264,7 +367,7 @@ function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                         alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPECache(P, zero(u), σ, tab, linsolve_rhs, linsolve)
+        MPECache(P, similar(u), σ, tab, linsolve_rhs, linsolve)
     else
         throw(ArgumentError("MPE can only be applied to production-destruction systems"))
     end
@@ -575,8 +678,8 @@ function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPRK22Cache(tmp, P, P2,
-                    zero(u), # D
-                    zero(u), # D2
+                    similar(u), # D
+                    similar(u), # D2
                     σ,
                     tab, #MPRK22ConstantCache
                     linsolve)
@@ -599,7 +702,16 @@ end
     f.p(P, uprev, p, t) # evaluate production terms
     f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
     integrator.stats.nf += 1
-    @.. broadcast=false P2=a21 * P
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        @.. broadcast=false nz_P2=a21 * nz_P
+    else
+        @.. broadcast=false P2=a21 * P
+    end
     @.. broadcast=false D2=a21 * D
 
     # avoid division by zero due to zero Patankar weights
@@ -631,7 +743,16 @@ end
     f.d(D2, u, p, t + a21 * dt) # evaluate nonconservative destruction terms
     integrator.stats.nf += 1
 
-    @.. broadcast=false P2=b1 * P + b2 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        @.. broadcast=false nz_P2=b1 * nz_P + b2 * nz_P2
+    else
+        @.. broadcast=false P2=b1 * P + b2 * P2
+    end
     @.. broadcast=false D2=b1 * D + b2 * D2
 
     # tmp holds the right hand side of the linear system
@@ -674,7 +795,16 @@ end
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
     integrator.stats.nf += 1
-    @.. broadcast=false P2=a21 * P
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        @.. broadcast=false nz_P2=a21 * nz_P
+    else
+        @.. broadcast=false P2=a21 * P
+    end
 
     # Avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=uprev + small_constant
@@ -698,7 +828,16 @@ end
     f.p(P2, u, p, t + a21 * dt) # evaluate production terms
     integrator.stats.nf += 1
 
-    @.. broadcast=false P2=b1 * P + b2 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        @.. broadcast=false nz_P2=b1 * nz_P + b2 * nz_P2
+    else
+        @.. broadcast=false P2=b1 * P + b2 * P2
+    end
 
     build_mprk_matrix!(P2, P2, σ, dt)
 
@@ -1117,9 +1256,9 @@ function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uElt
                         assumptions = LinearSolve.OperatorAssumptions(true))
         MPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, tab, linsolve)
     elseif f isa PDSFunction
-        D = zero(u)
-        D2 = zero(u)
-        D3 = zero(u)
+        D = similar(u)
+        D2 = similar(u)
+        D3 = similar(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
         linsolve = init(linprob, alg.linsolve;
@@ -1146,7 +1285,16 @@ end
 
     f.p(P, uprev, p, t) # evaluate production terms
     f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
-    @.. broadcast=false P3=a21 * P
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=a21 * nz_P
+    else
+        @.. broadcast=false P3=a21 * P
+    end
     @.. broadcast=false D3=a21 * D
     integrator.stats.nf += 1
 
@@ -1176,7 +1324,17 @@ end
 
     f.p(P2, u, p, t + c2 * dt) # evaluate production terms
     f.d(D2, u, p, t + c2 * dt) # evaluate nonconservative destruction terms
-    @.. broadcast=false P3=a31 * P + a32 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=a31 * nz_P + a32 * nz_P2
+    else
+        @.. broadcast=false P3=a31 * P + a32 * P2
+    end
     @.. broadcast=false D3=a31 * D + a32 * D2
     integrator.stats.nf += 1
 
@@ -1200,7 +1358,17 @@ end
         @.. broadcast=false σ=σ + small_constant
     end
 
-    @.. broadcast=false P3=beta1 * P + beta2 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=beta1 * nz_P + beta2 * nz_P2
+    else
+        @.. broadcast=false P3=beta1 * P + beta2 * P2
+    end
     @.. broadcast=false D3=beta1 * D + beta2 * D2
 
     # tmp holds the right hand side of the linear system
@@ -1222,7 +1390,17 @@ end
 
     f.p(P3, u, p, t + c3 * dt) # evaluate production terms
     f.d(D3, u, p, t + c3 * dt) # evaluate nonconservative destruction terms
-    @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=b1 * nz_P + b2 * nz_P2 + b3 * nz_P3
+    else
+        @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    end
     @.. broadcast=false D3=b1 * D + b2 * D2 + b3 * D3
     integrator.stats.nf += 1
 
@@ -1263,7 +1441,16 @@ end
     # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
     f.p(P, uprev, p, t) # evaluate production terms
-    @.. broadcast=false P3=a21 * P
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=a21 * nz_P
+    else
+        @.. broadcast=false P3=a21 * P
+    end
     integrator.stats.nf += 1
 
     # avoid division by zero due to zero Patankar weights
@@ -1285,7 +1472,17 @@ end
     @.. broadcast=false σ=σ + small_constant
 
     f.p(P2, u, p, t + c2 * dt) # evaluate production terms
-    @.. broadcast=false P3=a31 * P + a32 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=a31 * nz_P + a32 * nz_P2
+    else
+        @.. broadcast=false P3=a31 * P + a32 * P2
+    end
     integrator.stats.nf += 1
 
     build_mprk_matrix!(P3, P3, σ, dt)
@@ -1302,7 +1499,17 @@ end
         @.. broadcast=false σ=σ + small_constant
     end
 
-    @.. broadcast=false P3=beta1 * P + beta2 * P2
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=beta1 * nz_P + beta2 * nz_P2
+    else
+        @.. broadcast=false P3=beta1 * P + beta2 * P2
+    end
 
     build_mprk_matrix!(P3, P3, σ, dt)
 
@@ -1316,7 +1523,17 @@ end
     @.. broadcast=false σ=σ + small_constant
 
     f.p(P3, u, p, t + c3 * dt) # evaluate production terms
-    @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    if issparse(P)
+        # We need to keep the structural nonzeros of the production terms.
+        # However, this is not guaranteed by broadcasting, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+        nz_P = nonzeros(P)
+        nz_P2 = nonzeros(P2)
+        nz_P3 = nonzeros(P3)
+        @.. broadcast=false nz_P3=b1 * nz_P + b2 * nz_P2 + b3 * nz_P3
+    else
+        @.. broadcast=false P3=b1 * P + b2 * P2 + b3 * P3
+    end
     integrator.stats.nf += 1
 
     build_mprk_matrix!(P3, P3, σ, dt)
