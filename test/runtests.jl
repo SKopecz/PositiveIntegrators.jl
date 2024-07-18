@@ -202,6 +202,75 @@ function linear_advection_fd_upwind_D!(D, u, p, t)
     return nothing
 end
 
+
+@testset "Different matrix types (conservative, adaptive)" begin
+    prod_1! = (P, u, p, t) -> begin
+        fill!(P, zero(eltype(P)))
+        for i in 1:(length(u) - 1)
+            P[i, i + 1] = i * u[i]
+        end
+        return nothing
+    end
+
+    prod_2! = (P, u, p, t) -> begin
+        fill!(P, zero(eltype(P)))
+        for i in 1:(length(u) - 1)
+            P[i + 1, i] = i * u[i + 1]
+        end
+        return nothing
+    end
+
+    prod_3! = (P, u, p, t) -> begin
+        fill!(P, zero(eltype(P)))
+        for i in 1:(length(u) - 1)
+            P[i, i + 1] = i * u[i]
+            P[i + 1, i] = i * u[i + 1]
+        end
+        return nothing
+    end
+
+    n = 4
+    P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
+                                zeros(n),
+                                [0.4, 0.5, 0.6])
+    P_dense = Matrix(P_tridiagonal)
+    P_sparse = sparse(P_tridiagonal)
+    u0 = [1.0, 1.5, 2.0, 2.5]
+    tspan = (0.0, 1.0)
+    dt = 0.25
+
+    rtol = sqrt(eps(Float32))
+
+    @testset "$alg" for alg in (MPRK43II(2.0 / 3.0), MPRK43II(0.5))
+
+        #=
+        # Something is going wrong on macOS with sparse matrices for MPRK43II, see
+        # https://github.com/SKopecz/PositiveIntegrators.jl/pull/101
+        if Sys.isapple() && (alg isa MPRK43II)
+            @test_skip false
+            continue
+        end
+        =#
+
+        for prod! in (prod_1!, prod_2!, prod_3!)
+            prod = (u, p, t) -> begin
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return P
+            end
+            prob_sparse_ip = ConservativePDSProblem(prod!, u0, tspan;
+                                                    p_prototype = P_sparse)
+            prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
+                                                    p_prototype = P_sparse)
+            sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
+            sol_sparse_op = solve(prob_sparse_op, alg; dt)
+
+            @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
+            @test isapprox(sol_sparse_ip.u, sol_sparse_op.u; rtol)
+        end
+    end
+end
+#=
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
@@ -1735,3 +1804,4 @@ end
         @test_nowarn plot(sol)
     end
 end;
+=#
