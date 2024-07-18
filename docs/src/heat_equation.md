@@ -1,7 +1,7 @@
 # [Tutorial: Solution of the heat equation](@id tutorial-heat-equation)
 
 Similar to the
-[tutorial on the linear advection equation](@ref tutorial-linear-advection),
+[tutorial on linear advection](@ref tutorial-linear-advection),
 we will demonstrate how to solve a conservative production-destruction
 system (PDS) resulting from a PDE discretization and means to improve
 the performance.
