@@ -1,4 +1,4 @@
-# [Tutorial: Solution of the heat equation](@id tutorial-heat-equation)
+# [Tutorial: Solution of the heat equation with Neumann boundary conditions](@id tutorial-heat-equation-neumann)
 
 Similar to the
 [tutorial on linear advection](@ref tutorial-linear-advection),
@@ -49,7 +49,7 @@ and destruction terms ``d_{i,j} = p_{j,i}``.
 
 ## Solution of the conservative production-destruction system
 
-Now we are ready to define a `ConservativePDSProblem` and to solve this
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this
 problem with a method of
 [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or
 [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
@@ -60,7 +60,7 @@ Moreover, we choose the initial condition
 u_0(x) = \cos(\pi x)^2.
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 x_boundaries = range(0, 1, length = 101)
 x = x_boundaries[1:end-1] .+ step(x_boundaries) / 2
 u0 = @. cospi(x)^2 # initial solution
@@ -79,7 +79,7 @@ the resulting linear systems:
 
 ### Standard dense matrices
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using PositiveIntegrators # load ConservativePDSProblem
 
 function heat_eq_P!(P, u, μ, t)
@@ -115,7 +115,7 @@ sol = solve(prob, MPRK22(1.0); save_everystep = false)
 nothing #hide
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using Plots
 
 plot(x, u0; label = "u0", xguide = "x", yguide = "u")
@@ -129,7 +129,7 @@ To use different matrix types for the production terms and linear systems,
 you can use the keyword argument `p_prototype` of
 [`ConservativePDSProblem`](@ref) and [`PDSProblem`](@ref).
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using SparseArrays
 p_prototype = spdiagm(-1 => ones(eltype(u0), length(u0) - 1),
                       +1 => ones(eltype(u0), length(u0) - 1))
@@ -141,7 +141,7 @@ sol_sparse = solve(prob_sparse, MPRK22(1.0); save_everystep = false)
 nothing #hide
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 plot(x,u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol_sparse.u); label = "u")
 ```
@@ -154,7 +154,7 @@ since they are in fact tridiagonal matrices. Thus, we can also use
 the special matrix type `Tridiagonal` from the standard library
 `LinearAlgebra`.
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using LinearAlgebra
 p_prototype = Tridiagonal(ones(eltype(u0), length(u0) - 1),
                           ones(eltype(u0), length(u0)),
@@ -167,7 +167,7 @@ sol_tridiagonal = solve(prob_tridiagonal, MPRK22(1.0); save_everystep = false)
 nothing #hide
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 plot(x,u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol_tridiagonal.u); label = "u")
 ```
@@ -179,12 +179,12 @@ plot!(x, last(sol_tridiagonal.u); label = "u")
 Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
 to compare the performance of the different implementations.
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using BenchmarkTools
 @benchmark solve(prob, MPRK22(1.0); save_everystep = false)
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 @benchmark solve(prob_sparse, MPRK22(1.0); save_everystep = false)
 ```
 
@@ -196,12 +196,12 @@ systems do not necessarily have the structure for which UMFPACK is optimized
  for. Thus, it is often possible to gain performance by switching to KLU
  instead.
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 using LinearSolve
 @benchmark solve(prob_sparse, MPRK22(1.0; linsolve = KLUFactorization()); save_everystep = false)
 ```
 
-```@example HeatEquation
+```@example HeatEquationNeumann
 @benchmark solve(prob_tridiagonal, MPRK22(1.0); save_everystep = false)
 ```
 
@@ -209,7 +209,7 @@ using LinearSolve
 ## Package versions
 
 These results were obtained using the following versions.
-```@example HeatEquation
+```@example HeatEquationNeumann
 using InteractiveUtils
 versioninfo()
 println()
