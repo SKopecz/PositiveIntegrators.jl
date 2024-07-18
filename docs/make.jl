@@ -75,6 +75,8 @@ makedocs(modules = [PositiveIntegrators],
              "Home" => "index.md",
              "Tutorials" => [
                  "Linear Advection" => "linear_advection.md",
+                 "Heat Equation, Neumann BCs" => "heat_equation_neumann.md",
+                 "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
              ],
              "Troubleshooting, FAQ" => "faq.md",
              "API reference" => "api_reference.md",
