@@ -7,7 +7,7 @@ system (PDS) resulting from a PDE discretization and means to improve
 the performance.
 
 
-## Definition of the production-destruction system
+## Definition of the conservative production-destruction system
 
 Consider the heat equation
 
@@ -16,8 +16,12 @@ Consider the heat equation
 ```
 
 with ``μ ≥ 0``, ``t≥ 0``, ``x\in[0,1]``, and homogeneous Neumann boundary conditions.
-We choose the classical central finite difference discretization of the
-Laplacian, resulting in the ODE
+We use a finite volume discretization, i.e., we split the domain ``[0, 1]`` into
+``N`` uniform cells of width ``\Delta x = 1 / N``. As degrees of freedom, we use
+the mean values of ``u(t)`` in each cell approximated by the point value ``u_i(t)``
+in the center of cell ``i``. Finally, we use the classical central finite difference
+discretization of the Laplacian with homogeneous Neumann boundary conditions,
+resulting in the ODE
 
 ```math
 \partial_t u(t) = L u(t),
@@ -36,30 +40,30 @@ The system can be written as a conservative PDS with production terms
 ```math
 \begin{aligned}
 &p_{i,i-1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i-1}(t),\quad i=2,\dots,N, \\
-&p_{i,i+1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i-1}(t),\quad i=1,\dots,N-1,
+&p_{i,i+1}(t,\mathbf u(t)) = \frac{\mu}{\Delta x^2} u_{i+1}(t),\quad i=1,\dots,N-1,
 \end{aligned}
 ```
 
 and destruction terms ``d_{i,j} = p_{j,i}``.
 
 
-## Solution of the production-destruction system
+## Solution of the conservative production-destruction system
 
 Now we are ready to define a `ConservativePDSProblem` and to solve this
 problem with a method of
 [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or
 [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
-In the following we use ``N=100`` nodes and the time domain ``t\in[0,1]``.
+In the following we use ``N = 100`` nodes and the time domain ``t \in [0,1]``.
 Moreover, we choose the initial condition
 
 ```math
-u_0(x) = \cos(\pi x).
+u_0(x) = \cos(\pi x)^2.
 ```
 
 ```@example HeatEquation
 x_boundaries = range(0, 1, length = 101)
 x = x_boundaries[1:end-1] .+ step(x_boundaries) / 2
-u0 = @. cospi(x) # initial solution
+u0 = @. cospi(x)^2 # initial solution
 tspan = (0.0, 1.0) # time domain
 
 nothing #hide
