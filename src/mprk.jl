@@ -982,7 +982,7 @@ algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
-`floatmin` of the floating point type used.
+`1e-50`.
 
 ## References
 
