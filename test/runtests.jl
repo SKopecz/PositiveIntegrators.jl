@@ -894,7 +894,6 @@ end
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
                                         SSPMPRK22(0.5, 1.0), SSPMPRK43())
-
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
