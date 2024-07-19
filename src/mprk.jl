@@ -998,7 +998,7 @@ struct MPRK43II{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
+function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = 1e-50)
     if isnothing(small_constant)
         small_constant_function = floatmin
     elseif small_constant isa Number
