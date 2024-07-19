@@ -1510,8 +1510,11 @@ end
     linsolve.A = P3
     @show linsolve.A
     @show linsolve.b
+    A_tmp = Matrix(linsolve.A)
+    b_tmp = linsolve.b
     linres = solve!(linsolve)
     @show linres
+    @show A_tmp\b_tmp
     integrator.stats.nsolve += 1
 
     σ .= linres
