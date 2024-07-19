@@ -58,7 +58,7 @@ plot(sol, tspan = (1e-6, 1e11),  xaxis = :log,
 The `SSPMPRK43()` scheme is only available with fixed time stepping. With a scheme like this it would take an enoumours amount of time to solve the Robertson problem accurately, since the time step must be chosen very small to accurately solve the problem in the initial phase. But the use of a `callback` allows us to modify the time steps size after each step.
 
 In the following example the `callback` doubles the time step size after each time step.
-```@example roberston
+```@example robertson
 sol_cb = solve(prob, SSPMPRK43(); dt = Inf, 
                callback = DiscreteCallback(Returns(true), 
                           integrator -> set_proposed_dt!(integrator, 2 * get_proposed_dt(integrator));
