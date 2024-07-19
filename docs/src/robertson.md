@@ -32,7 +32,7 @@ Now we are ready to define a `ConservativePDSProblem` and to solve this problem 
 Since this PDS consists of only three differential equations we provide an out-of-place implementation for the production matrix. Furthermore, we use static arrays for additional efficiency. See also the tutorial on [solving an NPZD model](@ref tutorial-npzd).
 
 ```@example robertson
-using StaticArrays
+using PositiveIntegrators, StaticArrays
 
 function prod(u, p, t)
     @SMatrix [0.0 1e4*u[2]*u[3] 0.0; 
