@@ -59,6 +59,8 @@ The `SSPMPRK43()` scheme is only available with fixed time stepping. With a sche
 
 In the following example the `callback` doubles the time step size after each time step.
 ```@example robertson
+using OrdinaryDiffEq
+
 sol_cb = solve(prob, SSPMPRK43(); dt = Inf, 
                callback = DiscreteCallback(Returns(true), 
                           integrator -> set_proposed_dt!(integrator, 2 * get_proposed_dt(integrator));
