@@ -19,9 +19,8 @@ and we consider the initial conditions ``N=8``, ``P=2``, ``Z=1`` and ``D=4``. Th
 The model can be represented as a conservative PDS with production terms
 ```math
 \begin{aligned}
-p_{12} &= 0.01 P, & p_{13} &= 0.01 Z,\\
-p_{14} &= 0.003 D, & p_{21} &= \frac{NP}{0.01 + N},\\
-p_{32} &= 0.5  (1.0 - e^{-1.21  P^2})  Z,& p_{42} &= 0.05  P,\\
+p_{12} &= 0.01 P, & p_{13} &= 0.01 Z, & p_{14} &= 0.003 D,\\
+p_{21} &= \frac{NP}{0.01 + N}, & p_{32} &= 0.5  (1.0 - e^{-1.21  P^2})  Z,& p_{42} &= 0.05  P,\\
 p_{43} &= 0.02  Z.
 \end{aligned}
 ```
