@@ -135,7 +135,7 @@ using BenchmarkTools
 ## Package versions
 
 These results were obtained using the following versions.
-```@example LinearAdvection
+```@example NPZD
 using InteractiveUtils
 versioninfo()
 println()
