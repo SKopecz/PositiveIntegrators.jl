@@ -83,7 +83,7 @@ plot(sol; label = ["N" "P" "Z" "D"], xguide = "t")
 For PDS with a small number of differential equations like the NPZD model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro.
 
 ```@example NPZD
-using PositiveIntegrators # load ConservativePDSProblem
+using StaticArrays
 
 function prod_static(u, p, t)
     N, P, Z, D = u
