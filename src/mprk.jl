@@ -982,7 +982,7 @@ algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
-`floatmin` of the floating point type used.
+`1e-50`.
 
 ## References
 
@@ -998,7 +998,7 @@ struct MPRK43II{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
+function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = 1e-50)
     if isnothing(small_constant)
         small_constant_function = floatmin
     elseif small_constant isa Number
