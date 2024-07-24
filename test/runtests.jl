@@ -1265,7 +1265,7 @@ end
                     sol1 = solve(prob, alg; dt, adaptive = false)
 
                     # test get_tmp_cache and integrator interface - modifying
-                    # values from the cache should not changes the final results
+                    # values from the cache should not change the final results
                     integrator = init(prob, alg; dt, adaptive = false)
                     step!(integrator)
                     cache = @inferred get_tmp_cache(integrator)
