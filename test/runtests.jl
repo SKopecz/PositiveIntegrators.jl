@@ -1198,7 +1198,7 @@ end
             end
         end
 
-        # Here we check that the type of p_prototype actually 
+        # Here we check that the type of p_prototype actually
         # defines the types of the Ps inside the algorithm caches.
         # We test sparse, tridiagonal, and dense matrices.
         @testset "Prototype type check" begin
@@ -1246,7 +1246,7 @@ end
                                                 p_prototype = P_dense)
             prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
                                                  p_prototype = P_sparse)
-            ## nonconservative PDS                                         
+            ## nonconservative PDS
             prob_default2 = PDSProblem(prod_dense!, dest!, u0, tspan)
             prob_tridiagonal2 = PDSProblem(prod_tridiagonal!, dest!, u0, tspan;
                                            p_prototype = P_tridiagonal)
@@ -1262,7 +1262,19 @@ end
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
-                    solve(prob, alg; dt, adaptive = false)
+                    sol1 = solve(prob, alg; dt, adaptive = false)
+
+                    # test get_tmp_cache and integrator interface - modifying
+                    # values from the cache should not changes the final results
+                    integrator = init(prob, alg; dt, adaptive = false)
+                    step!(integrator)
+                    cache = @inferred get_tmp_cache(integrator)
+                    @test !isempty(cache)
+                    tmp = first(cache)
+                    fill!(tmp, NaN)
+                    sol2 = solve!(integrator)
+                    @test sol1.t ≈ sol2.t
+                    @test sol1.u ≈ sol2.u
                 end
             end
         end
