@@ -1222,7 +1222,10 @@ struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutabl
     linsolve::F
 end
 
-get_tmp_cache(integrator, ::Union{MPRK43I, MPRK43II}, cache::OrdinaryDiffEqMutableCache) = (cache.σ,)
+function get_tmp_cache(integrator, ::Union{MPRK43I, MPRK43II},
+                       cache::OrdinaryDiffEqMutableCache)
+    (cache.σ,)
+end
 
 # In-place
 function alg_cache(alg::Union{MPRK43I, MPRK43II}, u, rate_prototype, ::Type{uEltypeNoUnits},
