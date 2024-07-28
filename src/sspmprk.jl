@@ -223,6 +223,8 @@ struct SSPMPRK22ConservativeCache{uType, PType, tabType, F} <:
     linsolve::F
 end
 
+get_tmp_cache(integrator, ::SSPMPRK22, cache::OrdinaryDiffEqMutableCache) = (cache.σ,)
+
 # In-place
 function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -733,6 +735,8 @@ struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMut
     tab::tabType
     linsolve::F
 end
+
+get_tmp_cache(integrator, ::SSPMPRK43, cache::OrdinaryDiffEqMutableCache) = (cache.σ,)
 
 # In-place
 function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
