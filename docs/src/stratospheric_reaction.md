@@ -129,7 +129,7 @@ The solution of the stratospheric reaction problem can now be computed as follow
 ```@example stratreac
 u0 = [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
 tspan = (4.32e4, 3.024e5) # time domain
-prob = PDSProblem(prod, u0, tspan) # create the PDS
+prob = PDSProblem(prod, dest, u0, tspan) # create the PDS
 
 sol = solve(prob, MPRK43I(1.0, 0.5))
 
