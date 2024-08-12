@@ -8,12 +8,12 @@ We will compare the use of standard arrays and static arrays from [StaticArrays.
 This stratospheric reaction problem was described by Adrian Sandu in [Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750), see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155) by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The goverining equations are
 ```math
 \begin{aligned}
-O^{1D}' &= r_5 - r_6 -  r_7,\\
-O' &= 2r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11},\\
-O_3' &= r_2 - r_3 - r_4 - r_5 - r_7 - r_8,\\
-O_2' &= -r_1 -r_2 + r_3 + 2r_4+r_5+2r_7+r_8+r_9,\\
-NO' &= -r_8+r_9+r_{10}-r_{11},\\
-NO_2' &= r_8-r_9-r_{10}+r_{11},
+\frac{d}{dt}O^{1D} &= r_5 - r_6 -  r_7,\\
+\frac{d}{dt}O &= 2r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11},\\
+\frac{d}{dt}O_3 &= r_2 - r_3 - r_4 - r_5 - r_7 - r_8,\\
+\frac{d}{dt}O_2 &= -r_1 -r_2 + r_3 + 2r_4+r_5+2r_7+r_8+r_9,\\
+\frac{d}{dt}NO &= -r_8+r_9+r_{10}-r_{11},\\
+\frac{d}{dt}NO_2 &= r_8-r_9-r_{10}+r_{11},
 \end{aligned}
 ```
 with reaction rates
@@ -33,7 +33,7 @@ T &= t/3600 \mod 24,\quad T_r=4.5,\quad T_s = 19.5,\\
 \end{aligned}
 ```
 Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T`` and the time domain is ``(4.32⋅ 10^{4}, 3.024⋅10^5)``.
-There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\\cdot\\mathbf{u}_0`` and ``u_5+u_6 = 1.097⋅10^9``.
+There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0`` and ``u_5+u_6 = 1.097⋅10^9``.
 
 The stratospheric reaction problem can be represented as a (non-conservative) PDS with production terms
 ```math
@@ -41,13 +41,14 @@ The stratospheric reaction problem can be represented as a (non-conservative) PD
 p_{13} &= r_5, & p_{21} &= r_6, & p_{22} &= r_1+r_{10},\\
 p_{23} &= r_3, & p_{24} &= r_1,& p_{32} &= r_2,\\
 p_{41} &= r_7, & p_{42}&= r_4+r_9, & p_{43}&= r_4+r_7+r_8,\\
-p_{44} &= r_3+r_5, & p_{56}=r_9+r_{10}, & p_{65}&=r_8+r_{11}.
+p_{44} &= r_3+r_5, & p_{56}&=r_9+r_{10}, & p_{65}&=r_8+r_{11}.
 \end{aligned}
 ```
 and additional destruction terms
 ```math
 \begin{aligned}
-d_{22}&= r11, & d_{44}&=r2.
+d_{22}&= r_{11}, & d_{44}&=r_2.
+\end{aligned}
 ```
 
 ## Solution of the production-destruction system
@@ -60,7 +61,7 @@ As mentioned above, we will try two approaches to solve this PDS and compare the
 
 ### Standard out-of-place implementation
 
-Here we create a function to compute the production matrix with return type `Matrix{Float64}`.
+Here we create a function to compute the production matrix with return type `Matrix{Float64}` and a second function for the destruction vector with return type `Vector{Float64}`.
 
 ```@example stratreac
 using PositiveIntegrators # load PDSProblem
@@ -150,7 +151,7 @@ plot(p1, p2, p3, p4, p5, p6)
 ```
 
 ### Using static arrays
-For PDS with a small number of differential equations like the NPZD model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro.
+For PDS with a small number of differential equations like the NPZD model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector. 
 
 ```@example stratreac
 using StaticArrays
@@ -229,12 +230,12 @@ using Plots
 
 xticks = [tspan[1], tspan[2]]
 legend = :outertop
-p1 = plot(sol; idxs = (0, 1), label = "O¹ᴰ", xticks, legend, ylims=(-10, 100))
-p2 = plot(sol; idxs = (0, 2), label = "O", xticks, legend, ylims = (-1e8, 8e8))
-p3 = plot(sol; idxs = (0, 3), label = "O₃", xticks, legend, ylims = (2e11, 6e11))
-p4 = plot(sol; idxs = (0, 4), label = "O₂", xticks, legend, ylims=(1.69698e16, 1.69705e16))
-p5 = plot(sol; idxs = (0, 5), label = "NO", xticks, legend, ylims = (-5e6, 15e6))
-p6 = plot(sol; idxs = (0, 6), label = "NO₂", xticks, legend, ylims = (1.08e9, 1.1e9))
+p1 = plot(sol_static; idxs = (0, 1), label = "O¹ᴰ", xticks, legend, ylims=(-10, 100))
+p2 = plot(sol_static; idxs = (0, 2), label = "O", xticks, legend, ylims = (-1e8, 8e8))
+p3 = plot(sol_static; idxs = (0, 3), label = "O₃", xticks, legend, ylims = (2e11, 6e11))
+p4 = plot(sol_static; idxs = (0, 4), label = "O₂", xticks, legend, ylims=(1.69698e16, 1.69705e16))
+p5 = plot(sol_static; idxs = (0, 5), label = "NO", xticks, legend, ylims = (-5e6, 15e6))
+p6 = plot(sol_static; idxs = (0, 6), label = "NO₂", xticks, legend, ylims = (1.08e9, 1.1e9))
 plot(p1, p2, p3, p4, p5, p6)
 ```
 ### Performance comparison
