@@ -76,6 +76,7 @@ makedocs(modules = [PositiveIntegrators],
              "Tutorials" => [
                  "NPZD model" => "npzd_model.md",
                  "Robertson problem" => "robertson.md",
+                 "Stratospheric reaction problem" => "stratospheric_reaction.md",
                  "Linear Advection" => "linear_advection.md",
                  "Heat Equation, Neumann BCs" => "heat_equation_neumann.md",
                  "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
