@@ -8,12 +8,12 @@ We will compare the use of standard arrays and static arrays from [StaticArrays.
 This stratospheric reaction problem was described by Adrian Sandu in [Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750), see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155) by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The goverining equations are
 ```math
 \begin{aligned}
-\frac{d}{dt}O^{1D} &= r_5 - r_6 -  r_7,\\
-\frac{d}{dt}O &= 2r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11},\\
-\frac{d}{dt}O_3 &= r_2 - r_3 - r_4 - r_5 - r_7 - r_8,\\
-\frac{d}{dt}O_2 &= -r_1 -r_2 + r_3 + 2r_4+r_5+2r_7+r_8+r_9,\\
-\frac{d}{dt}NO &= -r_8+r_9+r_{10}-r_{11},\\
-\frac{d}{dt}NO_2 &= r_8-r_9-r_{10}+r_{11},
+\frac{dO^{1D}}{dt} &= r_5 - r_6 -  r_7,\\
+\frac{dO}{dt} &= 2r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11},\\
+\frac{dO_3}{dt} &= r_2 - r_3 - r_4 - r_5 - r_7 - r_8,\\
+\frac{dO_2}{dt} &= -r_1 -r_2 + r_3 + 2r_4+r_5+2r_7+r_8+r_9,\\
+\frac{dNO}{dt} &= -r_8+r_9+r_{10}-r_{11},\\
+\frac{dNO_2}{dt} &= r_8-r_9-r_{10}+r_{11},
 \end{aligned}
 ```
 with reaction rates
@@ -139,15 +139,17 @@ nothing #hide
 ```@example stratreac
 using Plots
 
-xticks = [tspan[1], tspan[2]]
-legend = :outertop
-p1 = plot(sol; idxs = (0, 1), label = "O¹ᴰ", xticks, legend, ylims=(-10, 100))
-p2 = plot(sol; idxs = (0, 2), label = "O", xticks, legend, ylims = (-1e8, 8e8))
-p3 = plot(sol; idxs = (0, 3), label = "O₃", xticks, legend, ylims = (2e11, 6e11))
-p4 = plot(sol; idxs = (0, 4), label = "O₂", xticks, legend, ylims=(1.69698e16, 1.69705e16))
-p5 = plot(sol; idxs = (0, 5), label = "NO", xticks, legend, ylims = (-5e6, 15e6))
-p6 = plot(sol; idxs = (0, 6), label = "NO₂", xticks, legend, ylims = (1.08e9, 1.1e9))
-plot(p1, p2, p3, p4, p5, p6)
+plot(sol,
+    layout=(3,2),
+    xguide = "t [h]",
+    xguidefontsize = 8,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
+    yformatter = identity,
+    tickfontsize = 7,
+    legend = :none, 
+    widen = true
+    )
 ```
 
 ### Using static arrays
@@ -228,15 +230,17 @@ nothing #hide
 ```@example stratreac
 using Plots
 
-xticks = [tspan[1], tspan[2]]
-legend = :outertop
-p1 = plot(sol_static; idxs = (0, 1), label = "O¹ᴰ", xticks, legend, ylims=(-10, 100))
-p2 = plot(sol_static; idxs = (0, 2), label = "O", xticks, legend, ylims = (-1e8, 8e8))
-p3 = plot(sol_static; idxs = (0, 3), label = "O₃", xticks, legend, ylims = (2e11, 6e11))
-p4 = plot(sol_static; idxs = (0, 4), label = "O₂", xticks, legend, ylims=(1.69698e16, 1.69705e16))
-p5 = plot(sol_static; idxs = (0, 5), label = "NO", xticks, legend, ylims = (-5e6, 15e6))
-p6 = plot(sol_static; idxs = (0, 6), label = "NO₂", xticks, legend, ylims = (1.08e9, 1.1e9))
-plot(p1, p2, p3, p4, p5, p6)
+plot(sol_static,
+    layout=(3,2),
+    xguide = "t [h]",
+    xguidefontsize = 8,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
+    yformatter = identity,
+    tickfontsize = 7,
+    legend = :none, 
+    widen = true
+    )
 ```
 ### Performance comparison
 
