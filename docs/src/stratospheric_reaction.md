@@ -32,7 +32,7 @@ T &= t/3600 \mod 24,\quad T_r=4.5,\quad T_s = 19.5,\\
 σ(T) &= \begin{cases}1, & T_r≤ T≤ T_s,\\0, & \text{otherwise}.\end{cases}
 \end{aligned}
 ```
-Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T`` and the time domain is ``(4.32⋅ 10^{4}, 3.024⋅10^5)``.
+Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T``. The time domain in seconds is ``(4.32⋅ 10^{4}, 3.024⋅10^5)``, which corresponds to ``(12.0, 84.0)`` hours.
 There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0`` and ``u_5+u_6 = 1.097⋅10^9``.
 
 The stratospheric reaction problem can be represented as a (non-conservative) PDS with production terms
@@ -145,11 +145,30 @@ plot(sol,
     xguidefontsize = 8,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
-    yformatter = identity,
     tickfontsize = 7,
     legend = :none, 
     widen = true
     )
+```
+
+As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants.
+```@example stratreac
+linear_invariant(a, u) = sum(a .* u)
+
+function relerr_lininv(a, u0, sol)
+    c = linear_invariant(a, u0)
+    return abs.(c .- (x -> linear_invariant(a, x)).(sol.u))./c
+end
+
+a1 = [1; 1; 3; 2; 1; 2] # first linear invariant
+a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
+
+p1 = plot(sol.t, rel_err_lin_inv(a1, u0, sol))
+p2 = plot(sol.t, rel_err_lin_inv(a2, u0, sol))
+plot(p1, p2, 
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    legend = :none)
+nothing #hide
 ```
 
 ### Using static arrays
@@ -236,7 +255,6 @@ plot(sol_static,
     xguidefontsize = 8,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
-    yformatter = identity,
     tickfontsize = 7,
     legend = :none, 
     widen = true
