@@ -171,7 +171,7 @@ plot(p1, p2,
 ```
 
 ### Using static arrays
-For PDS with a small number of differential equations like the NPZD model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector. 
+For PDS with a small number of differential equations like the stratospheric reaction model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector. 
 
 ```@example stratreac
 using StaticArrays
