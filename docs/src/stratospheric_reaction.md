@@ -163,8 +163,8 @@ end
 a1 = [1; 1; 3; 2; 1; 2] # first linear invariant
 a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
 
-p1 = plot(sol.t, rel_err_lin_inv(a1, u0, sol))
-p2 = plot(sol.t, rel_err_lin_inv(a2, u0, sol))
+p1 = plot(sol.t, relerr_lininv(a1, u0, sol))
+p2 = plot(sol.t, relerr_lininv(a2, u0, sol))
 plot(p1, p2, 
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     legend = :none)
