@@ -373,11 +373,16 @@ plot(p1, p2,
 ### Performance comparison
 
 Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
-to show the benefit of using static arrays.
+to show to compare the different implementations and to show the benefit of using static arrays.
 
 ```@example stratreac
 using BenchmarkTools
-@benchmark solve(prob, MPRK43I(1.0, 0.5))
+@benchmark solve(prob_oop, MPRK43I(1.0, 0.5))
+```
+
+```@example stratreac
+using BenchmarkTools
+@benchmark solve(prob_ip, MPRK43I(1.0, 0.5))
 ```
 
 ```@example stratreac
