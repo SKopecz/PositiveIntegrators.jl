@@ -11,7 +11,7 @@ The NPZD model we want to solve was described by Burchard, Deleersnijder and Mei
 N' &= 0.01N + 0.01Z + 0.003D - \frac{NP}{0.01 + N},\\
 P' &= \frac{NP}{0.01 + N}- 0.01P - 0.5( 1 - e^{-1.21P^2})Z - 0.05P,\\
 Z' &= 0.5(1 - e^{-1.21P^2})Z - 0.01Z - 0.02Z,\\
-D' &= 0.05P + 0.02Z - 0.003D
+D' &= 0.05P + 0.02Z - 0.003D,
 \end{aligned}
 ```
 and we consider the initial conditions ``N=8``, ``P=2``, ``Z=1`` and ``D=4``. The time domain of interest is ``t\in[0,10]``. 
