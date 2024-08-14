@@ -32,7 +32,8 @@ Now we are ready to define a `ConservativePDSProblem` and to solve this problem 
 
 As mentioned above, we will try two approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
-2. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
+2. an in-place implementation with standard (dynamic) matrices and vectors,
+3. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
 
 ### Standard out-of-place implementation
 
@@ -63,16 +64,65 @@ The solution of the NPZD model can now be computed as follows.
 ```@example NPZD
 u0 = [8.0, 2.0, 1.0, 4.0] # initial values
 tspan = (0.0, 10.0) # time domain
-prob = ConservativePDSProblem(prod, u0, tspan) # create the PDS
+prob_oop = ConservativePDSProblem(prod, u0, tspan) # create the PDS
 
-sol = solve(prob, MPRK43I(1.0, 0.5))
+sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
 ```@example NPZD
 using Plots
 
-plot(sol; label = ["N" "P" "Z" "D"], xguide = "t")
+plot(sol_oop; label = ["N" "P" "Z" "D"], xguide = "t")
+```
+
+### Standard in-place implementation
+
+Next we create an in-place function for the production matrix.
+
+```@example NPZD
+
+function prod!(PMat, u, p, t)
+    N, P, Z, D = u
+
+    p12 = 0.01 * P
+    p13 = 0.01 * Z
+    p14 = 0.003 * D
+    p21 = N / (0.01 + N) * P
+    p32 = 0.5 * (1.0 - exp(-1.21 * P^2)) * Z
+    p42 = 0.05 * P
+    p43 = 0.02 * Z
+
+    fill!(PMat, zero(eltype(PMat)))
+
+    PMat[1, 2] = p12
+    PMat[1, 3] = p13
+    PMat[1, 4] = p14
+    PMat[2, 1] = p21
+    PMat[3, 2] = p32
+    PMat[4, 2] = p42
+    PMat[4, 3] = p43
+
+    return nothing
+end
+nothing #hide
+```
+
+The solution of the in-place implementation of the NPZD model can now be computed as follows.
+```@example NPZD
+
+prob_ip = ConservativePDSProblem(prod!, u0, tspan)
+sol_ip = solve(prob_ip, MPRK43I(1.0, 0.5))
+nothing #hide
+```
+```@example NPZD
+
+plot(sol_ip; label = ["N" "P" "Z" "D"], xguide = "t")
+```
+
+We also check that the in-place and out-of-place solutions are equivalent.
+```@example NPZD
+sol_oop.t ≈ sol_ip.t && sol_oop.u ≈ sol_ip.u
 ```
 
 ### Using static arrays
@@ -120,7 +170,12 @@ to show the benefit of using static arrays.
 
 ```@example NPZD
 using BenchmarkTools
-@benchmark solve(prob, MPRK43I(1.0, 0.5))
+@benchmark solve(prob_oop, MPRK43I(1.0, 0.5))
+```
+
+```@example NPZD
+using BenchmarkTools
+@benchmark solve(prob_ip, MPRK43I(1.0, 0.5))
 ```
 
 ```@example NPZD
