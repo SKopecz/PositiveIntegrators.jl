@@ -391,7 +391,7 @@ plot(p3, p4,
 ### Performance comparison
 
 Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
-to show to compare the different implementations and to show the benefit of using static arrays.
+to compare the different implementations and to show the benefit of using static arrays.
 
 ```@example stratreac
 using BenchmarkTools
