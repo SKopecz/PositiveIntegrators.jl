@@ -253,9 +253,8 @@ plot(sol_ip,
 ```
 
 We also check that the in-place and out-of-place solutions are equivalent.
-```@eval stratreac
-sol_oop.t ≈ sol_ip.t
-sol_oop.u ≈ sol_ip.u
+```@example stratreac
+sol_oop.t ≈ sol_ip.t && sol_oop.u ≈ sol_ip.u
 ```
 
 ### Using static arrays
@@ -348,7 +347,7 @@ plot(sol_static,
     )
 ```
 
-The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as `prob_pds_stratreac`.
+The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
 
 ### Preservation of linear invariants
 As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.
