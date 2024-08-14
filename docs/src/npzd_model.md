@@ -30,7 +30,7 @@ Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is ful
 
 Now we are ready to define a `ConservativePDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
 
-As mentioned above, we will try two approaches to solve this PDS and compare their efficiency. These are
+As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
 2. an in-place implementation with standard (dynamic) matrices and vectors,
 3. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
@@ -163,6 +163,9 @@ using Plots
 
 plot(sol_static; label = ["N" "P" "Z" "D"], xguide = "t")
 ```
+
+The above implementation of the NPZD model using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_npzd`](@ref).
+
 ### Performance comparison
 
 Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
