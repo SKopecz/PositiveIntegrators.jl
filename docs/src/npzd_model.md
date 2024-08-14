@@ -24,7 +24,7 @@ p_{21} &= \frac{NP}{0.01 + N}, & p_{32} &= 0.5  (1.0 - e^{-1.21  P^2})  Z,& p_{4
 p_{43} &= 0.02  Z.
 \end{aligned}
 ```
-Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``\mathbf P``.
+Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``(p_{ij})_{i,j=1}^4``.
 
 ## Solution of the production-destruction system
 
