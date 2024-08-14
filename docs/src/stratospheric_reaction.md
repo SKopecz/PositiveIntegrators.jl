@@ -351,6 +351,7 @@ The above implementation of the stratospheric reaction problem using `StaticArra
 
 ### Preservation of linear invariants
 As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.
+
 ```@example stratreac
 linear_invariant(a, u) = sum(a .* u)
 
@@ -367,6 +368,22 @@ p2 = plot(sol_oop.t, relerr_lininv(a2, u0, sol_oop))
 plot(p1, p2, 
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     legend = :none)
+```
+
+In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants. We show this using the Rosenbrock scheme `Rosenbrock23` as an example, making sure that the solution is actually nonnegative.
+
+```@example stratreac
+sol_Ros23 = solve(prob_pds_stratreac, Rosenbrock23(),
+             isoutofdomain = (y, p, t) -> any(x -> x < 0, y) # reject step if the current solution has a negative element
+             );
+any(map(x -> any(x .< 0), sol_Ros23.u)) # Is there a negative solution component?
+```
+```@example stratreac
+p3 = plot(sol_Ros23.t, relerr_lininv(a1, u0, sol_Ros23))
+p4 = plot(sol_Ros23.t, relerr_lininv(a2, u0, sol_Ros23))
+plot(p3, p4,
+     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+     legend = :none)
 ```
 
 ### Performance comparison
