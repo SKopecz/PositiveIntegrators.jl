@@ -65,7 +65,7 @@ stepsize_callback = DiscreteCallback(
     Returns(true), # adapt the step size after every time step
     integrator -> set_proposed_dt!(integrator, 1.5 * get_proposed_dt(integrator));
     save_positions = (false, false),
-    initialize = (c, u, t, integrator) -> set_proposed_dt!(integrator, 1.0e-5)))
+    initialize = (c, u, t, integrator) -> set_proposed_dt!(integrator, 1.0e-5))
 sol_cb = solve(prob, SSPMPRK43(); dt = Inf, callback =  stepsize_callback);
 nothing #hide
 ```
