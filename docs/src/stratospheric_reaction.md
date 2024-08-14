@@ -5,7 +5,7 @@ We will compare the use of standard arrays and static arrays from [StaticArrays.
 
 ## Definition of the production-destruction system
 
-This stratospheric reaction problem was described by Adrian Sandu in [Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750), see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155) by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The goverining equations are
+This stratospheric reaction problem was described by Adrian Sandu in [Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750), see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155) by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The governing equations are
 ```math
 \begin{aligned}
 \frac{dO^{1D}}{dt} &= r_5 - r_6 -  r_7,\\
