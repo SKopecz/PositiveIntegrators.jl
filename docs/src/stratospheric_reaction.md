@@ -373,6 +373,8 @@ plot(p1, p2,
 In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants. We show this using the Rosenbrock scheme `Rosenbrock23` as an example, making sure that the solution is actually nonnegative.
 
 ```@example stratreac
+using OrdinaryDiffEq
+
 sol_Ros23 = solve(prob_oop, Rosenbrock23(),
              isoutofdomain = (y, p, t) -> any(x -> x < 0, y) # reject step if the current solution has a negative element
              );
