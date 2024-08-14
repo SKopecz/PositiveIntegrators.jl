@@ -55,13 +55,14 @@ d_{22}&= r_{11}, & d_{44}&=r_2.
 
 Now we are ready to define a `PDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
 
-As mentioned above, we will try two approaches to solve this PDS and compare their efficiency. These are
+As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
-2. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
+2. an in-place implementation with standard (dynamics) matrices and vectors,
+3. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
 
 ### Standard out-of-place implementation
 
-Here we create a function to compute the production matrix with return type `Matrix{Float64}` and a second function for the destruction vector with return type `Vector{Float64}`.
+Here we create an out-of-place function to compute the production matrix with return type `Matrix{Float64}` and a second out-of-place function for the destruction vector with return type `Vector{Float64}`.
 
 ```@example stratreac
 using PositiveIntegrators # load PDSProblem
@@ -130,16 +131,16 @@ The solution of the stratospheric reaction problem can now be computed as follow
 ```@example stratreac
 u0 = [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
 tspan = (4.32e4, 3.024e5) # time domain
-prob = PDSProblem(prod, dest, u0, tspan) # create the PDS
+prob_oop = PDSProblem(prod, dest, u0, tspan) # create the PDS
 
-sol = solve(prob, MPRK43I(1.0, 0.5))
+sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
 ```@example stratreac
 using Plots
 
-plot(sol,
+plot(sol_oop,
     layout=(3,2),
     xguide = "t [h]",
     xguidefontsize = 8,
@@ -151,23 +152,110 @@ plot(sol,
     )
 ```
 
-As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.
-```@example stratreac
-linear_invariant(a, u) = sum(a .* u)
+### Standard in-place implementation
 
-function relerr_lininv(a, u0, sol)
-    c = linear_invariant(a, u0)
-    return abs.(c .- (x -> linear_invariant(a, x)).(sol.u))./c
+Next we create in-place functions for the production matrix and the destruction vector.
+
+```@example stratreac
+
+function prod!(P, u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    Tr = 4.5
+    Ts = 19.5
+    T = mod(t / 3600, 24)
+    if (Tr <= T) && (T <= Ts)
+        Tfrac = (2 * T - Tr - Ts) / (Ts - Tr)
+        sigma = 0.5 + 0.5 * cos(pi * abs(Tfrac) * Tfrac)
+    else
+        sigma = 0.0
+    end
+
+    M = 8.120e16
+
+    k1 = 2.643e-10 * sigma^3
+    k2 = 8.018e-17
+    k3 = 6.120e-4 * sigma
+    k4 = 1.567e-15
+    k5 = 1.070e-3 * sigma^2
+    k6 = 7.110e-11
+    k7 = 1.200e-10
+    k8 = 6.062e-15
+    k9 = 1.069e-11
+    k10 = 1.289e-2 * sigma
+    k11 = 1.0e-8
+
+    r1 = k1 * O2
+    r2 = k2 * O * O2
+    r3 = k3 * O3
+    r4 = k4 * O3 * O
+    r5 = k5 * O3
+    r6 = k6 * M * O1D
+    r7 = k7 * O1D * O3
+    r8 = k8 * O3 * NO
+    r9 = k9 * NO2 * O
+    r10 = k10 * NO2
+    r11 = k11 * NO * O
+
+    fill!(P, zero(eltype(P)))
+    P[1, 3] = r5
+    P[2, 1] = r6
+    P[2, 2] = r1 + r10
+    P[2, 3] = r3
+    P[2, 4] = r1
+    P[3, 2] = r2
+    P[4, 1] = r7
+    P[4, 2] = r4 + r9
+    P[4, 3] = r4 + r7 + r8
+    P[4, 4] = r3 + r5
+    P[5, 6] = r9 + r10
+    P[6, 5] = r8 + r11
+    return nothing
 end
 
-a1 = [1; 1; 3; 2; 1; 2] # first linear invariant
-a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
+function dest!(D, u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
 
-p1 = plot(sol.t, relerr_lininv(a1, u0, sol))
-p2 = plot(sol.t, relerr_lininv(a2, u0, sol))
-plot(p1, p2, 
+    k2 = 8.018e-17
+    k11 = 1.0e-8
+
+    r2 = k2 * O * O2
+    r11 = k11 * NO * O
+
+    fill!(D, zero(eltype(D)))
+
+    D[2] = r11
+    D[4] = r2
+
+    return nothing
+end
+nothing #hide
+```
+The solution of the in-place implementation of the stratospheric reaction problem can now be computed as follows.
+```@example stratreac
+
+prob_ip = PDSProblem(prod!, dest!, u0, tspan) # create the PDS
+sol_ip = solve(prob_ip, MPRK43I(1.0, 0.5))
+nothing #hide
+```
+```@example stratreac
+
+plot(sol_ip,
+    layout=(3,2),
+    xguide = "t [h]",
+    xguidefontsize = 8,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
-    legend = :none)
+    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
+    tickfontsize = 7,
+    legend = :none, 
+    widen = true
+    )
+```
+
+We also check that the in-place and out-of-place solutions are equivalent.
+```@eval stratreac
+sol_oop.t ≈ sol_ip.t
+sol_oop.u ≈ sol_ip.u
 ```
 
 ### Using static arrays
@@ -259,6 +347,29 @@ plot(sol_static,
     widen = true
     )
 ```
+
+The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as `prob_pds_stratreac`.
+
+### Preservation of linear invariants
+As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.
+```@example stratreac
+linear_invariant(a, u) = sum(a .* u)
+
+function relerr_lininv(a, u0, sol)
+    c = linear_invariant(a, u0)
+    return abs.(c .- (x -> linear_invariant(a, x)).(sol.u))./c
+end
+
+a1 = [1; 1; 3; 2; 1; 2] # first linear invariant
+a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
+
+p1 = plot(sol_oop.t, relerr_lininv(a1, u0, sol_oop))
+p2 = plot(sol_oop.t, relerr_lininv(a2, u0, sol_oop))
+plot(p1, p2, 
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    legend = :none)
+```
+
 ### Performance comparison
 
 Finally, we use [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl)
