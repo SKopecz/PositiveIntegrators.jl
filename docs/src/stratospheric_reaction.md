@@ -57,7 +57,7 @@ Now we are ready to define a `PDSProblem` and to solve this problem with a metho
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
-2. an in-place implementation with standard (dynamics) matrices and vectors,
+2. an in-place implementation with standard (dynamic) matrices and vectors,
 3. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
 
 ### Standard out-of-place implementation
