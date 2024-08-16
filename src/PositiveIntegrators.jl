@@ -40,7 +40,8 @@ using OrdinaryDiffEq: @cache,
                       recursivefill!, _vec, wrapprecs, dolinsolve
 import OrdinaryDiffEq: alg_order, isfsal,
                        calculate_residuals, calculate_residuals!,
-                       alg_cache, initialize!, perform_step!,
+                       alg_cache, get_tmp_cache,
+                       initialize!, perform_step!,
                        _ode_interpolant, _ode_interpolant!
 
 # 2. Export functionality defining the public API
