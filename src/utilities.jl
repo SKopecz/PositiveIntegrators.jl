@@ -16,8 +16,13 @@ function isnegative(u::AbstractVector{<:AbstractVector}, args...)
                 push!(minima, minimum(v))
             end
         end
-        println("Components ", components,
-                " contain negative elements, the respective minima are ", minima)
+        if length(components) == 1
+            println("Component ", components[1],
+                    " contains negative elements, the minimum is ", minima[1]), "."
+        else
+            println("Components ", components,
+                    " contain negative elements, the respective minima are ", minima, ".")
+        end
     end
     return anyisnegative
 end

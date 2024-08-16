@@ -1746,4 +1746,17 @@ end
         sol = solve(prob_pds_linmod, MPRK22(1.0))
         @test_nowarn plot(sol)
     end
+
+    @testet "utilities" begin
+        @testset "is(non)negative" begin
+            sol_Euler = solve(prob_pds_linmod, Euler(), dt = 0.25)
+            @test isnegative(sol_Euler)
+            @test isnegative(sol_Euler.u)
+            @test isnegative(sol_Euler.u[2])
+
+            sol_MPE = solve(prob_pds_linmod, MPE(), dt = 0.25)
+            @test isnonnegative(sol_MPE)
+            @test isnonnegative(sol_MPE.u)
+        end
+    end
 end;
