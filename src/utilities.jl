@@ -1,3 +1,4 @@
+
 function isnegative(u::AbstractVector, args...)
     return any(<(0), u)
 end
@@ -21,8 +22,18 @@ function isnegative(u::AbstractVector{<:AbstractVector}, args...)
     return anyisnegative
 end
 
+"""
+    isnegative(sol::ODESolution)
+
+Returns `true` if `sol` contains negative elements.
+"""
 function isnegative(sol::ODESolution, args...)
     return isnegative(sol.u, args...)
 end
 
+"""
+    isnonnegative(u)
+
+Negation of isnegative(u).    
+"""
 isnonnegative(args...) = !isnegative(args...)
