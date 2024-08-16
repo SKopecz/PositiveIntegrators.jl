@@ -338,7 +338,7 @@ sol_static = solve(prob_static, MPRK43I(1.0, 0.5))
 nothing #hide
 ```
 This solution is also nonnegative.
-```@examples stratreac
+```@example stratreac
 isnonnegative(sol_static)
 ```
 
