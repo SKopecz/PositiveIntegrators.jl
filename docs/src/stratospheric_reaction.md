@@ -152,7 +152,7 @@ plot(sol_oop,
     widen = true
     )
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative.
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example stratreac
 isnonnegative(sol_oop)
 ```
@@ -337,7 +337,10 @@ sol_static = solve(prob_static, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
-This solution is also nonnegative
+This solution is also nonnegative.
+```@examples stratreac
+isnonnegative(sol_static)
+```
 
 ```@example stratreac
 using Plots
@@ -352,10 +355,6 @@ plot(sol_static,
     legend = :none, 
     widen = true
     )
-```
-Also this 
-```@example stratreac
-
 ```
 
 The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
@@ -382,7 +381,7 @@ plot(p1, p2,
 ```
 
 In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions.
-One way to enforce nonnegative solutions of schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
+One way to enforce nonnegative solutions of such schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
 ```@example stratreac
 using OrdinaryDiffEq
 

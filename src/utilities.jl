@@ -26,6 +26,10 @@ function isnegative(u::AbstractVector{<:AbstractVector}, args...)
     return anyisnegative
 end
 
+function isnegative(sol::ODESolution, args...)
+    return isnegative(sol.u, args...)
+end
+
 """
     isnonnegative(u)
 
