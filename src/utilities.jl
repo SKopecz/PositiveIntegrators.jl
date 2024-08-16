@@ -1,15 +1,7 @@
-"""
-    isnegative(u)
-
-Returns `true` if any element of u is less than 0.
-"""
 function isnegative(u::AbstractVector, args...)
     return any(<(0), u)
 end
 
-"""
-    test 1
-"""
 function isnegative(u::AbstractVector{<:AbstractVector}, args...)
     anyisnegative = any(isnegative, u)
     if anyisnegative
@@ -29,16 +21,8 @@ function isnegative(u::AbstractVector{<:AbstractVector}, args...)
     return anyisnegative
 end
 
-"""
-    test 2
-"""
 function isnegative(sol::ODESolution, args...)
     return isnegative(sol.u, args...)
 end
 
-"""
-    isnonnegative(u)
-
-Negation of `isnegative`.
-"""
 isnonnegative(args...) = !isnegative(args...)
