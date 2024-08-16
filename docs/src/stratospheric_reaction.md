@@ -137,6 +137,7 @@ sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
+Plotting the solution shows that the components O¹ᴰ, O and NO are in danger of becoming negative. 
 ```@example stratreac
 using Plots
 
@@ -150,6 +151,10 @@ plot(sol_oop,
     legend = :none, 
     widen = true
     )
+```
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative.
+```@example stratreac
+isnonnegative(sol_oop)
 ```
 
 ### Standard in-place implementation
@@ -332,6 +337,8 @@ sol_static = solve(prob_static, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
+This solution is also nonnegative
+
 ```@example stratreac
 using Plots
 
@@ -345,6 +352,10 @@ plot(sol_static,
     legend = :none, 
     widen = true
     )
+```
+Also this 
+```@example stratreac
+
 ```
 
 The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
@@ -370,15 +381,18 @@ plot(p1, p2,
     legend = :none)
 ```
 
-In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants. We show this using the Rosenbrock scheme `Rosenbrock23` as an example, making sure that the solution is actually nonnegative.
-
+In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions.
+One way to enforce nonnegative solutions of schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
 ```@example stratreac
 using OrdinaryDiffEq
 
-sol_Ros23 = solve(prob_oop, Rosenbrock23(),
-             isoutofdomain = (y, p, t) -> any(x -> x < 0, y) # reject step if the current solution has a negative element
-             );
-any(map(x -> any(x .< 0), sol_Ros23.u)) # Is there a negative solution component?
+sol_tmp = solve(prob_oop, Rosenbrock23());
+isnonnegative(sol_tmp)
+```
+
+``` @example stratreac
+sol_Ros23 = solve(prob_oop, Rosenbrock23(), isoutofdomain = isnegative);
+isnonnegative(sol_Ros23)
 ```
 ```@example stratreac
 p3 = plot(sol_Ros23.t, relerr_lininv(a1, u0, sol_Ros23))
