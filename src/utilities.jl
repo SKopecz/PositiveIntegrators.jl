@@ -26,6 +26,8 @@ end
     isnegative(sol::ODESolution)
 
 Returns `true` if `sol` contains negative elements.
+
+See also [`isnonnegative`](@ref).
 """
 function isnegative(sol::ODESolution, args...)
     return isnegative(sol.u, args...)
