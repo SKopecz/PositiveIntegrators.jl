@@ -36,6 +36,6 @@ end
 """
     isnonnegative(u)
 
-Negation of isnegative(u).    
+Negation of [`isnegative`](@ref).    
 """
 isnonnegative(args...) = !isnegative(args...)
