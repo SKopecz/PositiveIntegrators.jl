@@ -76,7 +76,7 @@ using Plots
 
 plot(sol_oop; label = ["N" "P" "Z" "D"], xguide = "t")
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function `isnonnegative` (and also `isnegative`) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example NPZD
 isnonnegative(sol_oop)
 ```
