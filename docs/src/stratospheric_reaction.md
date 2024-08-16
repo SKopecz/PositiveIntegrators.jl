@@ -32,7 +32,7 @@ T &= t/3600 \mod 24,\quad T_r=4.5,\quad T_s = 19.5,\\
 σ(T) &= \begin{cases}1, & T_r≤ T≤ T_s,\\0, & \text{otherwise}.\end{cases}
 \end{aligned}
 ```
-Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T``. The time domain in seconds is ``(4.32⋅10^{4}, 3.024⋅10^5)``, which corresponds to ``(12.0, 84.0)`` in hours.
+Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T``. The time domain in seconds is ``[4.32⋅10^{4}, 3.024⋅10^5]``, which corresponds to ``[12.0, 84.0]`` in hours.
 There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0`` and ``u_5+u_6 = 1.097⋅10^9``.
 
 The stratospheric reaction problem can be represented as a (non-conservative) PDS with production terms
@@ -50,10 +50,11 @@ and additional destruction terms
 d_{22}&= r_{11}, & d_{44}&=r_2.
 \end{aligned}
 ```
+In addition, all production and destruction terms not listed have the value zero.
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a `PDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
+Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,

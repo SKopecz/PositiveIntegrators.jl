@@ -21,10 +21,10 @@ The model can be represented as a conservative PDS with production terms
 \begin{aligned}
 p_{12} &= 0.01 P, & p_{13} &= 0.01 Z, & p_{14} &= 0.003 D,\\
 p_{21} &= \frac{NP}{0.01 + N}, & p_{32} &= 0.5  (1.0 - e^{-1.21  P^2})  Z,& p_{42} &= 0.05  P,\\
-p_{43} &= 0.02  Z.
+p_{43} &= 0.02  Z,
 \end{aligned}
 ```
-Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``(p_{ij})_{i,j=1}^4``.
+whereby production terms not listed have the value zero. Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``(p_{ij})_{i,j=1}^4``.
 
 ## Solution of the production-destruction system
 
