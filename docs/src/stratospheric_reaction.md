@@ -137,7 +137,7 @@ sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
-Plotting the solution shows that the components O¹ᴰ, O and NO are in danger of becoming negative. 
+Plotting the solution shows that the components ``O¹ᴰ``, ``O`` and ``NO`` are in danger of becoming negative. 
 ```@example stratreac
 using Plots
 
