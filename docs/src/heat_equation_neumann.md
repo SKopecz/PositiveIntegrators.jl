@@ -10,7 +10,6 @@ the performance.
 ## Definition of the conservative production-destruction system
 
 Consider the heat equation
-
 ```math
 \partial_t u(t,x) = \mu \partial_x^2 u(t,x),\quad u(0,x)=u_0(x),
 ```
@@ -44,7 +43,7 @@ The system can be written as a conservative PDS with production terms
 \end{aligned}
 ```
 
-and destruction terms ``d_{i,j} = p_{j,i}``.
+and destruction terms ``d_{i,j} = p_{j,i}``. In addition, all production and destruction terms not listed are zero.
 
 
 ## Solution of the conservative production-destruction system
@@ -55,7 +54,6 @@ problem with a method of
 [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 In the following we use ``N = 100`` nodes and the time domain ``t \in [0,1]``.
 Moreover, we choose the initial condition
-
 ```math
 u_0(x) = \cos(\pi x)^2.
 ```
