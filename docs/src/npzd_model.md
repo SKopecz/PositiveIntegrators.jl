@@ -28,7 +28,7 @@ Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is ful
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a `ConservativePDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
@@ -70,10 +70,15 @@ sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
+Plotting the solution shows that the components O¹ᴰ, O and NO are in danger of becoming negative. 
 ```@example NPZD
 using Plots
 
 plot(sol_oop; label = ["N" "P" "Z" "D"], xguide = "t")
+```
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+```@example stratreac
+isnonnegative(sol_oop)
 ```
 
 ### Standard in-place implementation
@@ -162,6 +167,10 @@ nothing #hide
 using Plots
 
 plot(sol_static; label = ["N" "P" "Z" "D"], xguide = "t")
+```
+This solution is also nonnegative.
+```@example stratreac
+isnonnegative(sol_static)
 ```
 
 The above implementation of the NPZD model using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_npzd`](@ref).
