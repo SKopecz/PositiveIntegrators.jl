@@ -3,13 +3,16 @@ abstract type AbstractPDSProblem end
 
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
-                       p_prototype = nothing,
-                       analytic = nothing)
+               p_prototype = nothing,
+               analytic = nothing)
+    PDSProblem(PD, u0, tspan, p = NullParameters();
+               p_prototype = nothing,
+               analytic = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
-`P` denotes the production matrix.
-The diagonal of `P` contains production terms without destruction counterparts.
-`D` is the vector of destruction terms without production counterparts.
+`P` denotes the function defining the production matrix ``P``.
+The diagonal of ``P`` contains production terms without destruction counterparts.
+`D` is the function defining the vector of destruction terms ``D`` without production counterparts.
 `u0` is the vector of initial conditions and `tspan` the time span
 `(t_initial, t_final)` of the problem. The optional argument `p` can be used
 to pass additional parameters to the functions `P` and `D`.
@@ -17,13 +20,17 @@ to pass additional parameters to the functions `P` and `D`.
 The functions `P` and `D` can be used either in the out-of-place form with signature
 `production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
 
+Instead of having two separate functions `P` and `D`, a single function `PD` can be used.
+In the out-of-place form, `PD` must return a tuple `(production_terms, destruction_terms) = PD(u, p, t)`.
+In the in-place form, `PD` must have the signature `PD(production_terms, destruction_terms, u, p, t)`.
+
 ### Keyword arguments: ###
 
 - `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
-    If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
+  If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
-    Specifying the analytic solution can be useful for plotting and convergence tests.
+  Specifying the analytic solution can be useful for plotting and convergence tests.
 
 ## References
 
@@ -35,11 +42,26 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 """
 struct PDSProblem{iip} <: AbstractPDSProblem end
 
-# New ODE function PDSFunction
-struct PDSFunction{iip, specialize, P, D, PrototypeP, PrototypeD, Ta} <:
-       AbstractODEFunction{iip}
+# Internal structure wrapping a production and a destruction function
+struct ProductionDestruction{P, D} <: Function
     p::P
     d::D
+end
+
+function (prod_dest::ProductionDestruction)(u, p, t)
+    prod_dest.p(u, p, t), prod_dest.d(u, p, t)
+end
+
+function (prod_dest::ProductionDestruction)(p, d, u, p, t)
+    prod_dest.p(p, u, p, t)
+    prod_dest.d(d, u, p, t)
+    return nothing
+end
+
+# New ODE function PDSFunction
+struct PDSFunction{iip, specialize, PD, PrototypeP, PrototypeD, Ta} <:
+       AbstractODEFunction{iip}
+    prod_dest::PD
     p_prototype::PrototypeP
     d_prototype::PrototypeD
     analytic::Ta
@@ -64,7 +86,7 @@ function Base.getproperty(obj::PDSFunction, sym::Symbol)
     end
 end
 
-# Most general constructor for PDSProblems
+# Most general constructors for PDSProblems
 function PDSProblem(P, D, u0, tspan, p = NullParameters();
                     kwargs...)
     Piip = isinplace(P, 4)
@@ -74,12 +96,29 @@ function PDSProblem(P, D, u0, tspan, p = NullParameters();
     else
         error("Conflict due to the joint use of in-place and out-of-place functions.")
     end
-    return PDSProblem{iip}(P, D, u0, tspan, p; kwargs...)
+    prod_dest = ProductionDestruction(P, D)
+    return PDSProblem{iip}(prod_dest, u0, tspan, p; kwargs...)
 end
 
-# Specialized constructor for PDSProblems setting `iip` manually
+function PDSProblem(prod_dest, u0, tspan, p = NullParameters();
+                    kwargs...)
+    iip = isinplace(prod_dest, 5)
+    return PDSProblem{iip}(prod_dest, u0, tspan, p; kwargs...)
+end
+
+# Specialized constructors for PDSProblems setting `iip` manually
 # (arbitrary functions)
 function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
+                         p_prototype = nothing,
+                         analytic = nothing,
+                         kwargs...) where {iip}
+    prod_dest = ProductionDestruction(P, D)
+    return PDSProblem{iip}(prod_dest, u0, tspan, p;
+                           p_prototype = p_prototype,
+                           analytic = analytic, kwargs...)
+end
+
+function PDSProblem{iip}(prod_dest, u0, tspan, p = NullParameters();
                          p_prototype = nothing,
                          analytic = nothing,
                          kwargs...) where {iip}
@@ -88,7 +127,7 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     if isnothing(p_prototype) && iip
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
-    # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store 
+    # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store
     # evaluations of D.
     d_prototype = similar(u0)
 
