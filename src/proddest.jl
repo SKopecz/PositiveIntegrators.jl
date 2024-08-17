@@ -127,7 +127,8 @@ function PDSFunction{iip, FullSpecialize}(P, D;
     end
     PDSFunction{iip, FullSpecialize, typeof(P), typeof(D), typeof(p_prototype),
                 typeof(d_prototype),
-                typeof(std_rhs), typeof(analytic)}(P, D, p_prototype, d_prototype, std_rhs, analytic)
+                typeof(std_rhs), typeof(analytic)}(P, D, p_prototype, d_prototype, std_rhs,
+                                                   analytic)
 end
 
 # Evaluation of a PDSFunction
@@ -295,7 +296,8 @@ function ConservativePDSFunction{iip, FullSpecialize}(P;
         std_rhs = ConservativePDSStdRHS(P, p_prototype)
     end
     ConservativePDSFunction{iip, FullSpecialize, typeof(P), typeof(p_prototype),
-                            typeof(std_rhs), typeof(analytic)}(P, p_prototype, std_rhs, analytic)
+                            typeof(std_rhs), typeof(analytic)}(P, p_prototype, std_rhs,
+                                                               analytic)
 end
 
 # Evaluation of a ConservativePDSFunction
