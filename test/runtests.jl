@@ -1757,6 +1757,11 @@ end
             sol_MPE = solve(prob_pds_linmod, MPE(), dt = 0.25)
             @test isnonnegative(sol_MPE)
             @test isnonnegative(sol_MPE.u)
+
+            sol_bruss = solve(prob_pds_brusselator, Euler(), dt = 1.0)
+            @test isnegative(sol_bruss)
+            @test isnegative(sol_bruss.u)
+            @test isnegative(last(sol_bruss.u))
         end
     end
 end;
