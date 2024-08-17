@@ -213,7 +213,7 @@ end
 
     @testset "ExplicitImports.jl" begin
         @test isnothing(check_no_implicit_imports(PositiveIntegrators))
-        @test_broken isnothing(check_no_stale_explicit_imports(PositiveIntegrators))
+        @test isnothing(check_no_stale_explicit_imports(PositiveIntegrators))
     end
 
     @testset "ConservativePDSFunction" begin
