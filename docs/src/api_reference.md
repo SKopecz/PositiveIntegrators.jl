@@ -35,3 +35,10 @@ MPRK43I
 MPRK43II
 SSPMPRK43
 ```
+
+## Auxiliary functions
+
+```@docs
+isnegative
+isnonnegative
+```
