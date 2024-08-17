@@ -4,7 +4,8 @@ abstract type AbstractPDSProblem end
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
                p_prototype = nothing,
-               analytic = nothing)
+               analytic = nothing,
+               std_rhs = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
 `P` denotes the function defining the production matrix ``P``.
@@ -24,6 +25,10 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
   Specifying the analytic solution can be useful for plotting and convergence tests.
+- `std_rhs`: The standard ODE right-hand side evaluation function callable
+  as `du = std_rhs(u, p, t)` for the out-of-place form and
+  as `std_rhs(du, u, p, t)` for the in-place form. If not specified,
+  a default implementation calling `P` and `D` is used.
 
 ## References
 
@@ -36,12 +41,13 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 struct PDSProblem{iip} <: AbstractPDSProblem end
 
 # New ODE function PDSFunction
-struct PDSFunction{iip, specialize, P, D, PrototypeP, PrototypeD, Ta} <:
+struct PDSFunction{iip, specialize, P, D, PrototypeP, PrototypeD, StdRHS, Ta} <:
        AbstractODEFunction{iip}
     p::P
     d::D
     p_prototype::PrototypeP
     d_prototype::PrototypeD
+    std_rhs::StdRHS
     analytic::Ta
 end
 
@@ -82,6 +88,7 @@ end
 function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
                          p_prototype = nothing,
                          analytic = nothing,
+                         std_rhs = nothing,
                          kwargs...) where {iip}
 
     # p_prototype is used to store evaluations of P, if P is in-place.
@@ -92,8 +99,8 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     # evaluations of D.
     d_prototype = similar(u0)
 
-    PD = PDSFunction{iip}(P, D; p_prototype = p_prototype, d_prototype = d_prototype,
-                          analytic = analytic)
+    PD = PDSFunction{iip}(P, D; p_prototype, d_prototype,
+                          analytic, std_rhs)
     PDSProblem{iip}(PD, u0, tspan, p; kwargs...)
 end
 
@@ -112,21 +119,43 @@ end
 # Most specific constructor for PDSFunction
 function PDSFunction{iip, FullSpecialize}(P, D;
                                           p_prototype = nothing,
-                                          d_prototype = nothing,
-                                          analytic = nothing) where {iip}
+                                          d_prototype,
+                                          analytic = nothing,
+                                          std_rhs = nothing) where {iip}
+    if std_rhs === nothing
+        std_rhs = PDSStdRHS(P, D, p_prototype, d_prototype)
+    end
+    @info "constructor" std_rhs
     PDSFunction{iip, FullSpecialize, typeof(P), typeof(D), typeof(p_prototype),
                 typeof(d_prototype),
-                typeof(analytic)}(P, D, p_prototype, d_prototype, analytic)
+                typeof(std_rhs), typeof(analytic)}(P, D, p_prototype, d_prototype, std_rhs, analytic)
 end
 
-# Evaluation of a PDSFunction (out-of-place)
+# Evaluation of a PDSFunction
 function (PD::PDSFunction)(u, p, t)
+    return PD.std_rhs(u, p, t)
+end
+
+function (PD::PDSFunction)(du, u, p, t)
+    return PD.std_rhs(du, u, p, t)
+end
+
+# Default implementation of the standard right-hand side evaluation function
+struct PDSStdRHS{P, D, PrototypeP, PrototypeD} <: Function
+    p::P
+    d::D
+    p_prototype::PrototypeP
+    d_prototype::PrototypeD
+end
+
+# Evaluation of a PDSStdRHS (out-of-place)
+function (PD::PDSStdRHS)(u, p, t)
     diag(PD.p(u, p, t)) + vec(sum(PD.p(u, p, t), dims = 2)) -
     vec(sum(PD.p(u, p, t), dims = 1)) - vec(PD.d(u, p, t))
 end
 
-# Evaluation of a PDSFunction (in-place)
-function (PD::PDSFunction)(du, u, p, t)
+# Evaluation of a PDSStdRHS (in-place)
+function (PD::PDSStdRHS)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
@@ -157,7 +186,8 @@ end
 """
     ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                            p_prototype = nothing,
-                           analytic = nothing)
+                           analytic = nothing,
+                           std_rhs = nothing)
 
 A structure describing a conservative system of ordinary differential equation in form of a production-destruction system (PDS).
 `P` denotes the function defining the production matrix ``P``.
@@ -176,6 +206,10 @@ The function `P` can be given either in the out-of-place form with signature
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
   Specifying the analytic solution can be useful for plotting and convergence tests.
+- `std_rhs`: The standard ODE right-hand side evaluation function callable
+  as `du = std_rhs(u, p, t)` for the out-of-place form and
+  as `std_rhs(du, u, p, t)` for the in-place form. If not specified,
+  a default implementation calling `P` is used.
 
 ## References
 
@@ -188,12 +222,12 @@ The function `P` can be given either in the out-of-place form with signature
 struct ConservativePDSProblem{iip} <: AbstractPDSProblem end
 
 # New ODE function ConservativePDSFunction
-struct ConservativePDSFunction{iip, specialize, P, PrototypeP, TMP, Ta} <:
+struct ConservativePDSFunction{iip, specialize, P, PrototypeP, StdRHS, Ta} <:
        AbstractODEFunction{iip}
-    p::P
-    p_prototype::PrototypeP
-    tmp::TMP
-    analytic::Ta
+    p::P # production terms
+    p_prototype::PrototypeP # prototype for production terms
+    std_rhs::StdRHS # standard right-hand side evaluation function
+    analytic::Ta # analytic solution (or nothing)
 end
 
 # define behavior of ConservativePDSFunction for non-existing fields
@@ -227,6 +261,7 @@ end
 function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
                                      p_prototype = nothing,
                                      analytic = nothing,
+                                     std_rhs = nothing,
                                      kwargs...) where {iip}
 
     # p_prototype is used to store evaluations of P, if P is in-place.
@@ -234,7 +269,7 @@ function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
 
-    PD = ConservativePDSFunction{iip}(P; p_prototype = p_prototype, analytic = analytic)
+    PD = ConservativePDSFunction{iip}(P; p_prototype, analytic, std_rhs)
     ConservativePDSProblem{iip}(PD, u0, tspan, p; kwargs...)
 end
 
@@ -253,18 +288,42 @@ end
 # Most specific constructor for ConservativePDSFunction
 function ConservativePDSFunction{iip, FullSpecialize}(P;
                                                       p_prototype = nothing,
-                                                      analytic = nothing) where {iip}
+                                                      analytic = nothing,
+                                                      std_rhs = nothing) where {iip}
+    if std_rhs === nothing
+        std_rhs = ConservativePDSStdRHS(P, p_prototype)
+    end
+    ConservativePDSFunction{iip, FullSpecialize, typeof(P), typeof(p_prototype),
+                            typeof(std_rhs), typeof(analytic)}(P, p_prototype, std_rhs, analytic)
+end
+
+# Evaluation of a ConservativePDSFunction
+function (PD::ConservativePDSFunction)(u, p, t)
+    return PD.std_rhs(u, p, t)
+end
+
+function (PD::ConservativePDSFunction)(du, u, p, t)
+    return PD.std_rhs(du, u, p, t)
+end
+
+# Default implementation of the standard right-hand side evaluation function
+struct ConservativePDSStdRHS{P, PrototypeP, TMP} <: Function
+    p::P
+    p_prototype::PrototypeP
+    tmp::TMP
+end
+
+function ConservativePDSStdRHS(P, p_prototype)
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
     else
         tmp = nothing
     end
-    ConservativePDSFunction{iip, FullSpecialize, typeof(P), typeof(p_prototype),
-                            typeof(tmp), typeof(analytic)}(P, p_prototype, tmp, analytic)
+    ConservativePDSStdRHS(P, p_prototype, tmp)
 end
 
-# Evaluation of a ConservativePDSFunction (out-of-place)
-function (PD::ConservativePDSFunction)(u, p, t)
+# Evaluation of a ConservativePDSStdRHS (out-of-place)
+function (PD::ConservativePDSStdRHS)(u, p, t)
     #vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
     P = PD.p(u, p, t)
 
@@ -278,7 +337,7 @@ function (PD::ConservativePDSFunction)(u, p, t)
     return f
 end
 
-function (PD::ConservativePDSFunction)(u::SVector, p, t)
+function (PD::ConservativePDSStdRHS)(u::SVector, p, t)
     P = PD.p(u, p, t)
 
     f = similar(u) #constructs MVector
@@ -297,8 +356,8 @@ function (PD::ConservativePDSFunction)(u::SVector, p, t)
     return SVector(f)
 end
 
-# Evaluation of a ConservativePDSFunction (in-place)
-function (PD::ConservativePDSFunction)(du, u, p, t)
+# Evaluation of a ConservativePDSStdRHS (in-place)
+function (PD::ConservativePDSStdRHS)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
     sum_terms!(du, PD.tmp, PD.p_prototype)
     return nothing
