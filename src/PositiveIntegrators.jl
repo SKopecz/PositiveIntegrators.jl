@@ -68,6 +68,7 @@ include("mprk.jl")
 # modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
 include("sspmprk.jl")
 
+# interpolation for dense output
 include("interpolation.jl")
 
 # predefined PDS problems
