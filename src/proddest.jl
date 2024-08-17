@@ -4,7 +4,6 @@ abstract type AbstractPDSProblem end
 """
     PDSProblem(P, D, u0, tspan, p = NullParameters();
                        p_prototype = nothing,
-                       d_prototype = nothing,
                        analytic = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
@@ -20,13 +19,9 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
-- `d_prototype`: If `D` is given in in-place form, `d_prototype` is used to store evaluations of `D`.
-  If `d_prototype` is not specified explicitly and `D` is in-place, then `d_prototype` will be internally
-set to `zeros(eltype(u0), (length(u0),))`.
-
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
     Specifying the analytic solution can be useful for plotting and convergence tests.
 
@@ -86,7 +81,6 @@ end
 # (arbitrary functions)
 function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
                          p_prototype = nothing,
-                         d_prototype = nothing,
                          analytic = nothing,
                          kwargs...) where {iip}
 
@@ -94,10 +88,9 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     if isnothing(p_prototype) && iip
         p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
     end
-    # d_prototype is used to store evaluations of D, if D is in-place.
-    if isnothing(d_prototype) && iip
-        d_prototype = zeros(eltype(u0), (length(u0),))
-    end
+    # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store 
+    # evaluations of D.
+    d_prototype = similar(u0)
 
     PD = PDSFunction{iip}(P, D; p_prototype = p_prototype, d_prototype = d_prototype,
                           analytic = analytic)
@@ -163,8 +156,8 @@ end
 # New problem type ConservativePDSProblem
 """
     ConservativePDSProblem(P, u0, tspan, p = NullParameters();
-                            p_prototype = nothing, 
-                            analytic=nothing)
+                           p_prototype = nothing,
+                           analytic = nothing)
 
 A structure describing a conservative system of ordinary differential equation in form of a production-destruction system (PDS).
 `P` denotes the production matrix.
@@ -177,7 +170,7 @@ The function `P` can be given either in the out-of-place form with signature
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` is used to store evaluations of `P`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
     If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
   set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
@@ -257,7 +250,8 @@ function ConservativePDSFunction{iip}(P; kwargs...) where {iip}
 end
 
 # Most specific constructor for ConservativePDSFunction
-function ConservativePDSFunction{iip, FullSpecialize}(P; p_prototype = nothing,
+function ConservativePDSFunction{iip, FullSpecialize}(P;
+                                                      p_prototype = nothing,
                                                       analytic = nothing) where {iip}
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
@@ -305,21 +299,49 @@ end
 # Evaluation of a ConservativePDSFunction (in-place)
 function (PD::ConservativePDSFunction)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
+    sum_terms!(du, PD.tmp, PD.p_prototype)
+    return nothing
+end
 
-    if PD.p_prototype isa AbstractSparseMatrix
-        # Same result but more efficient - at least currently for SparseMatrixCSC
-        fill!(PD.tmp, one(eltype(PD.tmp)))
-        mul!(vec(du), PD.p_prototype, PD.tmp)
-        sum!(PD.tmp', PD.p_prototype)
-        vec(du) .-= PD.tmp
-    else
-        # This implementation does not need any auxiliary vectors
-        for i in 1:length(u)
-            du[i] = zero(eltype(du))
-            for j in 1:length(u)
-                du[i] += PD.p_prototype[i, j] - PD.p_prototype[j, i]
-            end
+# Generic fallback (for dense arrays)
+# This implementation does not need any auxiliary vectors
+@inline function sum_terms!(du, tmp, P)
+    for i in 1:length(du)
+        du[i] = zero(eltype(du))
+        for j in 1:length(du)
+            du[i] += P[i, j] - P[j, i]
         end
+    end
+    return nothing
+end
+
+# Same result but more efficient - at least currently for SparseMatrixCSC
+@inline function sum_terms!(du, tmp, P::AbstractSparseMatrix)
+    fill!(tmp, one(eltype(tmp)))
+    mul!(vec(du), P, tmp)
+    sum!(tmp', P)
+    vec(du) .-= tmp
+    return nothing
+end
+
+@inline function sum_terms!(du, tmp, P::Tridiagonal)
+    Base.require_one_based_indexing(du, P.dl, P.du)
+    @assert length(du) == length(P.dl) + 1 == length(P.du) + 1
+
+    let i = 1
+        Pij = P.du[i]
+        Pji = P.dl[i]
+        du[i] = Pij - Pji
+    end
+    for i in 2:(length(du) - 1)
+        Pij = P.dl[i - 1] + P.du[i]
+        Pji = P.du[i - 1] + P.dl[i]
+        du[i] = Pij - Pji
+    end
+    let i = lastindex(du)
+        Pij = P.dl[i - 1]
+        Pji = P.du[i - 1]
+        du[i] = Pij - Pji
     end
     return nothing
 end

@@ -20,7 +20,7 @@ open(joinpath(@__DIR__, "src", "license.md"), "w") do io
     # Point to source license file
     println(io, """
     ```@meta
-    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE.md"
+    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE"
     ```
     """)
     # Write the modified contents
@@ -73,6 +73,15 @@ makedocs(modules = [PositiveIntegrators],
          # Explicitly specify documentation structure
          pages = [
              "Home" => "index.md",
+             "Tutorials" => [
+                 "NPZD model" => "npzd_model.md",
+                 "Robertson problem" => "robertson.md",
+                 "Stratospheric reaction problem" => "stratospheric_reaction.md",
+                 "Linear Advection" => "linear_advection.md",
+                 "Heat Equation, Neumann BCs" => "heat_equation_neumann.md",
+                 "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
+             ],
+             "Troubleshooting, FAQ" => "faq.md",
              "API reference" => "api_reference.md",
              "Contributing" => "contributing.md",
              "Code of conduct" => "code_of_conduct.md",

@@ -1,16 +1,12 @@
 # PositiveIntegrators.jl
 
-The [Julia]() library
+The [Julia](https://julialang.org) library
 [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
 provides several time integration methods developed to preserve the positivity
 of numerical solutions.
 
-TODO: More introduction etc.
-
 
 ## Installation
-
-TODO: PositiveIntegrators.jl has to be registered - up to now, it is not!
 
 [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
 is a registered Julia package. Thus, you can install it from the Julia REPL via
@@ -42,16 +38,16 @@ The application of MPRK schemes requires the ODE system to be represented as a p
     u_i'(t) = \sum_{j=1}^N \bigl(p_{ij}(t,\boldsymbol u) - d_{ij}(t,\boldsymbol u)\bigr),\quad i=1,\dots,N,
 ```
 where ``\boldsymbol u=(u_1,\dots,u_n)^T`` is the vector of unknowns and both production terms ``p_{ij}(t,\boldsymbol u)`` and destruction terms ``d_{ij}(t,\boldsymbol u)`` must be nonnegative for all ``i,j=1,\dots,N``. The meaning behind ``p_{ij}`` and ``d_{ij}`` is as follows:
-* ``p_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which 
+* ``p_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which
   appear in equation ``i`` with a positive sign and in equation ``j`` with a negative sign.
-* ``d_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which 
+* ``d_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which
   appear in equation ``i`` with a negative sign and in equation ``j`` with a positive sign.
-* ``p_{ii}`` represents the sum of all nonnegative terms  which appear in   
+* ``p_{ii}`` represents the sum of all nonnegative terms  which appear in
   equation ``i`` and don't have a negative counterpart in one of the other equations.
-* ``d_{ii}`` represents the sum of all negative terms which appear in   
+* ``d_{ii}`` represents the sum of all negative terms which appear in
   equation ``i`` and don't have a positive counterpart in one of the other equations.
 
-This naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j`` and therefore a PDS is completely defined by the production matrix ``\mathbf{P}=(p_{ij})_{i,j=1,\dots,N}`` and the destruction vector ``\mathbf{d}=(d_{ii})_{i=1,\dots,N}``. 
+This naming convention leads to ``p_{ij} = d_{ji}`` for ``i≠ j`` and therefore a PDS is completely defined by the production matrix ``\mathbf{P}=(p_{ij})_{i,j=1,\dots,N}`` and the destruction vector ``\mathbf{d}=(d_{ii})_{i=1,\dots,N}``.
 
 As an example we consider the Lotka-Volterra model
 ```math
@@ -76,14 +72,14 @@ Consequently the production matrix ``\mathbf P`` and destruction vector ``\mathb
 ```
 
 ```@setup LotkaVolterra
-import Pkg; Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots") 
+import Pkg; Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots")
 ```
-To solve this PDS together with initial values ``u_1(0)=u_2(0)=2`` on the time domain ``(0,10)``, we first need to create a `PDSProblem`. 
+To solve this PDS together with initial values ``u_1(0)=u_2(0)=2`` on the time domain ``(0,10)``, we first need to create a `PDSProblem`.
 ```@example LotkaVolterra
 using PositiveIntegrators # load PDSProblem
 
-P(u, p, t) = [2*u[1]  0.0; u[1]*u[2]  0.0] # Production matrix
-d(u, p, t) = [0.0; u[2]] # Destruction vector
+P(u, p, t) = [2*u[1]  0; u[1]*u[2]  0] # Production matrix
+d(u, p, t) = [0; u[2]] # Destruction vector
 
 u0 = [2.0; 2.0] # initial values
 tspan = (0.0, 10.0) # time span
@@ -92,17 +88,15 @@ tspan = (0.0, 10.0) # time span
 prob = PDSProblem(P, d, u0, tspan)
 nothing #hide
 ```
-Now that the problem has been created, we can solve it with any of the methods of [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Here we use the method `Tsit5()`. Please note that [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) currently only provides methods for positive and conservative PDS, see below.
+Now that the problem has been created, we can solve it with any method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl). In the following, we use the method `MPRK22(1.0)`. In addition, we could also use any method provided by [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/), but these might possibly generate negative approximations.
 
 ```@example LotkaVolterra
-using OrdinaryDiffEq  #load Tsit5
-
-sol = solve(prob, Tsit5())
+sol = solve(prob, MPRK22(1.0))
 nothing # hide
 ```
 Finally, we can use [Plots.jl](https://docs.juliaplots.org/stable/) to visualize the solution.
 ```@example LotkaVolterra
-using Plots 
+using Plots
 
 plot(sol)
 ```
@@ -112,18 +106,17 @@ plot(sol)
 A PDS with the additional property
 ```math
   p_{ii}(t,\boldsymbol y)=d_{ii}(t,\boldsymbol y)=0
-``` 
+```
 for ``i=1,\dots,N`` is called conservative. In this case we have
 ``p_{ij}=d_{ji}`` for all ``i,j=1,\dots,N``, which leads to
 ```math
 \frac{d}{dt}\sum_{i=1}^N y_i=\sum_{i=1}^N y_i' = \sum_{\mathclap{i,j=1}}^N \bigl(p_{ij}(t,\boldsymbol y) - d_{ij}(t,\boldsymbol y)\bigr)= \sum_{\mathclap{i,j=1}}^N \bigl(p_{ij}(t,\boldsymbol y) - p_{ji}(t,\boldsymbol y)\bigr) = 0.
 ```
 This shows that the sum of the state variables of a conservative PDS remains constant over time, i.e.
-```math 
-\sum_{i=1}^N y_i(t) = \sum_{i=1}^N y_i(0) 
+```math
+\sum_{i=1}^N y_i(t) = \sum_{i=1}^N y_i(0)
 ```
 for all times ``t>0``.
-Moreover, a conservative PDS is completely defined by the square matrix ``\mathbf P=(p_{ij})_{i,j=1,\dots,N}``. There is no need to store an additional vector of destruction terms since ``d_{ij} = p_{ji}`` for all ``i,j=1,\dots,N``. 
 
 One specific example of a conservative PDS is the SIR model
 ```math
@@ -142,7 +135,7 @@ The corresponding production matrix ``\mathbf P`` is
 The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)`` using `ConservativePDSProblem` from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
 ```@setup SIR
-import Pkg; Pkg.add("OrdinaryDiffEq"); 
+import Pkg; Pkg.add("OrdinaryDiffEq");
 ```
 
 ```@example SIR
@@ -169,7 +162,7 @@ tspan = (0.0, 100.0); # time span
 prob = ConservativePDSProblem(P, u0, tspan)
 nothing # hide
 ```
-Since the SIR model is not only conservative but also positive, we can use any MPRK scheme from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`. 
+Since the SIR model is not only conservative but also positive, we can use any scheme from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`.
 Please note that any method from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used as well, but might possibly generate negative approximations.
 
 ```@example SIR
@@ -180,8 +173,10 @@ Finally, we can use [Plots.jl](https://docs.juliaplots.org/stable/) to visualize
 ```@example SIR
 using Plots
 
-plot(sol, legend=:right)
+plot(sol, label = ["S" "I" "R"], legend=:right)
+plot!(sol.t, sum.(sol.u), label = "S+I+R") # Plot S+I+R over time.
 ```
+We see that there is always a nonnegative number of people in each compartment, while the population ``S+I+R`` remains constant over time.
 
 ## Referencing
 
@@ -194,7 +189,7 @@ for your research, please cite it using the bibtex entry
          time integration methods},
   author={Kopecz, Stefan and Ranocha, Hendrik and contributors},
   year={2023},
-  doi={TODO},
+  doi={10.5281/zenodo.10868393},
   url={https://github.com/SKopecz/PositiveIntegrators.jl}
 }
 ```

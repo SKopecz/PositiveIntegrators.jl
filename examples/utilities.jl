@@ -48,20 +48,25 @@ function convergence_tab_plot(prob, algs, test_setup = nothing; dts = 0.5 .^ (1:
     return sims
 end
 
-myplot(sol, name = "", analytic = false) = _myplot(plot, sol, name, analytic)
-myplot!(sol, name = "", analytic = false) = _myplot(plot!, sol, name, analytic)
+function myplot(sol, name = "", analytic = false; kwargs...)
+    _myplot(plot, sol, name, analytic; kwargs...)
+end
+function myplot!(sol, name = "", analytic = false; kwargs...)
+    _myplot(plot!, sol, name, analytic; kwargs...)
+end
 
-function _myplot(plotf, sol, name = "", analytic = false)
+function _myplot(plotf, sol, name = "", analytic = false; kwargs...)
     N = length(sol.u[1])
     if analytic == true
-        plotf(sol, color = palette(:default)[1:(2 * N)]', legend = :right,
-              plot_analytic = true)
+        plotf(sol, color = palette(:default)[1:(2 * N)]',
+              plot_analytic = true; kwargs...)
     else
-        plotf(sol, color = palette(:default)[1:N]', legend = :right, plot_analytic = false)
+        plotf(sol, color = palette(:default)[1:N]', plot_analytic = false; kwargs...)
     end
     p = plot!(sol, color = palette(:default)[1:N]', denseplot = false,
-              markershape = :circle, #markerstrokecolor = palette(:default)[1:N]',
-              linecolor = invisible(), label = "")
+              markershape = :circle,
+              markersize = 3, #markerstrokecolor = palette(:default)[1:N]',
+              linecolor = invisible(), label = ""; kwargs...)
     title!(name)
     return p
 end

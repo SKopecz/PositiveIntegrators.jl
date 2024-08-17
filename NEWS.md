@@ -5,9 +5,18 @@ PositiveIntegrators.jl.jl follows the interpretation of
 used in the Julia ecosystem. Notable changes will be documented in this file
 for human readability.
 
+## Changes when updating to v0.2 from v0.1.x
+
+#### Removed
+
+- The optional keyword argument `d_prototype` has been removed from `PDSProblem`
 
 ## Changes in the v0.1 lifecycle
 
+### Added
+
+- MPRK methods `MPRK43I` and `MPRK43II` of Kopecz and Meister
+- SSP MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang and Shu
 
 ## Initial release v0.1.0
 
@@ -17,3 +26,5 @@ for human readability.
   `prob_pds_linmod`, `prob_pds_nonlinmod`, `prob_pds_npzd`, `prob_pds_robertson`,
   `prob_pds_sir`, `prob_pds_stratreac`
 - Modified Patankar methods `MPE` and `MPRK22`
+
+
