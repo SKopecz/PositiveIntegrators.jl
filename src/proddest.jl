@@ -125,7 +125,6 @@ function PDSFunction{iip, FullSpecialize}(P, D;
     if std_rhs === nothing
         std_rhs = PDSStdRHS(P, D, p_prototype, d_prototype)
     end
-    @info "constructor" std_rhs
     PDSFunction{iip, FullSpecialize, typeof(P), typeof(D), typeof(p_prototype),
                 typeof(d_prototype),
                 typeof(std_rhs), typeof(analytic)}(P, D, p_prototype, d_prototype, std_rhs, analytic)
@@ -150,8 +149,10 @@ end
 
 # Evaluation of a PDSStdRHS (out-of-place)
 function (PD::PDSStdRHS)(u, p, t)
-    diag(PD.p(u, p, t)) + vec(sum(PD.p(u, p, t), dims = 2)) -
-    vec(sum(PD.p(u, p, t), dims = 1)) - vec(PD.d(u, p, t))
+    P = PD.p(u, p, t)
+    D = PD.d(u, p, t)
+    diag(P) + vec(sum(P, dims = 2)) -
+    vec(sum(P, dims = 1)) - vec(D)
 end
 
 # Evaluation of a PDSStdRHS (in-place)

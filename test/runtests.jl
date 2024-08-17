@@ -210,6 +210,78 @@ end
                       ambiguities = false,)
     end
 
+    @testset "ODE RHS" begin
+        let counter_p = Ref(1), counter_d = Ref(1), counter_rhs = Ref(1)
+            # out-of-place
+            prod1 = (u, p, t) -> begin
+                counter_p[] += 1
+                return [0 u[2]; u[1] 0]
+            end
+            dest1 = (u, p, t) -> begin
+                counter_d[] += 1
+                return zero(u)
+            end
+            rhs1 = (u, p, t) -> begin
+                counter_rhs[] += 1
+                return [-u[1] + u[2], u[1] - u[2]]
+            end
+            u0 = [1.0, 0.0]
+            tspan = (0.0, 1.0)
+            prob_default = PDSProblem(prod1, dest1, u0, tspan)
+            prob_special = PDSProblem(prod1, dest1, u0, tspan; std_rhs = rhs1)
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_default.f(u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 0
+            @inferred prob_special.f(u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 1
+
+            # in-place
+            prod1! = (P, u, p, t) -> begin
+                counter_p[] += 1
+                P[1, 1] = 0
+                P[1, 2] = u[2]
+                P[2, 1] = u[1]
+                P[2, 2] = 0
+                return nothing
+            end
+            dest1! = (D, u, p, t) -> begin
+                counter_d[] += 1
+                fill!(D, 0)
+                return nothing
+            end
+            rhs1! = (du, u, p, t) -> begin
+                counter_rhs[] += 1
+                du[1] = -u[1] + u[2]
+                du[2] = u[1] - u[2]
+                return nothing
+            end
+            u0 = [1.0, 0.0]
+            tspan = (0.0, 1.0)
+            prob_default = PDSProblem(prod1!, dest1!, u0, tspan)
+            prob_special = PDSProblem(prod1!, dest1!, u0, tspan; std_rhs = rhs1!)
+
+            du = similar(u0)
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_default.f(du, u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 0
+            @inferred prob_special.f(du, u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 1
+        end
+    end
+
     @testset "ConservativePDSFunction" begin
         prod_1! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
