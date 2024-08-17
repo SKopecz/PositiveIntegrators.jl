@@ -1747,7 +1747,7 @@ end
         @test_nowarn plot(sol)
     end
 
-    @testet "utilities" begin
+    @testset "utilities" begin
         @testset "is(non)negative" begin
             sol_Euler = solve(prob_pds_linmod, Euler(), dt = 0.25)
             @test isnegative(sol_Euler)
