@@ -11,6 +11,7 @@ using PositiveIntegrators
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
+using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_imports
 
 """
     experimental_orders_of_convergence(prob, alg, dts;
@@ -208,6 +209,11 @@ end
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,)
+    end
+
+    @testset "ExplicitImports.jl" begin
+        @test isnothing(check_no_implicit_imports(PositiveIntegrators))
+        @test isnothing(check_no_stale_explicit_imports(PositiveIntegrators))
     end
 
     @testset "ODE RHS" begin
