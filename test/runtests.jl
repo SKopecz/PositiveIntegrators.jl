@@ -237,9 +237,13 @@ end
             @test counter_p[] == 1
             @test counter_d[] == 1
             @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
             @inferred prob_special.f(u0, nothing, 0.0)
-            @test counter_p[] == 1
-            @test counter_d[] == 1
+            @test counter_p[] == 0
+            @test counter_d[] == 0
             @test counter_rhs[] == 1
 
             # in-place
@@ -275,10 +279,40 @@ end
             @test counter_p[] == 1
             @test counter_d[] == 1
             @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
             @inferred prob_special.f(du, u0, nothing, 0.0)
-            @test counter_p[] == 1
-            @test counter_d[] == 1
+            @test counter_p[] == 0
+            @test counter_d[] == 0
             @test counter_rhs[] == 1
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_default, MPE(); dt = 0.1)
+            @test 10 <= counter_p[] <= 11
+            @test 10 <= counter_d[] <= 11
+            @test counter_d[] == counter_p[]
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_default, Euler(); dt = 0.1)
+            @test 10 <= counter_p[] <= 11
+            @test 10 <= counter_d[] <= 11
+            @test counter_d[] == counter_p[]
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_special, Euler(); dt = 0.1)
+            @test counter_p[] == 0
+            @test counter_d[] == 0
+            @test 10 <= counter_rhs[] <= 11
         end
     end
 
