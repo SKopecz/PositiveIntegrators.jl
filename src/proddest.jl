@@ -27,7 +27,9 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
   Specifying the analytic solution can be useful for plotting and convergence tests.
 - `std_rhs`: The standard ODE right-hand side evaluation function callable
   as `du = std_rhs(u, p, t)` for the out-of-place form and
-  as `std_rhs(du, u, p, t)` for the in-place form. If not specified,
+  as `std_rhs(du, u, p, t)` for the in-place form. Solvers that do not rely on
+  the production-destruction representation of the ODE, will use this function
+  instead to compute the solution. If not specified,
   a default implementation calling `P` and `D` is used.
 
 ## References
@@ -210,7 +212,9 @@ The function `P` can be given either in the out-of-place form with signature
   Specifying the analytic solution can be useful for plotting and convergence tests.
 - `std_rhs`: The standard ODE right-hand side evaluation function callable
   as `du = std_rhs(u, p, t)` for the out-of-place form and
-  as `std_rhs(du, u, p, t)` for the in-place form. If not specified,
+  as `std_rhs(du, u, p, t)` for the in-place form. Solvers that do not rely on
+  the production-destruction representation of the ODE, will use this function
+  instead to compute the solution. If not specified,
   a default implementation calling `P` is used.
 
 ## References
