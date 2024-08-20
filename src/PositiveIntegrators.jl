@@ -46,7 +46,7 @@ export SSPMPRK22, SSPMPRK43
 
 export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
-       prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac
+       prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac, prob_pds_minmapk
 
 export isnegative, isnonnegative
 

@@ -664,6 +664,94 @@ end
             @test 0.95 < alloc1 / alloc5 < 1.05
             @test 0.95 < alloc1 / alloc6 < 1.05
         end
+
+        # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,
+        # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying std_rhs
+        @testset "Check that production-destruction form and standard ODE fit together in predefinded problems" begin
+            # non-stiff conservative problems (out-of-place)
+            probs = (prob_pds_linmod, prob_pds_nonlinmod, prob_pds_brusselator,
+                     prob_pds_sir, prob_pds_npzd)
+            algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # non-stiff conservative problems (in-place)
+            # Requires autodiff=false
+            probs = (prob_pds_linmod_inplace,)
+            algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
+                    Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
+                    TRBDF2(autodiff = false))
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # non-stiff non-conservative problems (out-of-place)
+            probs = (prob_pds_minmapk,)
+            algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # Robertson problem
+            prob = prob_pds_robertson
+            algs = (ImplicitEuler(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for alg in algs
+                dt = 1e-6
+                sol = solve(prob, alg; dt) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # Bertolazzi problem
+            # Did not find any solver configuration to compute a reasonable solution and pass tests.
+            # - constant time stepping requires very small dt
+            # - adaptive time stepping generates solutions with different number of time steps 
+            #
+            # Nevertheless, the following code shows that the same problem is solved in each case
+            # prob = prob_pds_bertolazzi
+            # alg = ImplicitEuler()
+            # dt = 1e-3
+            # sol = solve(prob, alg; dt) # use explicit f
+            # sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+            # sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+            # plot(plot(sol),plot(sol2),plot(sol3))
+
+            # Stratospheric reaction problem
+            prob = prob_pds_stratreac
+            algs = (ImplicitEuler(), Rosenbrock23(), TRBDF2())
+            @testset "$alg" for alg in algs
+                dt = 1.0
+                sol = solve(prob, alg; dt) # use explicit f
+                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+        end
     end
 
     @testset "PDS Solvers" begin
