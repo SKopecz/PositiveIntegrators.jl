@@ -18,6 +18,7 @@ prob_pds_bertolazzi
 prob_pds_brusselator
 prob_pds_linmod
 prob_pds_linmod_inplace
+prob_pds_mapk
 prob_pds_nonlinmod
 prob_pds_npzd
 prob_pds_robertson
