@@ -502,6 +502,7 @@ k_1 &=\\frac{100}{3}, & k_2 &=\\frac{1}{3}, & k_3 &=50,\\\\
 k_4 &=0.5, & k_5 &=\\frac{10}{3} ,  & k_6 &= 0.1,\\\\
 k_7 &= 0.1.
 \\end{aligned}
+```
 
 The initial value is ``\\mathbf{u}_0 = (0.1, 0.175, 0.15, 1.15, 0.81, 0.5)^T`` and the time domain ``(4.32⋅ 10^{4}, 3.024⋅10^5)``.
 There are two independent linear invariants, e.g. ``u_1+u_4+u_6=1.75`` and ``u_2+u_3+u_4+u_5 =2.285``.
