@@ -666,7 +666,7 @@ end
         end
 
         # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,
-        # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying str_rhs
+        # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying std_rhs
         @testset "Check that production-destruction form and standard ODE fit together in predefinded problems" begin
             # non-stiff conservative problems (out-of-place)
             probs = (prob_pds_linmod, prob_pds_nonlinmod, prob_pds_brusselator,
