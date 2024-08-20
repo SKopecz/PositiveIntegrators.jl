@@ -504,7 +504,7 @@ k_7 &= 0.1.
 \\end{aligned}
 ```
 
-The initial value is ``\\mathbf{u}_0 = (0.1, 0.175, 0.15, 1.15, 0.81, 0.5)^T`` and the time domain ``(4.32⋅ 10^{4}, 3.024⋅10^5)``.
+The initial value is ``\\mathbf{u}_0 = (0.1, 0.175, 0.15, 1.15, 0.81, 0.5)^T`` and the time domain ``(0, 200)``.
 There are two independent linear invariants, e.g. ``u_1+u_4+u_6=1.75`` and ``u_2+u_3+u_4+u_5 =2.285``.
 
 ## References
