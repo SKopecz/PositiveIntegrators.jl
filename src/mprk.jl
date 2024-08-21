@@ -1007,7 +1007,8 @@ function small_constant_function_MPRK43II(type)
     return small_constant
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = small_constant_function_MPRK43II)
+function MPRK43II(gamma; linsolve = LUFactorization(),
+                  small_constant = small_constant_function_MPRK43II)
     if isnothing(small_constant)
         small_constant_function = floatmin
     elseif small_constant isa Number
