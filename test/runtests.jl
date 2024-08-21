@@ -633,7 +633,7 @@ end
                                                                                                  dt = 0.1)
         end
 
-        # Here we check that algorithms with input parameters return constants 
+        # Here we check that algorithms which accept input parameters return constants 
         # of the same type as the inputs
         @testset "Constant types" begin
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
