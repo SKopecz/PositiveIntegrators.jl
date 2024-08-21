@@ -466,8 +466,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
-`1e-50`.
+to avoid divisions by zero. The default for `Float64` computations is `1e-50`.
 
 The current implementation only supports fixed time steps.
 
@@ -492,12 +491,12 @@ function small_constant_function_SSPMPRK43(type)
     if type == Float64
         small_constant = 1e-50
     elseif type == Float32
-        # small_constant_function is chosen such that the problem below
+        # small_constant is chosen such that the problem below
         # (zero initial condition) can be solved
         # P_linmod(u, p, t) = [0 u[2]; 5*u[1] 0]
         # u0 = [1.0f0, 0.0f0]
         # prob = ConservativePDSProblem(P_linmod, u0, (0.0f0, 2.0f0))
-        # sol = solve(prob, SSPMPRK43(small_constant=1f-8); dt=0.1f0)
+        # sol = solve(prob, SSPMPRK43(); dt=0.1f0)
         small_constant = 1.0f-8
     else
         small_constant = floatmin(type)
