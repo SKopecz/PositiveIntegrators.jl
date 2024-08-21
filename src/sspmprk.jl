@@ -488,7 +488,25 @@ struct SSPMPRK43{F, T} <: OrdinaryDiffEqAlgorithm
     small_constant_function::T
 end
 
-function SSPMPRK43(; linsolve = LUFactorization(), small_constant = 1e-50)
+function small_constant_function_SSPMPRK43(type)
+    if type == Float64
+        small_constant = 1e-50
+    elseif type == Float32
+        # small_constant_function is chosen such that the problem below
+        # (zero initial condition) can be solved
+        # P_linmod(u, p, t) = [0 u[2]; 5*u[1] 0]
+        # u0 = [1.0f0, 0.0f0]
+        # prob = ConservativePDSProblem(P_linmod, u0, (0.0f0, 2.0f0))
+        # sol = solve(prob, SSPMPRK43(small_constant=1f-8); dt=0.1f0)
+        small_constant = 1.0f-8
+    else
+        small_constant = floatmin(type)
+    end
+    return small_constant
+end
+
+function SSPMPRK43(; linsolve = LUFactorization(),
+                   small_constant = small_constant_function_SSPMPRK43)
     if isnothing(small_constant)
         small_constant_function = floatmin
     elseif small_constant isa Number
@@ -534,8 +552,7 @@ function get_constant_parameters(alg::SSPMPRK43)
     c3 = β20 + α21 * β10 + β21
 
     return n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20,
-           β21, β30,
-           β31, β32, c3
+           β21, β30, β31, β32, c3
 end
 
 struct SSPMPRK43ConstantCache{T} <: OrdinaryDiffEqConstantCache
@@ -573,11 +590,12 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
         throw(ArgumentError("SSPMPRK43 can only be applied to production-destruction systems"))
     end
-    n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = get_constant_parameters(alg)
+    const_param = get_constant_parameters(alg)
+    const_param = convert.(uEltypeNoUnits, const_param)
+    n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31, α32, β10, β20, β21, β30, β31, β32, c3 = const_param
+    small_constant = alg.small_constant_function(uEltypeNoUnits)
     SSPMPRK43ConstantCache(n1, n2, z, η1, η2, η3, η4, η5, η6, s, α10, α20, α21, α30, α31,
-                           α32, β10,
-                           β20, β21, β30,
-                           β31, β32, c3, alg.small_constant_function(uEltypeNoUnits))
+                           α32, β10, β20, β21, β30, β31, β32, c3, small_constant)
 end
 
 function initialize!(integrator, cache::SSPMPRK43ConstantCache)

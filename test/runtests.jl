@@ -633,6 +633,24 @@ end
                                                                                                  dt = 0.1)
         end
 
+        # Here we check that algorithms with input parameters return constants 
+        # of the same type as the inputs
+        @testset "Constant types" begin
+            algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
+                    MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
+                    SSPMPRK22(0.5f0, 1.0f0))
+            @testset "$i" for (i, alg) in enumerate(algs)
+                @test eltype(PositiveIntegrators.get_constant_parameters(alg)) == Float32
+            end
+
+            algs = (MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
+                    SSPMPRK22(0.5, 1.0))
+            @testset "$i" for (i, alg) in enumerate(algs)
+                @test eltype(PositiveIntegrators.get_constant_parameters(alg)) == Float64
+            end
+        end
+
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
         @testset "Linear model problem: MPE = IE?" begin
             # problem data
