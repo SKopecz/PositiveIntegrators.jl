@@ -802,7 +802,9 @@ end
                     @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_ode_static ≈ sol_cpds_static ≈
                           sol_pds_static
                 end
-            
+            end
+        end
+
         # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,
         # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying std_rhs
         @testset "Check that production-destruction form and standard ODE fit together in predefinded problems" begin
@@ -888,7 +890,6 @@ end
                 sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
                 @test sol.t ≈ sol2.t ≈ sol3.t
                 @test sol.u ≈ sol2.u ≈ sol3.u
-
             end
         end
     end
