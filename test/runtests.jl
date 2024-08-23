@@ -210,152 +210,56 @@ end
                       ambiguities = false,)
     end
 
-    @testset "Test for (Conservative)PDSFunctions" begin
-        @testset "ConservativePDSFunction" begin
-            prod_1! = (P, u, p, t) -> begin
-                fill!(P, zero(eltype(P)))
-                for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                end
-                return nothing
+    @testset "ConservativePDSFunction" begin
+        prod_1! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u) - 1)
+                P[i, i + 1] = i * u[i]
             end
-            prod_2! = (P, u, p, t) -> begin
-                fill!(P, zero(eltype(P)))
-                for i in 1:(length(u) - 1)
-                    P[i + 1, i] = i * u[i + 1]
-                end
-                return nothing
+            return nothing
+        end
+        prod_2! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u) - 1)
+                P[i + 1, i] = i * u[i + 1]
             end
-            prod_3! = (P, u, p, t) -> begin
-                fill!(P, zero(eltype(P)))
-                for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                    P[i + 1, i] = i * u[i + 1]
-                end
-                return nothing
+            return nothing
+        end
+        prod_3! = (P, u, p, t) -> begin
+            fill!(P, zero(eltype(P)))
+            for i in 1:(length(u) - 1)
+                P[i, i + 1] = i * u[i]
+                P[i + 1, i] = i * u[i + 1]
             end
-
-            n = 10
-            P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
-            P_dense = Matrix(P_tridiagonal)
-            P_sparse = sparse(P_tridiagonal)
-            u0 = rand(n)
-            tspan = (0.0, 1.0)
-
-            du_tridiagonal = similar(u0)
-            du_dense = similar(u0)
-            du_sparse = similar(u0)
-
-            for prod! in (prod_1!, prod_2!, prod_3!)
-                prob_tridiagonal = ConservativePDSProblem(prod!, u0, tspan;
-                                                          p_prototype = P_tridiagonal)
-                prob_dense = ConservativePDSProblem(prod!, u0, tspan;
-                                                    p_prototype = P_dense)
-                prob_sparse = ConservativePDSProblem(prod!, u0, tspan;
-                                                     p_prototype = P_sparse)
-
-                prob_tridiagonal.f(du_tridiagonal, u0, nothing, 0.0)
-                prob_dense.f(du_dense, u0, nothing, 0.0)
-                prob_sparse.f(du_sparse, u0, nothing, 0.0)
-
-                @test du_tridiagonal ≈ du_dense
-                @test du_tridiagonal ≈ du_sparse
-                @test du_dense ≈ du_sparse
-            end
+            return nothing
         end
 
-        # Here we check that PDSFunctions and ConservativePDSFunctions can be evaluated
-        # at (u, p, t) also in cases where u and t carry units.
-        # This is required when solvers form OrdinarDiffEq are used to solve a PDS.
-        @testset "(Conservative)PDSFunction and units" begin
-            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
-                u0 = [0.9u"N", 0.1u"N"]
-                u0_static = @SVector [0.9u"N", 0.1u"N"]
-                t0 = 0.0u"s"
-                tspan = (t0, 2.0u"s")
+        n = 10
+        P_tridiagonal = Tridiagonal(rand(n - 1), zeros(n), rand(n - 1))
+        P_dense = Matrix(P_tridiagonal)
+        P_sparse = sparse(P_tridiagonal)
+        u0 = rand(n)
+        tspan = (0.0, 1.0)
 
-                f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
-                P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
-                D(u, p, t) = [0.0; 0.0]u"N/s"
-                g = PositiveIntegrators.ConservativePDSFunction{false}(P)
-                h = PositiveIntegrators.PDSFunction{false}(P, D)
+        du_tridiagonal = similar(u0)
+        du_dense = similar(u0)
+        du_sparse = similar(u0)
 
-                f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
-                P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
-                D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
-                g_static = PositiveIntegrators.ConservativePDSFunction{false}(P_static)
-                h_static = PositiveIntegrators.PDSFunction{false}(P_static, D_static)
+        for prod! in (prod_1!, prod_2!, prod_3!)
+            prob_tridiagonal = ConservativePDSProblem(prod!, u0, tspan;
+                                                      p_prototype = P_tridiagonal)
+            prob_dense = ConservativePDSProblem(prod!, u0, tspan;
+                                                p_prototype = P_dense)
+            prob_sparse = ConservativePDSProblem(prod!, u0, tspan;
+                                                 p_prototype = P_sparse)
 
-                f1 = f(u0, nothing, t0)
-                g1 = g(u0, nothing, t0)
-                h1 = h(u0, nothing, t0)
-                f2 = f_static(u0_static, nothing, t0)
-                g2 = g_static(u0_static, nothing, t0)
-                h2 = h_static(u0_static, nothing, t0)
+            prob_tridiagonal.f(du_tridiagonal, u0, nothing, 0.0)
+            prob_dense.f(du_dense, u0, nothing, 0.0)
+            prob_sparse.f(du_sparse, u0, nothing, 0.0)
 
-                @test f1 == g1 == h1 == f2 == g2 == h2
-            end
-            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
-                u0 = [1.0, 1.5, 2.0, 2.5]u"N"
-                t0 = 0.0u"s"
-
-                function f!(du, u, p, t)
-                    fill!(du, zero(eltype(du)))
-
-                    du[1] = (u[1] - u[2]) / u"s"
-                    du[2] = (3 * u[2] - 2 * u[3] - u[1]) / u"s"
-                    du[3] = (-2 * u[2] + 5 * u[3] - 3 * u[4]) / u"s"
-                    du[4] = (3 * u[4] - 3 * u[3]) / u"s"
-
-                    return nothing
-                end
-                function P!(P, u, p, t)
-                    fill!(P, zero(eltype(P)))
-                    for i in 1:(length(u) - 1)
-                        P[i, i + 1] = i * u[i] / u"s"
-                        P[i + 1, i] = i * u[i + 1] / u"s"
-                    end
-                    return nothing
-                end
-                function D!(D, u, p, t)
-                    fill!(D, zero(eltype(D)))
-                    return nothing
-                end
-
-                P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3], zeros(4),
-                                            [0.4, 0.5, 0.6])u"N/s"
-                P_dense = Matrix(P_tridiagonal)
-                P_sparse = sparse(P_tridiagonal)
-                D_dense = zeros(4)u"N/s"
-
-                f_dense! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
-                                                                             p_prototype = P_dense)
-                f_tridiagonal! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
-                                                                                   p_prototype = P_tridiagonal)
-                f_sparse! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
-                                                                              p_prototype = P_sparse)
-                g_dense! = PositiveIntegrators.PDSFunction{true}(P!, D!,
-                                                                 p_prototype = P_dense,
-                                                                 d_prototype = D_dense)
-                g_tridiagonal! = PositiveIntegrators.PDSFunction{true}(P!, D!,
-                                                                       p_prototype = P_tridiagonal,
-                                                                       d_prototype = D_dense)
-                g_sparse! = PositiveIntegrators.PDSFunction{true}(P!, D!,
-                                                                  p_prototype = P_sparse,
-                                                                  d_prototype = D_dense)
-
-                du1 = du2 = du3 = du4 = du5 = du6 = du7 = zeros(4)u"N/s"
-
-                f!(du1, u0, nothing, t0)
-                f_dense!(du2, u0, nothing, t0)
-                f_tridiagonal!(du3, u0, nothing, t0)
-                f_sparse!(du4, u0, nothing, t0)
-                g_dense!(du5, u0, nothing, t0)
-                g_tridiagonal!(du6, u0, nothing, t0)
-                g_sparse!(du7, u0, nothing, t0)
-
-                @test du1 == du2 == du3 == du4 == du5 == du6 == du7
-            end
+            @test du_tridiagonal ≈ du_dense
+            @test du_tridiagonal ≈ du_sparse
+            @test du_dense ≈ du_sparse
         end
     end
 
@@ -647,6 +551,146 @@ end
             @test 0.95 < alloc1 / alloc4 < 1.05
             @test 0.95 < alloc1 / alloc5 < 1.05
             @test 0.95 < alloc1 / alloc6 < 1.05
+        end
+
+        # Here we check that PDSFunctions and ConservativePDSFunctions can be evaluated
+        # at (u, p, t) also in cases where u and t carry units.
+        # This is required when solvers form OrdinarDiffEq are used to solve a PDS
+        # and std_rhs is not specified.
+        @testset "(Conservative)PDSFunction and units" begin
+            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
+                u0 = [0.9u"N", 0.1u"N"]
+                u0_static = @SVector [0.9u"N", 0.1u"N"]
+                t0 = 0.0u"s"
+                tspan = (t0, 2.0u"s")
+
+                f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
+                P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D(u, p, t) = [0.0; 0.0]u"N/s"
+                g = PositiveIntegrators.ConservativePDSFunction{false}(P)
+                h = PositiveIntegrators.PDSFunction{false}(P, D)
+
+                f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
+                P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+                g_static = PositiveIntegrators.ConservativePDSFunction{false}(P_static)
+                h_static = PositiveIntegrators.PDSFunction{false}(P_static, D_static)
+
+                f1 = f(u0, nothing, t0)
+                g1 = g(u0, nothing, t0)
+                h1 = h(u0, nothing, t0)
+                f2 = f_static(u0_static, nothing, t0)
+                g2 = g_static(u0_static, nothing, t0)
+                h2 = h_static(u0_static, nothing, t0)
+
+                @test f1 == g1 == h1 == f2 == g2 == h2
+            end
+            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
+                u0 = [1.0, 1.5, 2.0, 2.5]u"N"
+                t0 = 0.0u"s"
+
+                function f!(du, u, p, t)
+                    fill!(du, zero(eltype(du)))
+
+                    du[1] = (u[1] - u[2]) / u"s"
+                    du[2] = (3 * u[2] - 2 * u[3] - u[1]) / u"s"
+                    du[3] = (-2 * u[2] + 5 * u[3] - 3 * u[4]) / u"s"
+                    du[4] = (3 * u[4] - 3 * u[3]) / u"s"
+
+                    return nothing
+                end
+                function P!(P, u, p, t)
+                    fill!(P, zero(eltype(P)))
+                    for i in 1:(length(u) - 1)
+                        P[i, i + 1] = i * u[i] / u"s"
+                        P[i + 1, i] = i * u[i + 1] / u"s"
+                    end
+                    return nothing
+                end
+                function D!(D, u, p, t)
+                    fill!(D, zero(eltype(D)))
+                    return nothing
+                end
+
+                P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3], zeros(4),
+                                            [0.4, 0.5, 0.6])u"N/s"
+                P_dense = Matrix(P_tridiagonal)
+                P_sparse = sparse(P_tridiagonal)
+                D_dense = zeros(4)u"N/s"
+
+                f_dense! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                             p_prototype = P_dense)
+                f_tridiagonal! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                                   p_prototype = P_tridiagonal)
+                f_sparse! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                              p_prototype = P_sparse)
+                g_dense! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                 p_prototype = P_dense,
+                                                                 d_prototype = D_dense)
+                g_tridiagonal! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                       p_prototype = P_tridiagonal,
+                                                                       d_prototype = D_dense)
+                g_sparse! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                  p_prototype = P_sparse,
+                                                                  d_prototype = D_dense)
+
+                du1 = du2 = du3 = du4 = du5 = du6 = du7 = zeros(4)u"N/s"
+
+                f!(du1, u0, nothing, t0)
+                f_dense!(du2, u0, nothing, t0)
+                f_tridiagonal!(du3, u0, nothing, t0)
+                f_sparse!(du4, u0, nothing, t0)
+                g_dense!(du5, u0, nothing, t0)
+                g_tridiagonal!(du6, u0, nothing, t0)
+                g_sparse!(du7, u0, nothing, t0)
+
+                @test du1 == du2 == du3 == du4 == du5 == du6 == du7
+            end
+        end
+
+        @testset "Compatibility of OrdinarDiffEq solvers with (Conservative)PDSProblems and units" begin
+            @testset "out-of-place" begin
+                u0 = [0.9u"N", 0.1u"N"]
+                u0_static = @SVector [0.9u"N", 0.1u"N"]
+                tspan = (0.0u"s", 2.0u"s")
+
+                f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
+                P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D(u, p, t) = [0.0; 0.0]u"N/s"
+                f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
+                P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+
+                prob_ode = ODEProblem(f, u0, tspan)
+                prob_cpds = ConservativePDSProblem(P, u0, tspan)
+                prob_pds = PDSProblem(P, D, u0, tspan)
+                #prob_cpds_rhs = ConservativePDSProblem(P, u0, tspan; std_rhs = f)
+                #prob_pds_rhs = PDSProblem(P, D, u0, tspan; std_rhs = f)
+                prob_ode_static = ODEProblem(f, u0_static, tspan)
+                prob_cpds_static = ConservativePDSProblem(P, u0_static, tspan)
+                prob_pds_static = PDSProblem(P, D, u0_static, tspan)
+                #prob_cpds_static_rhs = ConservativePDSProblem(P, u0_static, tspan; std_rhs = f)
+                #prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f)
+
+                algs = (Euler(), Tsit5())
+
+                for alg in algs
+                    alg = Euler()
+                    sol_ode = solve(prob_ode, alg; dt = 0.1u"s")
+                    sol_cpds = solve(prob_cpds, alg; dt = 0.1u"s")
+                    sol_pds = solve(prob_pds, alg; dt = 0.1u"s")
+                    #sol_cpds_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    #sol_pds_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
+                    sol_ode_static = solve(prob_ode, alg; dt = 0.1u"s")
+                    sol_cpds_static = solve(prob_cpds, alg; dt = 0.1u"s")
+                    sol_pds_static = solve(prob_pds, alg; dt = 0.1u"s")
+                    #sol_cpds_static_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    #sol_pds_static_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")        
+
+                    @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_ode_static ≈ sol_cpds_static ≈
+                          sol_pds_static
+                end
+            end
         end
     end
 
