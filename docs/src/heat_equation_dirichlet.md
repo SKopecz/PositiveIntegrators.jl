@@ -52,7 +52,7 @@ d_{1,1}(t,\mathbf u(t)) &= \frac{\mu}{\Delta x^2} u_{1}(t), \\
 d_{N,N}(t,\mathbf u(t)) &= \frac{\mu}{\Delta x^2} u_{N}(t).
 \end{aligned}
 ```
-
+In addition, all production and destruction terms not listed are zero.
 
 ## Solution of the non-conservative production-destruction system
 

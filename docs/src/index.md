@@ -174,7 +174,7 @@ Finally, we can use [Plots.jl](https://docs.juliaplots.org/stable/) to visualize
 using Plots
 
 plot(sol, label = ["S" "I" "R"], legend=:right)
-plot!(sol, idxs = ((t, S, I, R) -> (t, S + I + R), 0, 1, 2, 3), label = "S+I+R") #Plot S+I+R over time.
+plot!(sol.t, sum.(sol.u), label = "S+I+R") # Plot S+I+R over time.
 ```
 We see that there is always a nonnegative number of people in each compartment, while the population ``S+I+R`` remains constant over time.
 

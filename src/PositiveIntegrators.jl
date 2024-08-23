@@ -1,10 +1,10 @@
 module PositiveIntegrators
 
 # 1. Load dependencies
-using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, diagind, mul!
+using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, mul!
 using SparseArrays: SparseArrays, AbstractSparseMatrix,
                     issparse, nonzeros, nzrange, rowvals, spdiagm
-using StaticArrays: SVector, MVector, SMatrix, StaticArray, @SVector, @SMatrix
+using StaticArrays: SVector, SMatrix, StaticArray, @SVector, @SMatrix
 
 using FastBroadcast: @..
 using MuladdMacro: @muladd
@@ -12,35 +12,29 @@ using SimpleUnPack: @unpack
 
 using Reexport: @reexport
 
-@reexport using SciMLBase: ODEFunction, ODEProblem, init, solve
+@reexport using SciMLBase: ODEProblem, init, solve
 
-using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize, NoSpecialize,
+using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize,
                  isinplace
 
 # TODO: Check imports and using statements below, reduce if possible
-using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm
+using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm, ODESolution
 
-using SymbolicIndexingInterface
+using SymbolicIndexingInterface: SymbolicIndexingInterface
 
 using LinearSolve: LinearSolve, LinearProblem, LUFactorization, solve!
 
-using SciMLBase: DEFAULT_OBSERVED
-import SciMLBase: interp_summary,
-                  __has_mass_matrix, __has_analytic, __has_tgrad,
-                  __has_jac, __has_jvp, __has_vjp, __has_jac_prototype,
-                  __has_sparsity, __has_Wfact, __has_Wfact_t,
-                  __has_paramjac, __has_syms, __has_indepsym, __has_paramsyms,
-                  __has_observed, __has_colorvec, __has_sys
+import SciMLBase: interp_summary
 
 using OrdinaryDiffEq: @cache,
-                      DEFAULT_PRECS,
                       OrdinaryDiffEqAdaptiveAlgorithm,
                       OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
                       False,
-                      recursivefill!, _vec, wrapprecs, dolinsolve
+                      _vec
 import OrdinaryDiffEq: alg_order, isfsal,
                        calculate_residuals, calculate_residuals!,
-                       alg_cache, initialize!, perform_step!,
+                       alg_cache, get_tmp_cache,
+                       initialize!, perform_step!,
                        _ode_interpolant, _ode_interpolant!
 
 # 2. Export functionality defining the public API
@@ -52,7 +46,9 @@ export SSPMPRK22, SSPMPRK43
 
 export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
-       prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac
+       prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac, prob_pds_minmapk
+
+export isnegative, isnonnegative
 
 # 3. Load source code
 
@@ -65,9 +61,13 @@ include("mprk.jl")
 # modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
 include("sspmprk.jl")
 
+# interpolation for dense output
 include("interpolation.jl")
 
 # predefined PDS problems
 include("PDSProblemLibrary.jl")
+
+# additional auxiliary functions
+include("utilities.jl")
 
 end # module

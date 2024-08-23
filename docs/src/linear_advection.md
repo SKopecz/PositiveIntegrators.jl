@@ -38,12 +38,11 @@ To be precise, the production matrix ``\mathbf P = (p_{i,j})`` of this conservat
 &p_{i,i-1}(t,\mathbf u(t)) = \frac{a}{Δ x}u_{i-1}(t),\quad i=2,\dots,N.
 \end{aligned}
 ```
-
-Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``\mathbf P``.
+In addition, all production and destruction terms not listed have the value zero. Since the PDS is conservative, we have ``d_{i,j}=p_{j,i}`` and the system is fully determined by the production matrix ``\mathbf P``.
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a `ConservativePDSProblem` and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use ``a=1``, ``N=1000`` and the time domain ``t\in[0,1]``. Moreover, we choose the step function
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use ``a=1``, ``N=1000`` and the time domain ``t\in[0,1]``. Moreover, we choose the step function
 
 ```math
 u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
@@ -99,10 +98,15 @@ plot(x, u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol.u); label = "u")
 ```
 
+We can use [`isnonnegative`](@ref) to check that the computed solution is nonnegative,  as expected from an MPRK scheme.
+```@example LinearAdvection
+isnonnegative(sol)
+```
+
 ### Using sparse matrices
 
 To use different matrix types for the production terms and linear systems,
-you can use the keyword argument `p_prototype` of
+we can use the keyword argument `p_prototype` of
 [`ConservativePDSProblem`](@ref) and [`PDSProblem`](@ref).
 
 ```@example LinearAdvection
@@ -119,6 +123,10 @@ nothing #hide
 ```@example LinearAdvection
 plot(x,u0; label = "u0", xguide = "x", yguide = "u")
 plot!(x, last(sol_sparse.u); label = "u")
+```
+Also this solution is nonnegative.
+```@example LinearAdvection
+isnonnegative(sol_sparse)
 ```
 
 ### Performance comparison

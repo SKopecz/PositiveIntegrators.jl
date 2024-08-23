@@ -337,6 +337,8 @@ struct MPEConservativeCache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCa
     linsolve::F
 end
 
+get_tmp_cache(integrator, ::MPE, cache::OrdinaryDiffEqMutableCache) = (cache.σ,)
+
 # In-place
 function alg_cache(alg::MPE, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -637,6 +639,8 @@ struct MPRK22ConservativeCache{uType, PType, tabType, F} <:
     tab::tabType
     linsolve::F
 end
+
+get_tmp_cache(integrator, ::MPRK22, cache::OrdinaryDiffEqMutableCache) = (cache.σ,)
 
 # In-place
 function alg_cache(alg::MPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -1226,6 +1230,11 @@ struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutabl
     σ::uType
     tab::tabType
     linsolve::F
+end
+
+function get_tmp_cache(integrator, ::Union{MPRK43I, MPRK43II},
+                       cache::OrdinaryDiffEqMutableCache)
+    (cache.σ,)
 end
 
 # In-place

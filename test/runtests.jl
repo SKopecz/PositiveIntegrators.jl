@@ -11,6 +11,7 @@ using PositiveIntegrators
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
+using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_imports
 
 """
     experimental_orders_of_convergence(prob, alg, dts;
@@ -208,6 +209,117 @@ end
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,)
+    end
+
+    @testset "ExplicitImports.jl" begin
+        @test isnothing(check_no_implicit_imports(PositiveIntegrators))
+        @test isnothing(check_no_stale_explicit_imports(PositiveIntegrators))
+    end
+
+    @testset "ODE RHS" begin
+        let counter_p = Ref(1), counter_d = Ref(1), counter_rhs = Ref(1)
+            # out-of-place
+            prod1 = (u, p, t) -> begin
+                counter_p[] += 1
+                return [0 u[2]; u[1] 0]
+            end
+            dest1 = (u, p, t) -> begin
+                counter_d[] += 1
+                return zero(u)
+            end
+            rhs1 = (u, p, t) -> begin
+                counter_rhs[] += 1
+                return [-u[1] + u[2], u[1] - u[2]]
+            end
+            u0 = [1.0, 0.0]
+            tspan = (0.0, 1.0)
+            prob_default = PDSProblem(prod1, dest1, u0, tspan)
+            prob_special = PDSProblem(prod1, dest1, u0, tspan; std_rhs = rhs1)
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_default.f(u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_special.f(u0, nothing, 0.0)
+            @test counter_p[] == 0
+            @test counter_d[] == 0
+            @test counter_rhs[] == 1
+
+            # in-place
+            prod1! = (P, u, p, t) -> begin
+                counter_p[] += 1
+                P[1, 1] = 0
+                P[1, 2] = u[2]
+                P[2, 1] = u[1]
+                P[2, 2] = 0
+                return nothing
+            end
+            dest1! = (D, u, p, t) -> begin
+                counter_d[] += 1
+                fill!(D, 0)
+                return nothing
+            end
+            rhs1! = (du, u, p, t) -> begin
+                counter_rhs[] += 1
+                du[1] = -u[1] + u[2]
+                du[2] = u[1] - u[2]
+                return nothing
+            end
+            u0 = [1.0, 0.0]
+            tspan = (0.0, 1.0)
+            prob_default = PDSProblem(prod1!, dest1!, u0, tspan)
+            prob_special = PDSProblem(prod1!, dest1!, u0, tspan; std_rhs = rhs1!)
+
+            du = similar(u0)
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_default.f(du, u0, nothing, 0.0)
+            @test counter_p[] == 1
+            @test counter_d[] == 1
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred prob_special.f(du, u0, nothing, 0.0)
+            @test counter_p[] == 0
+            @test counter_d[] == 0
+            @test counter_rhs[] == 1
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_default, MPE(); dt = 0.1)
+            @test 10 <= counter_p[] <= 11
+            @test 10 <= counter_d[] <= 11
+            @test counter_d[] == counter_p[]
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_default, Euler(); dt = 0.1)
+            @test 10 <= counter_p[] <= 11
+            @test 10 <= counter_d[] <= 11
+            @test counter_d[] == counter_p[]
+            @test counter_rhs[] == 0
+
+            counter_p[] = 0
+            counter_d[] = 0
+            counter_rhs[] = 0
+            @inferred solve(prob_special, Euler(); dt = 0.1)
+            @test counter_p[] == 0
+            @test counter_d[] == 0
+            @test 10 <= counter_rhs[] <= 11
+        end
     end
 
     @testset "ConservativePDSFunction" begin
@@ -690,6 +802,93 @@ end
                     @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_ode_static ≈ sol_cpds_static ≈
                           sol_pds_static
                 end
+            
+        # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,
+        # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying std_rhs
+        @testset "Check that production-destruction form and standard ODE fit together in predefinded problems" begin
+            # non-stiff conservative problems (out-of-place)
+            probs = (prob_pds_linmod, prob_pds_nonlinmod, prob_pds_brusselator,
+                     prob_pds_sir, prob_pds_npzd)
+            algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # non-stiff conservative problems (in-place)
+            # Requires autodiff=false
+            probs = (prob_pds_linmod_inplace,)
+            algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
+                    Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
+                    TRBDF2(autodiff = false))
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # non-stiff non-conservative problems (out-of-place)
+            probs = (prob_pds_minmapk,)
+            algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for prob in probs, alg in algs
+                dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
+                sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
+                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
+                             isoutofdomain = isnegative) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # Robertson problem
+            prob = prob_pds_robertson
+            algs = (ImplicitEuler(), Rosenbrock23(), SDIRK2(), TRBDF2())
+            @testset "$alg" for alg in algs
+                dt = 1e-6
+                sol = solve(prob, alg; dt) # use explicit f
+                sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+            end
+
+            # Bertolazzi problem
+            # Did not find any solver configuration to compute a reasonable solution and pass tests.
+            # - constant time stepping requires very small dt
+            # - adaptive time stepping generates solutions with different number of time steps 
+            #
+            # Nevertheless, the following code shows that the same problem is solved in each case
+            # prob = prob_pds_bertolazzi
+            # alg = ImplicitEuler()
+            # dt = 1e-3
+            # sol = solve(prob, alg; dt) # use explicit f
+            # sol2 = solve(ConservativePDSProblem(prob.f.p, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+            # sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+            # plot(plot(sol),plot(sol2),plot(sol3))
+
+            # Stratospheric reaction problem
+            prob = prob_pds_stratreac
+            algs = (ImplicitEuler(), Rosenbrock23(), TRBDF2())
+            @testset "$alg" for alg in algs
+                dt = 1.0
+                sol = solve(prob, alg; dt) # use explicit f
+                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+                sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
+                @test sol.t ≈ sol2.t ≈ sol3.t
+                @test sol.u ≈ sol2.u ≈ sol3.u
+
             end
         end
     end
@@ -1348,7 +1547,7 @@ end
             end
         end
 
-        # Here we check that the type of p_prototype actually 
+        # Here we check that the type of p_prototype actually
         # defines the types of the Ps inside the algorithm caches.
         # We test sparse, tridiagonal, and dense matrices.
         @testset "Prototype type check" begin
@@ -1396,7 +1595,7 @@ end
                                                 p_prototype = P_dense)
             prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
                                                  p_prototype = P_sparse)
-            ## nonconservative PDS                                         
+            ## nonconservative PDS
             prob_default2 = PDSProblem(prod_dense!, dest!, u0, tspan)
             prob_tridiagonal2 = PDSProblem(prod_tridiagonal!, dest!, u0, tspan;
                                            p_prototype = P_tridiagonal)
@@ -1412,7 +1611,19 @@ end
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
-                    solve(prob, alg; dt, adaptive = false)
+                    sol1 = solve(prob, alg; dt, adaptive = false)
+
+                    # test get_tmp_cache and integrator interface - modifying
+                    # values from the cache should not change the final results
+                    integrator = init(prob, alg; dt, adaptive = false)
+                    step!(integrator)
+                    cache = @inferred get_tmp_cache(integrator)
+                    @test !isempty(cache)
+                    tmp = first(cache)
+                    fill!(tmp, NaN)
+                    sol2 = solve!(integrator)
+                    @test sol1.t ≈ sol2.t
+                    @test sol1.u ≈ sol2.u
                 end
             end
         end
@@ -1883,5 +2094,23 @@ end
         using Plots
         sol = solve(prob_pds_linmod, MPRK22(1.0))
         @test_nowarn plot(sol)
+    end
+
+    @testset "utilities" begin
+        @testset "is(non)negative" begin
+            sol_Euler = solve(prob_pds_linmod, Euler(), dt = 0.25)
+            @test isnegative(sol_Euler)
+            @test isnegative(sol_Euler.u)
+            @test isnegative(sol_Euler.u[2])
+
+            sol_MPE = solve(prob_pds_linmod, MPE(), dt = 0.25)
+            @test isnonnegative(sol_MPE)
+            @test isnonnegative(sol_MPE.u)
+
+            sol_bruss = solve(prob_pds_brusselator, Euler(), dt = 1.0)
+            @test isnegative(sol_bruss)
+            @test isnegative(sol_bruss.u)
+            @test isnegative(last(sol_bruss.u))
+        end
     end
 end;
