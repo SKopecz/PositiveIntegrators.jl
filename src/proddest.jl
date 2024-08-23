@@ -153,7 +153,8 @@ end
 
 function PDSStdRHS(P, D, p_prototype, d_prototype)
     if p_prototype isa AbstractSparseMatrix
-        tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))/oneunit(first(p_prototype)) # drop units
+        tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),)) /
+              oneunit(first(p_prototype)) # drop units
     else
         tmp = nothing
     end
@@ -335,7 +336,7 @@ end
 function ConservativePDSStdRHS(P, p_prototype)
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
-        tmp2 = tmp/oneunit(first(tmp)) # drop units
+        tmp2 = tmp / oneunit(first(tmp)) # drop units
     else
         tmp = nothing
         tmp2 = nothing
