@@ -5,6 +5,8 @@ using Statistics: mean
 
 using StaticArrays: MVector
 
+using Unitful
+
 using OrdinaryDiffEq
 using PositiveIntegrators
 
