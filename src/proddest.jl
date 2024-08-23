@@ -164,8 +164,8 @@ function (PD::PDSStdRHS)(du, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
         # row sum coded as matrix-vector product 
-        fill!(PD.d_prototype, one(eltype(PD.tmp)))
-        mul!(vec(du), PD.p_prototype, PD.tmp)
+        fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
+        mul!(vec(du), PD.p_prototype, PD.d_prototype)
 
         for i in 1:length(u)  #vec(du) .+= diag(PD.p_prototype)
             du[i] += PD.p_prototype[i, i]
