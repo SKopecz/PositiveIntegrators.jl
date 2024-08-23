@@ -776,13 +776,14 @@ end
                 prob_ode = ODEProblem(f, u0, tspan)
                 prob_cpds = ConservativePDSProblem(P, u0, tspan)
                 prob_pds = PDSProblem(P, D, u0, tspan)
-                #prob_cpds_rhs = ConservativePDSProblem(P, u0, tspan; std_rhs = f)
-                #prob_pds_rhs = PDSProblem(P, D, u0, tspan; std_rhs = f)
+                prob_cpds_rhs = ConservativePDSProblem(P, u0, tspan; std_rhs = f)
+                prob_pds_rhs = PDSProblem(P, D, u0, tspan; std_rhs = f)
                 prob_ode_static = ODEProblem(f, u0_static, tspan)
                 prob_cpds_static = ConservativePDSProblem(P, u0_static, tspan)
                 prob_pds_static = PDSProblem(P, D, u0_static, tspan)
-                #prob_cpds_static_rhs = ConservativePDSProblem(P, u0_static, tspan; std_rhs = f)
-                #prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f)
+                prob_cpds_static_rhs = ConservativePDSProblem(P, u0_static, tspan;
+                                                              std_rhs = f_static)
+                prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f_static)
 
                 algs = (Euler(), Tsit5())
 
@@ -791,16 +792,17 @@ end
                     sol_ode = solve(prob_ode, alg; dt = 0.1u"s")
                     sol_cpds = solve(prob_cpds, alg; dt = 0.1u"s")
                     sol_pds = solve(prob_pds, alg; dt = 0.1u"s")
-                    #sol_cpds_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
-                    #sol_pds_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
+                    sol_cpds_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    sol_pds_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
                     sol_ode_static = solve(prob_ode, alg; dt = 0.1u"s")
                     sol_cpds_static = solve(prob_cpds, alg; dt = 0.1u"s")
                     sol_pds_static = solve(prob_pds, alg; dt = 0.1u"s")
-                    #sol_cpds_static_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
-                    #sol_pds_static_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")        
+                    sol_cpds_static_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    sol_pds_static_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
 
-                    @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_ode_static ≈ sol_cpds_static ≈
-                          sol_pds_static
+                    @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_cpds_rhs ≈ sol_pds_rhs ≈
+                          sol_ode_static ≈ sol_cpds_static ≈
+                          sol_pds_static ≈ sol_cpds_static_rhs ≈ sol_pds_static_rhs
                 end
             end
         end
