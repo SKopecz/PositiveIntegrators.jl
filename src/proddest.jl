@@ -130,9 +130,15 @@ function (PD::PDSFunction)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
-        # Same result but more efficient - at least currently for SparseMatrixCSC
-        fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
-        mul!(vec(du), PD.p_prototype, PD.d_prototype)
+        # Within mul! PD.d_prototype must not have units, in sum! PD.d_prototype needs units.   
+        # To avoid an additional auxiliary vector we use sum! also to compute 
+        # the row sum.
+
+        # row sum coded as matrix-vector product 
+        # fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
+        # mul!(vec(du), PD.p_prototype, PD.d_prototype)
+        sum!(vec(du), PD.p_prototype)
+
         for i in 1:length(u)  #vec(du) .+= diag(PD.p_prototype)
             du[i] += PD.p_prototype[i, i]
         end
@@ -267,7 +273,7 @@ function (PD::ConservativePDSFunction)(u, p, t)
     #vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
     P = PD.p(u, p, t)
 
-    f = zero(u)
+    f = zeros(eltype(P), size(u))
     @fastmath @inbounds @simd for I in CartesianIndices(P)
         if !iszero(P[I])
             f[I[1]] += P[I]
@@ -280,8 +286,8 @@ end
 function (PD::ConservativePDSFunction)(u::SVector, p, t)
     P = PD.p(u, p, t)
 
-    f = similar(u) #constructs MVector
-    zeroT = zero(eltype(u))
+    f = similar(P[:, 1]) #constructs MVector
+    zeroT = zero(eltype(P))
     for i in eachindex(f)
         f[i] = zeroT
     end
@@ -306,9 +312,9 @@ end
 # Generic fallback (for dense arrays)
 # This implementation does not need any auxiliary vectors
 @inline function sum_terms!(du, tmp, P)
-    for i in 1:length(du)
+    for i in eachindex(du)
         du[i] = zero(eltype(du))
-        for j in 1:length(du)
+        for j in eachindex(du)
             du[i] += P[i, j] - P[j, i]
         end
     end
@@ -317,9 +323,18 @@ end
 
 # Same result but more efficient - at least currently for SparseMatrixCSC
 @inline function sum_terms!(du, tmp, P::AbstractSparseMatrix)
-    fill!(tmp, one(eltype(tmp)))
-    mul!(vec(du), P, tmp)
+    # Within mul! tmp must not have units, in sum! tmp needs units.   
+    # To avoid an additional auxiliary vector we use sum! also to compute 
+    # the row sum.
+
+    # # row sum coded as matrix vector product
+    # fill!(tmp, one(eltype(tmp)))
+    # mul!(vec(du), P, tmp)
+    sum!(vec(du), P)
+
+    #column sum
     sum!(tmp', P)
+
     vec(du) .-= tmp
     return nothing
 end
