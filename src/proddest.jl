@@ -163,14 +163,9 @@ function (PD::PDSStdRHS)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
-        # Within mul! PD.d_prototype must not have units, in sum! PD.d_prototype needs units.   
-        # To avoid an additional auxiliary vector we use sum! also to compute 
-        # the row sum.
-
         # row sum coded as matrix-vector product 
-        # fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
-        # mul!(vec(du), PD.p_prototype, PD.d_prototype)
-        sum!(vec(du), PD.p_prototype)
+        fill!(PD.d_prototype, one(eltype(PD.tmp)))
+        mul!(vec(du), PD.p_prototype, PD.tmp)
 
         for i in 1:length(u)  #vec(du) .+= diag(PD.p_prototype)
             du[i] += PD.p_prototype[i, i]
@@ -390,14 +385,10 @@ end
 
 # Same result but more efficient - at least currently for SparseMatrixCSC
 @inline function sum_terms!(du, tmp, P::AbstractSparseMatrix)
-    # Within mul! tmp must not have units, in sum! tmp needs units.   
-    # To avoid an additional auxiliary vector we use sum! also to compute 
-    # the row sum.
-
-    # # row sum coded as matrix vector product
-    # fill!(tmp, one(eltype(tmp)))
-    # mul!(vec(du), P, tmp)
-    sum!(vec(du), P)
+    # row sum coded as matrix vector product
+    fill!(tmp, one(eltype(tmp)))
+    mul!(vec(du), P, tmp)
+    #sum!(vec(du), P)
 
     #column sum
     sum!(tmp', P)
