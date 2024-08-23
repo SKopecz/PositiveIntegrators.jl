@@ -3,7 +3,7 @@ using LinearAlgebra
 using SparseArrays
 using Statistics: mean
 
-using StaticArrays: MVector
+using StaticArrays: MVector, @SVector, SA
 
 using Unitful
 
