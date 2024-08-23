@@ -699,7 +699,7 @@ end
 
                 @test f1 == g1 == h1 == f2 == g2 == h2
             end
-            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
+            @testset "(Conservative)PDSFunction and units (in-place)" begin
                 u0 = [1.0, 1.5, 2.0, 2.5]u"N"
                 t0 = 0.0u"s"
 

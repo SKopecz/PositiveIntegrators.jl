@@ -121,7 +121,7 @@ end
 # Most specific constructor for PDSFunction
 function PDSFunction{iip, FullSpecialize}(P, D;
                                           p_prototype = nothing,
-                                          d_prototype,
+                                          d_prototype = nothing,
                                           analytic = nothing,
                                           std_rhs = nothing) where {iip}
     if std_rhs === nothing
