@@ -807,6 +807,74 @@ end
                           sol_pds_static ≈ sol_cpds_static_rhs ≈ sol_pds_static_rhs
                 end
             end
+            @testset "in-place" begin
+                u0 = [1.0, 1.5, 2.0, 2.5]u"N"
+                tspan = (0.0u"s", 1.0u"s")
+
+                function f!(du, u, p, t)
+                    fill!(du, zero(eltype(du)))
+
+                    du[1] = (u[1] - u[2]) / u"s"
+                    du[2] = (3 * u[2] - 2 * u[3] - u[1]) / u"s"
+                    du[3] = (-2 * u[2] + 5 * u[3] - 3 * u[4]) / u"s"
+                    du[4] = (3 * u[4] - 3 * u[3]) / u"s"
+
+                    return nothing
+                end
+                function P!(P, u, p, t)
+                    fill!(P, zero(eltype(P)))
+                    for i in 1:(length(u) - 1)
+                        P[i, i + 1] = i * u[i] / u"s"
+                        P[i + 1, i] = i * u[i + 1] / u"s"
+                    end
+                    return nothing
+                end
+                function D!(D, u, p, t)
+                    fill!(D, zero(eltype(D)))
+                    return nothing
+                end
+
+                P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3], zeros(4),
+                                            [0.4, 0.5, 0.6])u"N/s"
+                P_dense = Matrix(P_tridiagonal)
+                P_sparse = sparse(P_tridiagonal)
+                D_dense = zeros(4)u"N/s"
+
+                alg = Euler()
+
+                prob0 = ODEProblem(f!, u0, tspan)
+                sol0 = solve(prob0, alg; dt = 0.2u"s")
+
+                probs = Array{Any}(undef, 14)
+                probs[1] = ConservativePDSProblem(P!, u0, tspan)
+                probs[2] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_dense)
+                probs[3] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_dense,
+                                                  std_rhs = f!)
+                probs[4] = ConservativePDSProblem(P!, u0, tspan;
+                                                  p_prototype = P_tridiagonal)
+                probs[5] = ConservativePDSProblem(P!, u0, tspan;
+                                                  p_prototype = P_tridiagonal, std_rhs = f!)
+                probs[6] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse)
+                probs[7] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse,
+                                                  std_rhs = f!)
+                probs[8] = PDSProblem(P!, D!, u0, tspan)
+                probs[9] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense)
+                probs[10] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense,
+                                       std_rhs = f!)
+                probs[11] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal)
+                probs[12] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal,
+                                       std_rhs = f!)
+                probs[13] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse)
+                probs[14] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse,
+                                       std_rhs = f!)
+
+                for prob in probs
+                    sol = solve(prob, alg; dt = 0.2u"s")
+
+                    @test sol0.t ≈ sol.t
+                    @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                end
+            end
         end
 
         # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,

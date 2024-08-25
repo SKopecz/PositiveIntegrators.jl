@@ -95,11 +95,11 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
 
     # p_prototype is used to store evaluations of P, if P is in-place.
     if isnothing(p_prototype) && iip
-        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0))) / oneunit(first(tspan))
     end
     # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store
     # evaluations of D.
-    d_prototype = similar(u0)
+    d_prototype = similar(u0) / oneunit(first(tspan))
 
     PD = PDSFunction{iip}(P, D; p_prototype, d_prototype,
                           analytic, std_rhs)
@@ -199,7 +199,7 @@ function (PD::PDSStdRHS)(du, u, p, t)
 end
 
 # New problem type ConservativePDSProblem
-"""
+"""ConservativePDSProblem
     ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                            p_prototype = nothing,
                            analytic = nothing,
@@ -284,7 +284,7 @@ function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
 
     # p_prototype is used to store evaluations of P, if P is in-place.
     if isnothing(p_prototype) && iip
-        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0))) / oneunit(first(tspan))
     end
 
     PD = ConservativePDSFunction{iip}(P; p_prototype, analytic, std_rhs)
