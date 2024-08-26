@@ -321,7 +321,10 @@ end
     integrator.u = u
 end
 
-struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
+abstract type MPEMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::MPEMutableCache, rate_prototype) = (cache.fsalfirst, cache.k)
+
+struct MPECache{PType, uType, tabType, F} <: MPEMutableCache
     P::PType
     D::uType
     σ::uType
@@ -330,7 +333,7 @@ struct MPECache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct MPEConservativeCache{PType, uType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPEConservativeCache{PType, uType, tabType, F} <: MPEMutableCache
     P::PType
     σ::uType
     tab::tabType
