@@ -1067,6 +1067,23 @@ end
             end
         end
 
+        # We check that Float32 inputs result in Float32 outputs
+        # TODO: Use a tool such as LIKWID to check that no double-precision calculations are performed internally
+        @testset "Float32 input data" begin
+            P_linmod(u, p, t) = [0 u[2]; 5*u[1] 0]
+            u0 = [0.9f0, 0.1f0]
+            prob = ConservativePDSProblem(P_linmod, u0, (0.0f0, 2.0f0))
+
+            algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
+                    MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
+                    SSPMPRK22(0.5f0, 1.0f0))
+            for alg in algs
+                sol = solve(prob, alg; dt = 0.1f0, save_everystep = false)
+                @test sol.t isa Vector{Float32}
+                @test sol.u isa Vector{Vector{Float32}}
+            end
+        end
+
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
         @testset "Linear model problem: MPE = IE?" begin
             # problem data
