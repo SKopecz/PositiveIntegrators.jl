@@ -217,6 +217,10 @@ end
     return nothing
 end
 
+# We use MPRKMutableCache as supertype for all MPRK scheme caches
+abstract type MPRKMutableCache <: OrdinaryDiffEqMutableCache end
+get_fsalfirstlast(cache::MPRKMutableCache, rate_prototype) = (nothing, nothing)
+
 ### MPE #####################################################################################
 """
     MPE([linsolve = ..., small_constant = ...])
@@ -321,10 +325,7 @@ end
     integrator.u = u
 end
 
-abstract type MPEMutableCache <: OrdinaryDiffEqMutableCache end
-get_fsalfirstlast(cache::MPEMutableCache, rate_prototype) = (cache.fsalfirst, cache.k)
-
-struct MPECache{PType, uType, tabType, F} <: MPEMutableCache
+struct MPECache{PType, uType, tabType, F} <: MPRKMutableCache
     P::PType
     D::uType
     σ::uType
@@ -333,7 +334,7 @@ struct MPECache{PType, uType, tabType, F} <: MPEMutableCache
     linsolve::F
 end
 
-struct MPEConservativeCache{PType, uType, tabType, F} <: MPEMutableCache
+struct MPEConservativeCache{PType, uType, tabType, F} <: MPRKMutableCache
     P::PType
     σ::uType
     tab::tabType
@@ -621,8 +622,7 @@ end
     integrator.u = u
 end
 
-struct MPRK22Cache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+struct MPRK22Cache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -633,8 +633,7 @@ struct MPRK22Cache{uType, PType, tabType, F} <:
     linsolve::F
 end
 
-struct MPRK22ConservativeCache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+struct MPRK22ConservativeCache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -1200,7 +1199,7 @@ end
     integrator.u = u
 end
 
-struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPRK43Cache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -1214,7 +1213,7 @@ struct MPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct MPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct MPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     tmp2::uType
     P::PType
