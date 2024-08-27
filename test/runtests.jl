@@ -787,8 +787,9 @@ end
                                                               std_rhs = f_static)
                 prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f_static)
 
-                algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),
-                        TRBDF2())
+                # implicit solvers and units don't work
+                # algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),TRBDF2())
+                algs = (Euler(), Tsit5(), Vern9())
 
                 for alg in algs
                     sol_ode = solve(prob_ode, alg; dt = 0.1u"s")
