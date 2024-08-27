@@ -787,7 +787,8 @@ end
                                                               std_rhs = f_static)
                 prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f_static)
 
-                algs = (Euler(), Tsit5())
+                algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),
+                        TRBDF2())
 
                 for alg in algs
                     alg = Euler()
@@ -840,10 +841,10 @@ end
                 P_sparse = sparse(P_tridiagonal)
                 D_dense = zeros(4)u"N/s"
 
-                alg = Euler()
+                algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),
+                        TRBDF2())
 
                 prob0 = ODEProblem(f!, u0, tspan)
-                sol0 = solve(prob0, alg; dt = 0.2u"s")
 
                 probs = Array{Any}(undef, 14)
                 probs[1] = ConservativePDSProblem(P!, u0, tspan)
@@ -868,11 +869,14 @@ end
                 probs[14] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse,
                                        std_rhs = f!)
 
-                for prob in probs
-                    sol = solve(prob, alg; dt = 0.2u"s")
+                for alg in algs
+                    sol0 = solve(prob0, alg; dt = 0.2u"s")
+                    for prob in probs
+                        sol = solve(prob, alg; dt = 0.2u"s")
 
-                    @test sol0.t ≈ sol.t
-                    @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                        @test sol0.t ≈ sol.t
+                        @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                    end
                 end
             end
         end
