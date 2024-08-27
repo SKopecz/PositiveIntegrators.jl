@@ -791,7 +791,6 @@ end
                         TRBDF2())
 
                 for alg in algs
-                    alg = Euler()
                     sol_ode = solve(prob_ode, alg; dt = 0.1u"s")
                     sol_cpds = solve(prob_cpds, alg; dt = 0.1u"s")
                     sol_pds = solve(prob_pds, alg; dt = 0.1u"s")
