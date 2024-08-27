@@ -201,8 +201,7 @@ end
     integrator.u = u
 end
 
-struct SSPMPRK22Cache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+struct SSPMPRK22Cache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -213,8 +212,7 @@ struct SSPMPRK22Cache{uType, PType, tabType, F} <:
     linsolve::F
 end
 
-struct SSPMPRK22ConservativeCache{uType, PType, tabType, F} <:
-       OrdinaryDiffEqMutableCache
+struct SSPMPRK22ConservativeCache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     P::PType
     P2::PType
@@ -709,7 +707,7 @@ end
     integrator.u = u
 end
 
-struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43Cache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     tmp2::uType
     P::PType
@@ -724,7 +722,7 @@ struct SSPMPRK43Cache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
     linsolve::F
 end
 
-struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: OrdinaryDiffEqMutableCache
+struct SSPMPRK43ConservativeCache{uType, PType, tabType, F} <: MPRKMutableCache
     tmp::uType
     tmp2::uType
     P::PType
