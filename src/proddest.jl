@@ -199,7 +199,7 @@ function (PD::PDSStdRHS)(du, u, p, t)
 end
 
 # New problem type ConservativePDSProblem
-"""ConservativePDSProblem
+"""
     ConservativePDSProblem(P, u0, tspan, p = NullParameters();
                            p_prototype = nothing,
                            analytic = nothing,
