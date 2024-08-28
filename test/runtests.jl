@@ -5,7 +5,7 @@ using Statistics: mean
 
 using StaticArrays: MVector, @SVector, SA
 
-using Unitful
+using Unitful: @u_str
 
 using OrdinaryDiffEq
 using PositiveIntegrators
