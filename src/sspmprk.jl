@@ -467,7 +467,8 @@ algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. To display the default value for data type `type` evaluate 
-`PositiveIntegrators.small_constant_function_SSPMPRK43(type)`.
+`SSPMPRK43. small_constant_function(type)`, where `type` can be, e.g.,
+`Float64`.
 
 The current implementation only supports fixed time steps.
 
