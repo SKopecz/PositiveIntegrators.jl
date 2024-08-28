@@ -988,7 +988,8 @@ algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. To display the default value for data type `type` evaluate 
-`PositiveIntegrators.small_constant_function_MPRK43II(type)`.
+`MPRK43II(gamma).small_constant_function(type)`, where `type` can be, e.g.,
+`Float64`.
 
 ## References
 
