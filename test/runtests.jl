@@ -803,9 +803,31 @@ end
                     sol_cpds_static_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
                     sol_pds_static_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
 
-                    @test sol_ode ≈ sol_cpds ≈ sol_pds ≈ sol_cpds_rhs ≈ sol_pds_rhs ≈
-                          sol_ode_static ≈ sol_cpds_static ≈
-                          sol_pds_static ≈ sol_cpds_static_rhs ≈ sol_pds_static_rhs
+                    @test sol_ode.t ≈ sol_cpds.t
+                    @test sol_ode.t ≈ sol_pds.t
+                    @test sol_ode.t ≈ sol_cpds_rhs.t
+                    @test sol_ode.t ≈ sol_pds_rhs.t
+                    @test sol_ode.t ≈ sol_ode_static.t
+                    @test sol_ode.t ≈ sol_cpds_static.t
+                    @test sol_ode.t ≈ sol_pds_static.t
+                    @test sol_ode.t ≈ sol_cpds_static_rhs.t
+                    @test sol_ode.t ≈ sol_pds_static_rhs.t
+
+                    # isapprox(sol0.u,sol.u) tries to check norm(sol0.u-sol.u) < 0.0,
+                    # which fails, because we have units on the left, but not on the right
+                    # In addition, abstol with units is not allowed.
+                    # Hence, we strip the units.
+                    # For Vector{Quantity{}} like sol.t there is an isapprox method in quantities.jl, which
+                    # takes care of the stripping.
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_ode_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_static_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_static_rhs.u)
                 end
             end
             @testset "in-place" begin
@@ -875,15 +897,14 @@ end
                     for prob in probs
                         sol = solve(prob, alg; dt = 0.2u"s")
 
-                        #@test sol0.t ≈ sol.t
+                        @test sol0.t ≈ sol.t
                         # isapprox(sol0.u,sol.u) tries to check norm(sol0.u-sol.u) < 0.0,
                         # which fails, because we have units on the left, but not on the right
                         # In addition, abstol with units is not allowed.
                         # Hence, we strip the units.
-                        # For Vector{Quantity{}} like sol.t there is a isapprox method in quantities.jl, which
+                        # For Vector{Quantity{}} like sol.t there is an isapprox method in quantities.jl, which
                         # takes care of the stripping.
-                        #@test ustrip.(sol0.u) ≈ ustrip.(sol.u)
-                        @test sol0 ≈ sol
+                        @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
                     end
                 end
             end
