@@ -362,8 +362,8 @@ end
 function (PD::ConservativePDSStdRHS)(u::SVector, p, t)
     P = PD.p(u, p, t)
 
-    f = similar(u ./ oneunit(t)) #constructs MVector
-    zeroT = zero(eltype(f))
+    f = similar(P[:, 1]) #constructs MVector
+    zeroT = zero(eltype(P))
     for i in eachindex(f)
         f[i] = zeroT
     end
