@@ -99,7 +99,7 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     end
     # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store
     # evaluations of D.
-    d_prototype = similar(u0) / oneunit(first(tspan))
+    d_prototype = similar(u0 ./ oneunit(first(tspan)))
 
     PD = PDSFunction{iip}(P, D; p_prototype, d_prototype,
                           analytic, std_rhs)
@@ -362,8 +362,8 @@ end
 function (PD::ConservativePDSStdRHS)(u::SVector, p, t)
     P = PD.p(u, p, t)
 
-    f = similar(P[:, 1]) #constructs MVector
-    zeroT = zero(eltype(P))
+    f = similar(u ./ oneunit(t)) #constructs MVector
+    zeroT = zero(eltype(f))
     for i in eachindex(f)
         f[i] = zeroT
     end
