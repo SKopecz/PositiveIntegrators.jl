@@ -508,9 +508,7 @@ end
 
 function SSPMPRK43(; linsolve = LUFactorization(),
                    small_constant = small_constant_function_SSPMPRK43)
-    if isnothing(small_constant)
-        small_constant_function = floatmin
-    elseif small_constant isa Number
+    if small_constant isa Number
         small_constant_function = Returns(small_constant)
     else # assume small_constant isa Function
         small_constant_function = small_constant

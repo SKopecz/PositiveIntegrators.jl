@@ -1105,7 +1105,7 @@ end
 
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
                     MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
-                    SSPMPRK22(0.5f0, 1.0f0))
+                    SSPMPRK22(0.5f0, 1.0f0), SSPMPRK43())
             for alg in algs
                 sol = solve(prob, alg; dt = 0.1f0, save_everystep = false)
                 @test sol.t isa Vector{Float32}
