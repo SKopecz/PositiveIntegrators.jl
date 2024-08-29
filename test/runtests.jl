@@ -875,8 +875,15 @@ end
                     for prob in probs
                         sol = solve(prob, alg; dt = 0.2u"s")
 
-                        @test sol0.t ≈ sol.t
-                        @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                        #@test sol0.t ≈ sol.t
+                        # isapprox(sol0.u,sol.u) tries to check norm(sol0.u-sol.u) < 0.0,
+                        # which fails, because we have units on the left, but not on the right
+                        # In addition, abstol with units is not allowed.
+                        # Hence, we strip the units.
+                        # For Vector{Quantity{}} like sol.t there is a isapprox method in quantities.jl, which
+                        # takes care of the stripping.
+                        #@test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                        @test sol0 ≈ sol
                     end
                 end
             end
