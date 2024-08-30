@@ -13,7 +13,7 @@ A structure describing a system of ordinary differential equations in form of a 
 - the destruction vector ``D``
 
 The off-diagonal elements of ``P`` contain production terms with destruction counterparts
-(that do not need to be stored explicitly but are extraced from ``P``).
+(that do not need to be stored explicitly but are extracted from ``P``).
 The diagonal of ``P`` contains production terms without destruction counterparts.
 The vector of destruction terms ``D`` contains destruction terms without production counterparts.
 `u0` is the vector of initial conditions and `tspan` the time span
@@ -206,7 +206,7 @@ A structure describing a conservative system of ordinary differential equation i
 a production-destruction system (PDS).
 `P` denotes the function defining the production matrix ``P``.
 The off-diagonal elements of ``P`` contain production terms with destruction counterparts
-(that do not need to be stored explicitly but are extraced from ``P``).
+(that do not need to be stored explicitly but are extracted from ``P``).
 The diagonal of ``P`` contains production terms without destruction counterparts.
 `u0` is the vector of initial conditions and `tspan` the time span
 `(t_initial, t_final)` of the problem. The optional argument `p` can be used
