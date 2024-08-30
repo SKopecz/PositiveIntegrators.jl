@@ -283,13 +283,10 @@ end
             @test counter_pd[] == 0
             @test counter_rhs[] == 1
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred solve(prob_default, MPE(); dt = 0.1)
-            @test 10 <= counter_p[] <= 11
-            @test 10 <= counter_d[] <= 11
-            @test counter_d[] == counter_p[]
+            @test 10 <= counter_pd[] <= 11
             @test counter_rhs[] == 0
 
             counter_pd[] = 0
