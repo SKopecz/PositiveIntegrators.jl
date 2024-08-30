@@ -407,9 +407,9 @@ end
     # Same as linres = P \ linsolve_rhs
     linsolve.A = P
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 end
 
 @muladd function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
@@ -433,9 +433,9 @@ end
     # Same as linres = P \ uprev
     linsolve.A = P
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 end
 
 ### MPRK22 #####################################################################################
@@ -734,9 +734,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if isone(a21)
         σ .= u
@@ -771,9 +771,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
     # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
@@ -819,9 +819,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if isone(a21)
         σ .= u
@@ -849,9 +849,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
     # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
@@ -1341,12 +1341,12 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
     if !(q1 ≈ q2)
         tmp2 .= u #u2 in out-of-place version
     end
-    integrator.stats.nsolve += 1
 
     @.. broadcast=false σ=σ^(1 - q1) * u^q1
     @.. broadcast=false σ=σ + small_constant
@@ -1377,9 +1377,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if !(q1 ≈ q2)
         @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
@@ -1442,9 +1442,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now tmp stores the error estimate
     @.. broadcast=false tmp=u - σ
@@ -1488,12 +1488,12 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
     if !(q1 ≈ q2)
         tmp2 .= u #u2 in out-of-place version
     end
-    integrator.stats.nsolve += 1
 
     @.. broadcast=false σ=σ^(1 - q1) * u^q1
     @.. broadcast=false σ=σ + small_constant
@@ -1517,9 +1517,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if !(q1 ≈ q2)
         @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
@@ -1568,9 +1568,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now tmp stores the error estimate
     @.. broadcast=false tmp=u - σ

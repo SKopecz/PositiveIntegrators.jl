@@ -1685,12 +1685,12 @@ end
             prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
                                                  p_prototype = P_sparse)
             ## nonconservative PDS
-            prob_default2 = PDSProblem(prod_dest_dense!, dest!, u0, tspan)
-            prob_tridiagonal2 = PDSProblem(prod_dest_tridiagonal!, dest!, u0, tspan;
+            prob_default2 = PDSProblem(prod_dest_dense!, u0, tspan)
+            prob_tridiagonal2 = PDSProblem(prod_dest_tridiagonal!, u0, tspan;
                                            p_prototype = P_tridiagonal)
-            prob_dense2 = PDSProblem(prod_dest_dense!, dest!, u0, tspan;
+            prob_dense2 = PDSProblem(prod_dest_dense!, u0, tspan;
                                      p_prototype = P_dense)
-            prob_sparse2 = PDSProblem(prod_dest_sparse!, dest!, u0, tspan;
+            prob_sparse2 = PDSProblem(prod_dest_sparse!, u0, tspan;
                                       p_prototype = P_sparse)
             #solve and test
             for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
@@ -1938,8 +1938,8 @@ end
             function prod_dest(u, p, t)
                 P = similar(u, (length(u), length(u)))
                 d = similar(u)
-                prod_dest!(P, D, u, p, t)
-                return d
+                prod_dest!(P, d, u, p, t)
+                return P, d
             end
 
             prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
@@ -1989,7 +1989,7 @@ end
                 P = similar(u, (length(u), length(u)))
                 d = similar(u)
                 prod_dest!(P, d, u, p, t)
-                return d
+                return P, d
             end
 
             prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
@@ -2130,7 +2130,7 @@ end
                     P = similar(u, (length(u), length(u)))
                     d = similar(u)
                     prod_dest!(P, d, u, p, t)
-                    return P
+                    return P, d
                 end
                 u0 = [0.0; 2.0]
                 prob_oop = PDSProblem(prod_dest, u0, (0.0, 1.0))
@@ -2148,7 +2148,7 @@ end
             alg = MPE()
             u_exact(t) = 1 / (2 + 3 * t)
             f(t) = -3 / (2 + 3 * t)^2
-            function prod_dest!(P, u, p, t)
+            function prod_dest!(P, D, u, p, t)
                 fill!(P, zero(eltype(P)))
                 fill!(D, zero(eltype(D)))
                 D[1, 1] = -f(t)
