@@ -15,7 +15,7 @@ using Reexport: @reexport
 @reexport using SciMLBase: ODEProblem, init, solve
 
 using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize,
-                 isinplace
+                 TooFewArgumentsError, isinplace
 
 # TODO: Check imports and using statements below, reduce if possible
 using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm, ODESolution

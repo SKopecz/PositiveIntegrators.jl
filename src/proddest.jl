@@ -2,35 +2,42 @@
 abstract type AbstractPDSProblem end
 
 """
-    PDSProblem(P, D, u0, tspan, p = NullParameters();
+    PDSProblem(PD, u0, tspan, p = NullParameters();
                p_prototype = nothing,
                analytic = nothing,
                std_rhs = nothing)
 
 A structure describing a system of ordinary differential equations in form of a production-destruction system (PDS).
-`P` denotes the function defining the production matrix ``P``.
+`PD` denotes the function defining
+- the production matrix ``P``
+- the destruction vector ``D``
+
+The off-diagonal elements of ``P`` contain production terms with destruction counterparts
+(that do not need to be stored explicitly but are extraced from ``P``).
 The diagonal of ``P`` contains production terms without destruction counterparts.
-`D` is the function defining the vector of destruction terms ``D`` without production counterparts.
+The vector of destruction terms ``D`` contains destruction terms without production counterparts.
 `u0` is the vector of initial conditions and `tspan` the time span
 `(t_initial, t_final)` of the problem. The optional argument `p` can be used
-to pass additional parameters to the functions `P` and `D`.
+to pass additional parameters to the function `PD`.
 
-The functions `P` and `D` can be used either in the out-of-place form with signature
-`production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
+The function `PD` can be used either in the out-of-place form with signature
+`production_matrix, destruction_vector = PD(u, p, t)` or the in-place form
+`PD(production_matrix, destruction_vector, u, p, t)`.
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
-  If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
-  set to `zeros(eltype(u0), (length(u0), length(u0)))`.
+- `p_prototype`: If `PD` is given in in-place form, `p_prototype` or copies thereof are used
+  to store evaluations of `P`.
+  If `p_prototype` is not specified explicitly and `PD` is in-place, then `p_prototype`
+  will be internally set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
   Specifying the analytic solution can be useful for plotting and convergence tests.
 - `std_rhs`: The standard ODE right-hand side evaluation function callable
   as `du = std_rhs(u, p, t)` for the out-of-place form and
   as `std_rhs(du, u, p, t)` for the in-place form. Solvers that do not rely on
-  the production-destruction representation of the ODE, will use this function
-  instead to compute the solution. If not specified,
-  a default implementation calling `P` and `D` is used.
+  the production-destruction representation of the ODE will use this function
+  instead to compute the solution (e.g., standard ODE methods implemented in
+  OrdinaryDiffEq.jl). If not specified, a default implementation calling `PD` is used.
 
 ## References
 
@@ -43,10 +50,9 @@ The functions `P` and `D` can be used either in the out-of-place form with signa
 struct PDSProblem{iip} <: AbstractPDSProblem end
 
 # New ODE function PDSFunction
-struct PDSFunction{iip, specialize, P, D, PrototypeP, PrototypeD, StdRHS, Ta} <:
+struct PDSFunction{iip, specialize, PD, PrototypeP, PrototypeD, StdRHS, Ta} <:
        AbstractODEFunction{iip}
-    p::P
-    d::D
+    pd::PD
     p_prototype::PrototypeP
     d_prototype::PrototypeD
     std_rhs::StdRHS
@@ -73,21 +79,15 @@ function Base.getproperty(obj::PDSFunction, sym::Symbol)
 end
 
 # Most general constructor for PDSProblems
-function PDSProblem(P, D, u0, tspan, p = NullParameters();
+function PDSProblem(PD, u0, tspan, p = NullParameters();
                     kwargs...)
-    Piip = isinplace(P, 4)
-    Diip = isinplace(D, 4)
-    if Piip == Diip
-        iip = Piip
-    else
-        error("Conflict due to the joint use of in-place and out-of-place functions.")
-    end
-    return PDSProblem{iip}(P, D, u0, tspan, p; kwargs...)
+    iip = isinplace(PD, 5, "PD"; outofplace_param_number = 3)
+    return PDSProblem{iip}(PD, u0, tspan, p; kwargs...)
 end
 
 # Specialized constructor for PDSProblems setting `iip` manually
 # (arbitrary functions)
-function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
+function PDSProblem{iip}(PD, u0, tspan, p = NullParameters();
                          p_prototype = nothing,
                          analytic = nothing,
                          std_rhs = nothing,
@@ -101,98 +101,95 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
     # evaluations of D.
     d_prototype = similar(u0 ./ oneunit(first(tspan)))
 
-    PD = PDSFunction{iip}(P, D; p_prototype, d_prototype,
-                          analytic, std_rhs)
-    PDSProblem{iip}(PD, u0, tspan, p; kwargs...)
+    pds = PDSFunction{iip}(PD; p_prototype, d_prototype, analytic, std_rhs)
+    PDSProblem{iip}(pds, u0, tspan, p; kwargs...)
 end
 
 # Specialized constructor for PDSProblems setting `iip` manually
 # (PDSFunction)
-function PDSProblem{iip}(PD::PDSFunction, u0, tspan, p = NullParameters();
+function PDSProblem{iip}(pds::PDSFunction, u0, tspan, p = NullParameters();
                          kwargs...) where {iip}
-    ODEProblem(PD, u0, tspan, p, PDSProblem{iip}(); kwargs...)
+    ODEProblem(pds, u0, tspan, p, PDSProblem{iip}(); kwargs...)
 end
 
 # Specialized constructor for PDSFunction setting `iip` manually
-function PDSFunction{iip}(P, D; kwargs...) where {iip}
-    PDSFunction{iip, FullSpecialize}(P, D; kwargs...)
+function PDSFunction{iip}(PD; kwargs...) where {iip}
+    PDSFunction{iip, FullSpecialize}(PD; kwargs...)
 end
 
 # Most specific constructor for PDSFunction
-function PDSFunction{iip, FullSpecialize}(P, D;
+function PDSFunction{iip, FullSpecialize}(PD;
                                           p_prototype = nothing,
                                           d_prototype = nothing,
                                           analytic = nothing,
                                           std_rhs = nothing) where {iip}
     if std_rhs === nothing
-        std_rhs = PDSStdRHS(P, D, p_prototype, d_prototype)
+        std_rhs = PDSStdRHS(PD, p_prototype, d_prototype)
     end
-    PDSFunction{iip, FullSpecialize, typeof(P), typeof(D), typeof(p_prototype),
+    PDSFunction{iip, FullSpecialize, typeof(PD), typeof(p_prototype),
                 typeof(d_prototype),
-                typeof(std_rhs), typeof(analytic)}(P, D, p_prototype, d_prototype, std_rhs,
+                typeof(std_rhs), typeof(analytic)}(PD, p_prototype, d_prototype, std_rhs,
                                                    analytic)
 end
 
 # Evaluation of a PDSFunction
-function (PD::PDSFunction)(u, p, t)
-    return PD.std_rhs(u, p, t)
+function (pds::PDSFunction)(u, p, t)
+    return pds.std_rhs(u, p, t)
 end
 
-function (PD::PDSFunction)(du, u, p, t)
-    return PD.std_rhs(du, u, p, t)
+function (pds::PDSFunction)(du, u, p, t)
+    return pds.std_rhs(du, u, p, t)
 end
 
 # Default implementation of the standard right-hand side evaluation function
-struct PDSStdRHS{P, D, PrototypeP, PrototypeD, TMP} <: Function
-    p::P
-    d::D
+struct PDSStdRHS{PD, PrototypeP, PrototypeD, TMP} <: Function
+    pd::PD
     p_prototype::PrototypeP
     d_prototype::PrototypeD
     tmp::TMP
 end
 
-function PDSStdRHS(P, D, p_prototype, d_prototype)
+function PDSStdRHS(PD, p_prototype, d_prototype)
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),)) /
               oneunit(first(p_prototype)) # drop units
     else
         tmp = nothing
     end
-    PDSStdRHS(P, D, p_prototype, d_prototype, tmp)
+    PDSStdRHS(PD, p_prototype, d_prototype, tmp)
 end
 
 # Evaluation of a PDSStdRHS (out-of-place)
 function (PD::PDSStdRHS)(u, p, t)
-    P = PD.p(u, p, t)
-    D = PD.d(u, p, t)
-    diag(P) + vec(sum(P, dims = 2)) -
-    vec(sum(P, dims = 1)) - vec(D)
+    P, D = PD.pd(u, p, t)
+    rhs = diag(P) + vec(sum(P, dims = 2)) - vec(sum(P, dims = 1)) - vec(D)
+    return rhs
 end
 
 # Evaluation of a PDSStdRHS (in-place)
 function (PD::PDSStdRHS)(du, u, p, t)
-    PD.p(PD.p_prototype, u, p, t)
+    PD.pd(PD.p_prototype, PD.d_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
-        # row sum coded as matrix-vector product 
+        # row sum coded as matrix-vector product
         fill!(PD.tmp, one(eltype(PD.tmp)))
         mul!(vec(du), PD.p_prototype, PD.tmp)
 
-        for i in 1:length(u)  #vec(du) .+= diag(PD.p_prototype)
+        vec(du) .-= PD.d_prototype
+
+        for i in eachindex(u)  #vec(du) .+= diag(PD.p_prototype)
             du[i] += PD.p_prototype[i, i]
         end
         sum!(PD.d_prototype', PD.p_prototype)
         vec(du) .-= PD.d_prototype
-        PD.d(PD.d_prototype, u, p, t)
-        vec(du) .-= PD.d_prototype
     else
-        PD.d(PD.d_prototype, u, p, t)
         # This implementation does not need any auxiliary vectors
-        for i in 1:length(u)
-            du[i] = PD.p_prototype[i, i] - PD.d_prototype[i]
-            for j in 1:length(u)
-                du[i] += PD.p_prototype[i, j] - PD.p_prototype[j, i]
+        for i in eachindex(u)
+            du_i = PD.p_prototype[i, i] - PD.d_prototype[i]
+            for j in eachindex(u)
+                du_i += PD.p_prototype[i, j] - PD.p_prototype[j, i]
             end
+            du[i] = du_i
         end
     end
     return nothing
@@ -205,29 +202,33 @@ end
                            analytic = nothing,
                            std_rhs = nothing)
 
-A structure describing a conservative system of ordinary differential equation in form of a production-destruction system (PDS).
+A structure describing a conservative system of ordinary differential equation in form of
+a production-destruction system (PDS).
 `P` denotes the function defining the production matrix ``P``.
+The off-diagonal elements of ``P`` contain production terms with destruction counterparts
+(that do not need to be stored explicitly but are extraced from ``P``).
 The diagonal of ``P`` contains production terms without destruction counterparts.
 `u0` is the vector of initial conditions and `tspan` the time span
 `(t_initial, t_final)` of the problem. The optional argument `p` can be used
 to pass additional parameters to the function `P`.
 
 The function `P` can be given either in the out-of-place form with signature
-`production_terms = P(u, p, t)` or the in-place form `P(production_terms, u, p, t)`.
+`production_matrix = P(u, p, t)` or the in-place form `P(production_matrix, u, p, t)`.
 
 ### Keyword arguments: ###
 
-- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof are used to store evaluations of `P`.
-  If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype` will be internally
-  set to `zeros(eltype(u0), (length(u0), length(u0)))`.
+- `p_prototype`: If `P` is given in in-place form, `p_prototype` or copies thereof
+  are used to store evaluations of `P`.
+  If `p_prototype` is not specified explicitly and `P` is in-place, then `p_prototype`
+  will be internally set to `zeros(eltype(u0), (length(u0), length(u0)))`.
 - `analytic`: The analytic solution of a PDS must be given in the form `f(u0,p,t)`.
   Specifying the analytic solution can be useful for plotting and convergence tests.
 - `std_rhs`: The standard ODE right-hand side evaluation function callable
   as `du = std_rhs(u, p, t)` for the out-of-place form and
   as `std_rhs(du, u, p, t)` for the in-place form. Solvers that do not rely on
   the production-destruction representation of the ODE, will use this function
-  instead to compute the solution. If not specified,
-  a default implementation calling `P` is used.
+  instead to compute the solution (e.g., standard ODE methods implemented in
+  OrdinaryDiffEq.jl). If not specified, a default implementation calling `P` is used.
 
 ## References
 

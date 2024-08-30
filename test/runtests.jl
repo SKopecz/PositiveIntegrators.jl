@@ -142,26 +142,28 @@ end
 # u₁' = -3 u₁ + 0.5 u₂ - 2 u₁ + 0.5 u₂ (= -5 u₁ + u₂)
 # u₂' =  3 u₁ - 0.5 u₂ - 0.5 u₂ + 2 u₁ (= 5 u₁ - u₂)
 # linear model problem - nonconservative - out-of-place
-linmodP(u, p, t) = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
-linmodD(u, p, t) = [2 * u[1]; 0.5 * u[2]]
-const prob_pds_linmod_nonconservative = PDSProblem(linmodP, linmodD, [0.9, 0.1], (0.0, 2.0),
+function linmodPD(u, p, t)
+    P = [0.5*u[2] 0.5*u[2]; 3*u[1] 2*u[1]]
+    d = [2 * u[1]; 0.5 * u[2]]
+    return P, d
+end
+const prob_pds_linmod_nonconservative = PDSProblem(linmodPD, [0.9, 0.1], (0.0, 2.0),
                                                    [5.0, 1.0];
                                                    analytic = f_analytic)
 
 # linear model problem - nonconservative -  in-place
-function linmodP!(P, u, p, t)
+function linmodPD!(P, D, u, p, t)
     P[1, 1] = 0.5 * u[2]
     P[1, 2] = 0.5 * u[2]
     P[2, 1] = 3 * u[1]
     P[2, 2] = 2 * u[1]
-    return nothing
-end
-function linmodD!(D, u, p, t)
+
     D[1] = 2 * u[1]
     D[2] = 0.5 * u[2]
+
     return nothing
 end
-const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [0.9, 0.1],
+const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodPD!, [0.9, 0.1],
                                                            (0.0, 2.0), [5.0, 1.0];
                                                            analytic = f_analytic)
 
@@ -200,8 +202,9 @@ function linear_advection_fd_upwind_P!(P::SparseMatrixCSC, u, p, t)
     end
     return nothing
 end
-function linear_advection_fd_upwind_D!(D, u, p, t)
-    D .= 0.0
+function linear_advection_fd_upwind_PD!(P, D, u, p, t)
+    linear_advection_fd_upwind_P!(P, u, p, t)
+    fill!(D, 0.0)
     return nothing
 end
 
@@ -219,15 +222,11 @@ end
     end
 
     @testset "ODE RHS" begin
-        let counter_p = Ref(1), counter_d = Ref(1), counter_rhs = Ref(1)
+        let counter_pd = Ref(1), counter_rhs = Ref(1)
             # out-of-place
-            prod1 = (u, p, t) -> begin
-                counter_p[] += 1
-                return [0 u[2]; u[1] 0]
-            end
-            dest1 = (u, p, t) -> begin
-                counter_d[] += 1
-                return zero(u)
+            prod_dest_1 = (u, p, t) -> begin
+                counter_pd[] += 1
+                return [0 u[2]; u[1] 0], zero(u)
             end
             rhs1 = (u, p, t) -> begin
                 counter_rhs[] += 1
@@ -235,36 +234,28 @@ end
             end
             u0 = [1.0, 0.0]
             tspan = (0.0, 1.0)
-            prob_default = PDSProblem(prod1, dest1, u0, tspan)
-            prob_special = PDSProblem(prod1, dest1, u0, tspan; std_rhs = rhs1)
+            prob_default = PDSProblem(prod_dest_1, u0, tspan)
+            prob_special = PDSProblem(prod_dest_1, u0, tspan; std_rhs = rhs1)
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred prob_default.f(u0, nothing, 0.0)
-            @test counter_p[] == 1
-            @test counter_d[] == 1
+            @test counter_pd[] == 1
             @test counter_rhs[] == 0
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred prob_special.f(u0, nothing, 0.0)
-            @test counter_p[] == 0
-            @test counter_d[] == 0
+            @test counter_pd[] == 0
             @test counter_rhs[] == 1
 
             # in-place
-            prod1! = (P, u, p, t) -> begin
-                counter_p[] += 1
+            prod_dest_1! = (P, D, u, p, t) -> begin
+                counter_pd[] += 1
                 P[1, 1] = 0
                 P[1, 2] = u[2]
                 P[2, 1] = u[1]
                 P[2, 2] = 0
-                return nothing
-            end
-            dest1! = (D, u, p, t) -> begin
-                counter_d[] += 1
                 fill!(D, 0)
                 return nothing
             end
@@ -276,24 +267,20 @@ end
             end
             u0 = [1.0, 0.0]
             tspan = (0.0, 1.0)
-            prob_default = PDSProblem(prod1!, dest1!, u0, tspan)
-            prob_special = PDSProblem(prod1!, dest1!, u0, tspan; std_rhs = rhs1!)
+            prob_default = PDSProblem(prod_dest_1!, u0, tspan)
+            prob_special = PDSProblem(prod_dest_1!, u0, tspan; std_rhs = rhs1!)
 
             du = similar(u0)
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred prob_default.f(du, u0, nothing, 0.0)
-            @test counter_p[] == 1
-            @test counter_d[] == 1
+            @test counter_pd[] == 1
             @test counter_rhs[] == 0
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred prob_special.f(du, u0, nothing, 0.0)
-            @test counter_p[] == 0
-            @test counter_d[] == 0
+            @test counter_pd[] == 0
             @test counter_rhs[] == 1
 
             counter_p[] = 0
@@ -305,21 +292,16 @@ end
             @test counter_d[] == counter_p[]
             @test counter_rhs[] == 0
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred solve(prob_default, Euler(); dt = 0.1)
-            @test 10 <= counter_p[] <= 11
-            @test 10 <= counter_d[] <= 11
-            @test counter_d[] == counter_p[]
+            @test 10 <= counter_pd[] <= 11
             @test counter_rhs[] == 0
 
-            counter_p[] = 0
-            counter_d[] = 0
+            counter_pd[] = 0
             counter_rhs[] = 0
             @inferred solve(prob_special, Euler(); dt = 0.1)
-            @test counter_p[] == 0
-            @test counter_d[] == 0
+            @test counter_pd[] == 0
             @test 10 <= counter_rhs[] <= 11
         end
     end
@@ -412,22 +394,18 @@ end
             linmod_ODE_ip = ODEProblem(linmod!, u0, tspan)
 
             # out-of-place syntax for PDS
-            linmodP(u, p, t) = [0 u[2]; 5*u[1] 0]
-            linmodD(u, p, t) = [0.0; 0.0]
-            linmod_PDS_op = PDSProblem(linmodP, linmodD, u0, tspan)
+            linmodPD(u, p, t) = [0 u[2]; 5*u[1] 0], [0.0; 0.0]
+            linmod_PDS_op = PDSProblem(linmodPD, u0, tspan)
 
             # in-place sytanx for PDS
-            function linmodP!(P, u, p, t)
+            function linmodPD!(P, u, p, t)
                 fill!(P, zero(eltype(P)))
                 P[1, 2] = u[2]
                 P[2, 1] = 5 * u[1]
-                return nothing
-            end
-            function linmodD!(D, u, p, t)
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            linmod_PDS_ip = PDSProblem(linmodP!, linmodD!, u0, tspan)
+            linmod_PDS_ip = PDSProblem(linmodPD!, u0, tspan)
 
             # solutions
             sol_linmod_ODE_op = solve(linmod_ODE_op, Tsit5())
@@ -448,14 +426,6 @@ end
             alloc1 = @allocated(solve(linmod_ODE_ip, Tsit5()))
             alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
             @test 0.95 < alloc1 / alloc2 < 1.05
-        end
-
-        @testset "PDSProblem error handling" begin
-            P(u, p, t) = 0.0
-            D(du, u, p, t) = 0.0
-            if VERSION >= v"1.8"
-                @test_throws "in-place and out-of-place" PDSProblem(P, D, 0.0, (0.0, 1.0))
-            end
         end
     end
 
@@ -480,9 +450,9 @@ end
             linmod_f_ip = ODEProblem(linmod!, u0, tspan)
             # out-of-place syntax for PDS
             linmodP(u, p, t) = [0.0 u[2]; 5.0*u[1] 0.0]
-            linmodD(u, p, t) = [0.0; 0.0]
-            linmod_PDS_op = PDSProblem(linmodP, linmodD, u0, tspan)
-            linmod_PDS_op_2 = PDSProblem{false}(linmodP, linmodD, u0, tspan)
+            linmodPD(u, p, t) = linmodP(u, p, t), [0.0; 0.0]
+            linmod_PDS_op = PDSProblem(linmodPD, u0, tspan)
+            linmod_PDS_op_2 = PDSProblem{false}(linmodPD, u0, tspan)
             linmod_ConsPDS_op = ConservativePDSProblem(linmodP, u0, tspan)
             linmod_ConsPDS_op_2 = ConservativePDSProblem{false}(linmodP, u0, tspan)
             # in-place sytanx for PDS
@@ -492,12 +462,13 @@ end
                 P[2, 1] = 5.0 * u[1]
                 return nothing
             end
-            function linmodD!(D, u, p, t)
+            function linmodPD!(P, D, u, p, t)
+                linmodP!(P, u, p, t)
                 D .= 0.0
                 return nothing
             end
-            linmod_PDS_ip = PDSProblem(linmodP!, linmodD!, u0, tspan)
-            linmod_PDS_ip_2 = PDSProblem{true}(linmodP!, linmodD!, u0, tspan)
+            linmod_PDS_ip = PDSProblem(linmodPD!, u0, tspan)
+            linmod_PDS_ip_2 = PDSProblem{true}(linmodPD!, u0, tspan)
             linmod_ConsPDS_ip = ConservativePDSProblem(linmodP!, u0, tspan)
             linmod_ConsPDS_ip_2 = ConservativePDSProblem{true}(linmodP!, u0, tspan)
 
@@ -552,24 +523,20 @@ end
             end
             lotvol_f_ip = ODEProblem(lotvol!, u0, tspan)
             # out-of-place syntax for PDS
-            lotvolP(u, p, t) = [u[1] 0.0; u[1]*u[2] 0.0]
-            lotvolD(u, p, t) = [0.0; u[2]]
-            lotvol_PDS_op = PDSProblem(lotvolP, lotvolD, u0, tspan)
-            lotvol_PDS_op_2 = PDSProblem{false}(lotvolP, lotvolD, u0, tspan)
+            lotvolPD(u, p, t) = [u[1] 0.0; u[1]*u[2] 0.0], [0.0; u[2]]
+            lotvol_PDS_op = PDSProblem(lotvolPD, u0, tspan)
+            lotvol_PDS_op_2 = PDSProblem{false}(lotvolPD, u0, tspan)
             # in-place sytanx for PDS
-            function lotvolP!(P, u, p, t)
+            function lotvolPD!(P, D, u, p, t)
                 P .= 0.0
                 P[1, 1] = u[1]
                 P[2, 1] = u[2] * u[1]
-                return nothing
-            end
-            function lotvolD!(D, u, p, t)
                 D .= 0.0
                 D[2] = u[2]
                 return nothing
             end
-            lotvol_PDS_ip = PDSProblem(lotvolP!, lotvolD!, u0, tspan)
-            lotvol_PDS_ip_2 = PDSProblem{true}(lotvolP!, lotvolD!, u0, tspan)
+            lotvol_PDS_ip = PDSProblem(lotvolPD!, u0, tspan)
+            lotvol_PDS_ip_2 = PDSProblem{true}(lotvolPD!, u0, tspan)
 
             # solutions
             sol_lotvol_f_op = solve(lotvol_f_op, Tsit5())
@@ -603,18 +570,15 @@ end
             linear_advection_fd_upwind_ODE = ODEProblem(linear_advection_fd_upwind_f!, u0,
                                                         tspan)
             # problem with dense matrices
-            linear_advection_fd_upwind_PDS_dense = PDSProblem(linear_advection_fd_upwind_P!,
-                                                              linear_advection_fd_upwind_D!,
+            linear_advection_fd_upwind_PDS_dense = PDSProblem(linear_advection_fd_upwind_PD!,
                                                               u0, tspan)
             # problem with sparse matrices
             p_prototype = spdiagm(-1 => ones(eltype(u0), N - 1),
                                   N - 1 => ones(eltype(u0), 1))
-            linear_advection_fd_upwind_PDS_sparse = PDSProblem(linear_advection_fd_upwind_P!,
-                                                               linear_advection_fd_upwind_D!,
+            linear_advection_fd_upwind_PDS_sparse = PDSProblem(linear_advection_fd_upwind_PD!,
                                                                u0, tspan;
                                                                p_prototype = p_prototype)
-            linear_advection_fd_upwind_PDS_sparse_2 = PDSProblem{true}(linear_advection_fd_upwind_P!,
-                                                                       linear_advection_fd_upwind_D!,
+            linear_advection_fd_upwind_PDS_sparse_2 = PDSProblem{true}(linear_advection_fd_upwind_PD!,
                                                                        u0, tspan;
                                                                        p_prototype = p_prototype)
             linear_advection_fd_upwind_ConsPDS_sparse = ConservativePDSProblem(linear_advection_fd_upwind_P!,
@@ -681,14 +645,16 @@ end
                 f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
                 P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
                 D(u, p, t) = [0.0; 0.0]u"N/s"
+                PD(u, p, t) = P(u, p, t), D(u, p, t)
                 g = PositiveIntegrators.ConservativePDSFunction{false}(P)
-                h = PositiveIntegrators.PDSFunction{false}(P, D)
+                h = PositiveIntegrators.PDSFunction{false}(PD)
 
                 f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
                 P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
                 D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+                PD_static(u, p, t) = P_static(u, p, t), D_static(u, p, t)
                 g_static = PositiveIntegrators.ConservativePDSFunction{false}(P_static)
-                h_static = PositiveIntegrators.PDSFunction{false}(P_static, D_static)
+                h_static = PositiveIntegrators.PDSFunction{false}(PD_static)
 
                 f1 = f(u0, nothing, t0)
                 g1 = g(u0, nothing, t0)
@@ -721,7 +687,8 @@ end
                     end
                     return nothing
                 end
-                function D!(D, u, p, t)
+                function PD!(P, D, u, p, t)
+                    P!(P, u, p, t)
                     fill!(D, zero(eltype(D)))
                     return nothing
                 end
@@ -738,13 +705,13 @@ end
                                                                                    p_prototype = P_tridiagonal)
                 f_sparse! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
                                                                               p_prototype = P_sparse)
-                g_dense! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                g_dense! = PositiveIntegrators.PDSFunction{true}(PD!,
                                                                  p_prototype = P_dense,
                                                                  d_prototype = D_dense)
-                g_tridiagonal! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                g_tridiagonal! = PositiveIntegrators.PDSFunction{true}(PD!,
                                                                        p_prototype = P_tridiagonal,
                                                                        d_prototype = D_dense)
-                g_sparse! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                g_sparse! = PositiveIntegrators.PDSFunction{true}(PD!,
                                                                   p_prototype = P_sparse,
                                                                   d_prototype = D_dense)
 
@@ -771,21 +738,23 @@ end
                 f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
                 P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
                 D(u, p, t) = [0.0; 0.0]u"N/s"
+                PD(u, p, t) = P(u, p, t), D(u, p, t)
                 f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
                 P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
                 D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+                PD_static(u, p, t) = P_static(u, p, t), D_static(u, p, t)
 
                 prob_ode = ODEProblem(f, u0, tspan)
                 prob_cpds = ConservativePDSProblem(P, u0, tspan)
-                prob_pds = PDSProblem(P, D, u0, tspan)
+                prob_pds = PDSProblem(PD, u0, tspan)
                 prob_cpds_rhs = ConservativePDSProblem(P, u0, tspan; std_rhs = f)
-                prob_pds_rhs = PDSProblem(P, D, u0, tspan; std_rhs = f)
+                prob_pds_rhs = PDSProblem(PD, u0, tspan; std_rhs = f)
                 prob_ode_static = ODEProblem(f, u0_static, tspan)
                 prob_cpds_static = ConservativePDSProblem(P, u0_static, tspan)
-                prob_pds_static = PDSProblem(P, D, u0_static, tspan)
+                prob_pds_static = PDSProblem(PD, u0_static, tspan)
                 prob_cpds_static_rhs = ConservativePDSProblem(P, u0_static, tspan;
                                                               std_rhs = f_static)
-                prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f_static)
+                prob_pds_static_rhs = PDSProblem(PD, u0_static, tspan; std_rhs = f_static)
 
                 # implicit solvers and units don't work
                 # algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),TRBDF2())
@@ -852,7 +821,8 @@ end
                     end
                     return nothing
                 end
-                function D!(D, u, p, t)
+                function PD!(P, D, u, p, t)
+                    P!(P, u, p, t)
                     fill!(D, zero(eltype(D)))
                     return nothing
                 end
@@ -881,15 +851,15 @@ end
                 probs[6] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse)
                 probs[7] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse,
                                                   std_rhs = f!)
-                probs[8] = PDSProblem(P!, D!, u0, tspan)
-                probs[9] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense)
-                probs[10] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense,
+                probs[8] = PDSProblem(PD!, u0, tspan)
+                probs[9] = PDSProblem(PD!, u0, tspan; p_prototype = P_dense)
+                probs[10] = PDSProblem(PD!, u0, tspan; p_prototype = P_dense,
                                        std_rhs = f!)
-                probs[11] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal)
-                probs[12] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal,
+                probs[11] = PDSProblem(PD!, u0, tspan; p_prototype = P_tridiagonal)
+                probs[12] = PDSProblem(PD!, u0, tspan; p_prototype = P_tridiagonal,
                                        std_rhs = f!)
-                probs[13] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse)
-                probs[14] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse,
+                probs[13] = PDSProblem(PD!, u0, tspan; p_prototype = P_sparse)
+                probs[14] = PDSProblem(PD!, u0, tspan; p_prototype = P_sparse,
                                        std_rhs = f!)
 
                 for alg in algs
@@ -951,7 +921,7 @@ end
             @testset "$alg" for prob in probs, alg in algs
                 dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
                 sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
-                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt,
+                sol2 = solve(PDSProblem(prob.f.pd, prob.u0, prob.tspan), alg; dt,
                              isoutofdomain = isnegative) # use p and d to compute f
                 sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt,
                              isoutofdomain = isnegative) # use f to create ODEProblem
@@ -974,7 +944,7 @@ end
             # Bertolazzi problem
             # Did not find any solver configuration to compute a reasonable solution and pass tests.
             # - constant time stepping requires very small dt
-            # - adaptive time stepping generates solutions with different number of time steps 
+            # - adaptive time stepping generates solutions with different number of time steps
             #
             # Nevertheless, the following code shows that the same problem is solved in each case
             # prob = prob_pds_bertolazzi
@@ -991,7 +961,7 @@ end
             @testset "$alg" for alg in algs
                 dt = 1.0
                 sol = solve(prob, alg; dt) # use explicit f
-                sol2 = solve(PDSProblem(prob.f.p, prob.f.d, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
+                sol2 = solve(PDSProblem(prob.f.pd, prob.u0, prob.tspan), alg; dt) # use p and d to compute f
                 sol3 = solve(ODEProblem(prob.f.std_rhs, prob.u0, prob.tspan), alg; dt) # use f to create ODEProblem
                 @test sol.t ≈ sol2.t ≈ sol3.t
                 @test sol.u ≈ sol2.u ≈ sol3.u
@@ -1078,7 +1048,7 @@ end
                                                                                                  dt = 0.1)
         end
 
-        # Here we check that algorithms which accept input parameters return constants 
+        # Here we check that algorithms which accept input parameters return constants
         # of the same type as the inputs
         @testset "Constant types" begin
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
@@ -1131,8 +1101,8 @@ end
 
             # linear model problem - out-of-place
             linmodP(u, p, t) = [0 p[2]*u[2]; p[1]*u[1] 0]
-            linmodD(u, p, t) = [0.0; 0.0]
-            prob_op = PDSProblem(linmodP, linmodD, u0, tspan, p; analytic = f_analytic)
+            linmodPD(u, p, t) = linmodP(u, p, t), [0.0; 0.0]
+            prob_op = PDSProblem(linmodPD, u0, tspan, p; analytic = f_analytic)
             prob_op_2 = ConservativePDSProblem(linmodP, u0, tspan, p; analytic = f_analytic)
 
             dt = 0.25
@@ -1150,11 +1120,12 @@ end
                 P[2, 1] = p[1] * u[1]
                 return nothing
             end
-            function linmodD!(D, u, p, t)
+            function linmodPD!(P, D, u, p, t)
+                linmodP!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            prob_ip = PDSProblem(linmodP!, linmodD!, u0, tspan, p; analytic = f_analytic)
+            prob_ip = PDSProblem(linmodPD!, u0, tspan, p; analytic = f_analytic)
             prob_ip_2 = ConservativePDSProblem(linmodP!, u0, tspan, p;
                                                analytic = f_analytic)
 
@@ -1209,11 +1180,12 @@ end
                 P[2, 1] = p[1] * u[1]
                 return nothing
             end
-            function linmodD!(D, u, p, t)
+            function linmodPD!(P, D, u, p, t)
+                linmodP!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
                 return nothing
             end
-            prob_ip = PDSProblem(linmodP!, linmodD!, u0, tspan, p; analytic = f_analytic)
+            prob_ip = PDSProblem(linmodPD!, u0, tspan, p; analytic = f_analytic)
             prob_ip_2 = ConservativePDSProblem(linmodP!, u0, tspan, p;
                                                analytic = f_analytic)
 
@@ -1418,7 +1390,7 @@ end
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
         @testset "Different matrix types (nonconservative)" begin
-            prod_1! = (P, u, p, t) -> begin
+            prod_dest_1! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i, i + 1] = i * u[i]
@@ -1426,17 +1398,16 @@ end
                 for i in 1:length(u)
                     P[i, i] = i * u[i]
                 end
-                return nothing
-            end
-            dest_1! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = (i + 1) * u[i]
                 end
+
                 return nothing
             end
 
-            prod_2! = (P, u, p, t) -> begin
+            prod_dest_2! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i + 1, i] = i * u[i + 1]
@@ -1444,17 +1415,16 @@ end
                 for i in 1:length(u)
                     P[i, i] = (i - 1) * u[i]
                 end
-                return nothing
-            end
-            dest_2! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = i * u[i]
                 end
+
                 return nothing
             end
 
-            prod_3! = (P, u, p, t) -> begin
+            prod_dest_3! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i, i + 1] = i * u[i]
@@ -1463,13 +1433,12 @@ end
                 for i in 1:length(u)
                     P[i, i] = (i + 1) * u[i]
                 end
-                return nothing
-            end
-            dest_3! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = (i - 1) * u[i]
                 end
+
                 return nothing
             end
 
@@ -1489,29 +1458,24 @@ end
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
                                         SSPMPRK22(0.5, 1.0), SSPMPRK43())
-                for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
-                                          (dest_1!, dest_2!, dest_3!))
-                    prod = (u, p, t) -> begin
+                for (prod_dest!) in (prod_dest_1!, prod_dest_2!, prod_dest_3!)
+                    prod_dest = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
-                        prod!(P, u, p, t)
-                        return P
-                    end
-                    dest = (u, p, t) -> begin
                         D = similar(u)
-                        dest!(D, u, p, t)
-                        return D
+                        prod_dest!(P, D, u, p, t)
+                        return P, D
                     end
-                    prob_tridiagonal_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_tridiagonal_ip = PDSProblem(prod_dest!, u0, tspan;
                                                      p_prototype = P_tridiagonal)
-                    prob_tridiagonal_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_tridiagonal_op = PDSProblem(prod_dest, u0, tspan;
                                                      p_prototype = P_tridiagonal)
-                    prob_dense_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_dense_ip = PDSProblem(prod_dest!, u0, tspan;
                                                p_prototype = P_dense)
-                    prob_dense_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_dense_op = PDSProblem(prod_dest, u0, tspan;
                                                p_prototype = P_dense)
-                    prob_sparse_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_sparse_ip = PDSProblem(prod_dest!, u0, tspan;
                                                 p_prototype = P_sparse)
-                    prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_sparse_op = PDSProblem(prod_dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
@@ -1543,7 +1507,7 @@ end
         end
 
         @testset "Different matrix types (nonconservative, adaptive)" begin
-            prod_1! = (P, u, p, t) -> begin
+            prod_dest_1! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i, i + 1] = i * u[i]
@@ -1551,17 +1515,16 @@ end
                 for i in 1:length(u)
                     P[i, i] = i * u[i]
                 end
-                return nothing
-            end
-            dest_1! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = (i + 1) * u[i]
                 end
+
                 return nothing
             end
 
-            prod_2! = (P, u, p, t) -> begin
+            prod_dest_2! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i + 1, i] = i * u[i + 1]
@@ -1569,17 +1532,16 @@ end
                 for i in 1:length(u)
                     P[i, i] = (i - 1) * u[i]
                 end
-                return nothing
-            end
-            dest_2! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = i * u[i]
                 end
+
                 return nothing
             end
 
-            prod_3! = (P, u, p, t) -> begin
+            prod_dest_3! = (P, D, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
                     P[i, i + 1] = i * u[i]
@@ -1588,13 +1550,12 @@ end
                 for i in 1:length(u)
                     P[i, i] = (i + 1) * u[i]
                 end
-                return nothing
-            end
-            dest_3! = (D, u, p, t) -> begin
+
                 fill!(D, zero(eltype(D)))
                 for i in 1:length(u)
                     D[i] = (i - 1) * u[i]
                 end
+
                 return nothing
             end
 
@@ -1615,31 +1576,24 @@ end
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
                                         SSPMPRK22(0.5, 1.0), SSPMPRK43())
-                for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
-                                          (dest_1!, dest_2!, dest_3!))
-                    prod! = prod_3!
-                    dest! = dest_3!
-                    prod = (u, p, t) -> begin
+                for (prod!, dest!) in (prod_dest_1!, prod_dest_2!, prod_dest_3!)
+                    prod_dest = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
-                        prod!(P, u, p, t)
-                        return P
-                    end
-                    dest = (u, p, t) -> begin
                         D = similar(u)
-                        dest!(D, u, p, t)
-                        return D
+                        prod_dest!(P, D, u, p, t)
+                        return P, D
                     end
-                    prob_tridiagonal_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_tridiagonal_ip = PDSProblem(prod_dest!, u0, tspan;
                                                      p_prototype = P_tridiagonal)
-                    prob_tridiagonal_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_tridiagonal_op = PDSProblem(prod_dest, u0, tspan;
                                                      p_prototype = P_tridiagonal)
-                    prob_dense_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_dense_ip = PDSProblem(prod_dest!, u0, tspan;
                                                p_prototype = P_dense)
-                    prob_dense_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_dense_op = PDSProblem(prod_dest, u0, tspan;
                                                p_prototype = P_dense)
-                    prob_sparse_ip = PDSProblem(prod!, dest!, u0, tspan;
+                    prob_sparse_ip = PDSProblem(prod_dest!, u0, tspan;
                                                 p_prototype = P_sparse)
-                    prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
+                    prob_sparse_op = PDSProblem(prod_dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
@@ -1687,9 +1641,21 @@ end
                 prod_inner!(P, u, p, t)
                 return nothing
             end
+            prod_dest_sparse! = (P, D, u, p, t) -> begin
+                @test P isa SparseMatrixCSC
+                prod_inner!(P, u, p, t)
+                fill!(D, zero(eltype(D)))
+                return nothing
+            end
             prod_tridiagonal! = (P, u, p, t) -> begin
                 @test P isa Tridiagonal
                 prod_inner!(P, u, p, t)
+                return nothing
+            end
+            prod_dest_tridiagonal! = (P, D, u, p, t) -> begin
+                @test P isa Tridiagonal
+                prod_inner!(P, u, p, t)
+                fill!(D, zero(eltype(D)))
                 return nothing
             end
             prod_dense! = (P, u, p, t) -> begin
@@ -1697,8 +1663,11 @@ end
                 prod_inner!(P, u, p, t)
                 return nothing
             end
-            dest! = (D, u, p, t) -> begin
+            prod_dest_dense! = (P, D, u, p, t) -> begin
+                @test P isa Matrix
+                prod_inner!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
+                return nothing
             end
             #prototypes
             P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3],
@@ -1719,12 +1688,12 @@ end
             prob_sparse = ConservativePDSProblem(prod_sparse!, u0, tspan;
                                                  p_prototype = P_sparse)
             ## nonconservative PDS
-            prob_default2 = PDSProblem(prod_dense!, dest!, u0, tspan)
-            prob_tridiagonal2 = PDSProblem(prod_tridiagonal!, dest!, u0, tspan;
+            prob_default2 = PDSProblem(prod_dest_dense!, dest!, u0, tspan)
+            prob_tridiagonal2 = PDSProblem(prod_dest_tridiagonal!, dest!, u0, tspan;
                                            p_prototype = P_tridiagonal)
-            prob_dense2 = PDSProblem(prod_dense!, dest!, u0, tspan;
+            prob_dense2 = PDSProblem(prod_dest_dense!, dest!, u0, tspan;
                                      p_prototype = P_dense)
-            prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
+            prob_sparse2 = PDSProblem(prod_dest_sparse!, dest!, u0, tspan;
                                       p_prototype = P_sparse)
             #solve and test
             for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
@@ -1896,33 +1865,28 @@ end
         end
 
         @testset "Check convergence order (nonautonomous nonconservative PDS)" begin
-            prod! = (P, u, p, t) -> begin
+            prod_dest! = (P, d, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 P[1, 2] = sin(t)^2 * u[2]
                 P[2, 1] = cos(2 * t)^2 * u[1]
                 P[2, 2] = cos(t)^2 * u[2]
-                return nothing
-            end
-            dest! = (d, u, p, t) -> begin
+
                 fill!(d, zero(eltype(d)))
                 d[1] = sin(2 * t)^2 * u[1]
                 d[2] = sin(0.5 * t)^2 * u[2]
+
                 return nothing
             end
-            prod = (u, p, t) -> begin
+            prod_dest = (u, p, t) -> begin
                 P = similar(u, (length(u), length(u)))
-                prod!(P, u, p, t)
-                return P
-            end
-            dest = (u, p, t) -> begin
                 d = similar(u, (length(u),))
-                dest!(d, u, p, t)
-                return d
+                prod_dest!(P, d, u, p, t)
+                return P, d
             end
             u0 = [1.0; 0.0]
             tspan = (0.0, 1.0)
-            prob_oop = PDSProblem(prod, dest, u0, tspan) #out-of-place
-            prob_ip = PDSProblem(prod!, dest!, u0, tspan) #in-place
+            prob_oop = PDSProblem(prod_dest, u0, tspan) #out-of-place
+            prob_ip = PDSProblem(prod_dest!, u0, tspan) #in-place
 
             dts = 0.5 .^ (4:15)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
@@ -1964,24 +1928,27 @@ end
                 fill!(P, zero(eltype(P)))
                 P[2, 1] = λ * u[1]
             end
-            function dest!(D, u, p, t)
+            function prod_dest!(P, D, u, p, t)
+                prod!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
+                return nothing
             end
             function prod(u, p, t)
                 P = similar(u, (length(u), length(u)))
                 prod!(P, u, p, t)
                 return P
             end
-            function dest(u, p, t)
+            function prod_dest(u, p, t)
+                P = similar(u, (length(u), length(u)))
                 d = similar(u)
-                dest!(d, u, p, t)
+                prod_dest!(P, D, u, p, t)
                 return d
             end
 
             prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
-            prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
+            prob_ip_2 = PDSProblem(prod_dest!, u0, tspan, p)
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
-            prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
+            prob_oop_2 = PDSProblem(prod_dest, u0, tspan, p)
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
@@ -2012,7 +1979,8 @@ end
                 fill!(P, zero(eltype(P)))
                 P[2, 1] = λ * u[1]
             end
-            function dest!(D, u, p, t)
+            function prod_dest!(P, D, u, p, t)
+                prod!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
             end
             function prod(u, p, t)
@@ -2020,16 +1988,17 @@ end
                 prod!(P, u, p, t)
                 return P
             end
-            function dest(u, p, t)
+            function prod_dest(u, p, t)
+                P = similar(u, (length(u), length(u)))
                 d = similar(u)
-                dest!(d, u, p, t)
+                prod_dest!(P, d, u, p, t)
                 return d
             end
 
             prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
-            prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
+            prob_ip_2 = PDSProblem(prod_dest!, u0, tspan, p)
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
-            prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
+            prob_oop_2 = PDSProblem(prod_dest, u0, tspan, p)
 
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                     MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
@@ -2104,7 +2073,8 @@ end
                 fill!(P, zero(eltype(P)))
                 P[2, 1] = λ * u[1]
             end
-            function dest!(D, u, p, t)
+            function prod_dest!(P, D, u, p, t)
+                prod!(P, u, p, t)
                 fill!(D, zero(eltype(D)))
             end
             function prod(u, p, t)
@@ -2112,15 +2082,16 @@ end
                 prod!(P, u, p, t)
                 return P
             end
-            function dest(u, p, t)
+            function prod_dest(u, p, t)
+                P = similar(u, (length(u), length(u)))
                 d = similar(u)
-                dest!(d, u, p, t)
+                prod_dest!(P, d, u, p, t)
                 return d
             end
             prob_ip = ConservativePDSProblem(prod!, u0, tspan, p)
-            prob_ip_2 = PDSProblem(prod!, dest!, u0, tspan, p)
+            prob_ip_2 = PDSProblem(prod_dest!, u0, tspan, p)
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
-            prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
+            prob_oop_2 = PDSProblem(prod_dest, u0, tspan, p)
 
             probs = (prob_ip, prob_ip_2, prob_oop, prob_oop_2,
                      prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
@@ -2153,28 +2124,22 @@ end
                     MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
             @testset "$alg, $q" for alg in algs, q in 1:PositiveIntegrators.alg_order(alg)
                 f(t) = q * t^(q - 1)
-                function prod!(P, u, p, t)
+                function prod_dest!(P, D, u, p, t)
                     fill!(P, zero(eltype(P)))
                     P[1, 1] = f(t)
-                end
-                function dest!(D, u, p, t)
                     fill!(D, zero(eltype(D)))
                 end
-                function prod(u, p, t)
+                function prod_dest(u, p, t)
                     P = similar(u, (length(u), length(u)))
-                    prod!(P, u, p, t)
+                    d = similar(u)
+                    prod_dest!(P, d, u, p, t)
                     return P
                 end
-                function dest(u, p, t)
-                    d = similar(u)
-                    dest!(d, u, p, t)
-                    return d
-                end
                 u0 = [0.0; 2.0]
-                prob_oop = PDSProblem(prod, dest, u0, (0.0, 1.0))
+                prob_oop = PDSProblem(prod_dest, u0, (0.0, 1.0))
                 sol_oop = solve(prob_oop, alg, dt = 0.1; adaptive = false)
                 @test first(last(sol_oop.u)) ≈ 1.0
-                prob_ip = PDSProblem(prod!, dest!, u0, (0.0, 1.0))
+                prob_ip = PDSProblem(prod_dest!, u0, (0.0, 1.0))
                 sol_ip = solve(prob_ip, alg, dt = 0.1; adaptive = false)
                 @test first(last(sol_ip.u)) ≈ 1.0
             end
@@ -2186,28 +2151,22 @@ end
             alg = MPE()
             u_exact(t) = 1 / (2 + 3 * t)
             f(t) = -3 / (2 + 3 * t)^2
-            function prod!(P, u, p, t)
+            function prod_dest!(P, u, p, t)
                 fill!(P, zero(eltype(P)))
-            end
-            function dest!(D, u, p, t)
                 fill!(D, zero(eltype(D)))
                 D[1, 1] = -f(t)
             end
-            function prod(u, p, t)
+            function prod_dest(u, p, t)
                 P = similar(u, (length(u), length(u)))
-                prod!(P, u, p, t)
+                d = similar(u)
+                prod_dest!(P, d, u, p, t)
                 return P
             end
-            function dest(u, p, t)
-                d = similar(u)
-                dest!(d, u, p, t)
-                return d
-            end
             u0 = [0.5; 0.0]
-            prob_oop = PDSProblem(prod, dest, u0, (0.0, 1.0))
+            prob_oop = PDSProblem(prod_dest, u0, (0.0, 1.0))
             sol_oop = solve(prob_oop, alg, dt = 0.5; adaptive = false)
             @test first(last(sol_oop.u)) ≈ u_exact(last(prob_oop.tspan))
-            prob_ip = PDSProblem(prod!, dest!, u0, (0.0, 1.0))
+            prob_ip = PDSProblem(prod_dest!, u0, (0.0, 1.0))
             sol_ip = solve(prob_ip, alg, dt = 0.1; adaptive = false)
             @test first(last(sol_ip.u)) ≈ u_exact(last(prob_ip.tspan))
         end
@@ -2236,4 +2195,4 @@ end
             @test isnegative(last(sol_bruss.u))
         end
     end
-end;
+end
