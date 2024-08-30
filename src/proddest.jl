@@ -95,11 +95,11 @@ function PDSProblem{iip}(P, D, u0, tspan, p = NullParameters();
 
     # p_prototype is used to store evaluations of P, if P is in-place.
     if isnothing(p_prototype) && iip
-        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0))) / oneunit(first(tspan))
     end
     # If a PDSFunction is to be evaluated and D is in-place, then d_prototype is used to store
     # evaluations of D.
-    d_prototype = similar(u0)
+    d_prototype = similar(u0 ./ oneunit(first(tspan)))
 
     PD = PDSFunction{iip}(P, D; p_prototype, d_prototype,
                           analytic, std_rhs)
@@ -121,7 +121,7 @@ end
 # Most specific constructor for PDSFunction
 function PDSFunction{iip, FullSpecialize}(P, D;
                                           p_prototype = nothing,
-                                          d_prototype,
+                                          d_prototype = nothing,
                                           analytic = nothing,
                                           std_rhs = nothing) where {iip}
     if std_rhs === nothing
@@ -143,11 +143,22 @@ function (PD::PDSFunction)(du, u, p, t)
 end
 
 # Default implementation of the standard right-hand side evaluation function
-struct PDSStdRHS{P, D, PrototypeP, PrototypeD} <: Function
+struct PDSStdRHS{P, D, PrototypeP, PrototypeD, TMP} <: Function
     p::P
     d::D
     p_prototype::PrototypeP
     d_prototype::PrototypeD
+    tmp::TMP
+end
+
+function PDSStdRHS(P, D, p_prototype, d_prototype)
+    if p_prototype isa AbstractSparseMatrix
+        tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),)) /
+              oneunit(first(p_prototype)) # drop units
+    else
+        tmp = nothing
+    end
+    PDSStdRHS(P, D, p_prototype, d_prototype, tmp)
 end
 
 # Evaluation of a PDSStdRHS (out-of-place)
@@ -163,9 +174,10 @@ function (PD::PDSStdRHS)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
 
     if PD.p_prototype isa AbstractSparseMatrix
-        # Same result but more efficient - at least currently for SparseMatrixCSC
-        fill!(PD.d_prototype, one(eltype(PD.d_prototype)))
-        mul!(vec(du), PD.p_prototype, PD.d_prototype)
+        # row sum coded as matrix-vector product 
+        fill!(PD.tmp, one(eltype(PD.tmp)))
+        mul!(vec(du), PD.p_prototype, PD.tmp)
+
         for i in 1:length(u)  #vec(du) .+= diag(PD.p_prototype)
             du[i] += PD.p_prototype[i, i]
         end
@@ -272,7 +284,7 @@ function ConservativePDSProblem{iip}(P, u0, tspan, p = NullParameters();
 
     # p_prototype is used to store evaluations of P, if P is in-place.
     if isnothing(p_prototype) && iip
-        p_prototype = zeros(eltype(u0), (length(u0), length(u0)))
+        p_prototype = zeros(eltype(u0), (length(u0), length(u0))) / oneunit(first(tspan))
     end
 
     PD = ConservativePDSFunction{iip}(P; p_prototype, analytic, std_rhs)
@@ -314,19 +326,22 @@ function (PD::ConservativePDSFunction)(du, u, p, t)
 end
 
 # Default implementation of the standard right-hand side evaluation function
-struct ConservativePDSStdRHS{P, PrototypeP, TMP} <: Function
+struct ConservativePDSStdRHS{P, PrototypeP, TMP, TMP2} <: Function
     p::P
     p_prototype::PrototypeP
     tmp::TMP
+    tmp2::TMP2
 end
 
 function ConservativePDSStdRHS(P, p_prototype)
     if p_prototype isa AbstractSparseMatrix
         tmp = zeros(eltype(p_prototype), (size(p_prototype, 1),))
+        tmp2 = tmp / oneunit(first(tmp)) # drop units
     else
         tmp = nothing
+        tmp2 = nothing
     end
-    ConservativePDSStdRHS(P, p_prototype, tmp)
+    ConservativePDSStdRHS(P, p_prototype, tmp, tmp2)
 end
 
 # Evaluation of a ConservativePDSStdRHS (out-of-place)
@@ -334,7 +349,7 @@ function (PD::ConservativePDSStdRHS)(u, p, t)
     #vec(sum(PD.p(u, p, t), dims = 2)) - vec(sum(PD.p(u, p, t), dims = 1))
     P = PD.p(u, p, t)
 
-    f = zero(u)
+    f = zeros(eltype(P), size(u))
     @fastmath @inbounds @simd for I in CartesianIndices(P)
         if !iszero(P[I])
             f[I[1]] += P[I]
@@ -347,8 +362,8 @@ end
 function (PD::ConservativePDSStdRHS)(u::SVector, p, t)
     P = PD.p(u, p, t)
 
-    f = similar(u) #constructs MVector
-    zeroT = zero(eltype(u))
+    f = similar(P[:, 1]) #constructs MVector
+    zeroT = zero(eltype(P))
     for i in eachindex(f)
         f[i] = zeroT
     end
@@ -366,16 +381,16 @@ end
 # Evaluation of a ConservativePDSStdRHS (in-place)
 function (PD::ConservativePDSStdRHS)(du, u, p, t)
     PD.p(PD.p_prototype, u, p, t)
-    sum_terms!(du, PD.tmp, PD.p_prototype)
+    sum_terms!(du, PD.tmp, PD.tmp2, PD.p_prototype)
     return nothing
 end
 
 # Generic fallback (for dense arrays)
 # This implementation does not need any auxiliary vectors
-@inline function sum_terms!(du, tmp, P)
-    for i in 1:length(du)
+@inline function sum_terms!(du, tmp, tmp2, P)
+    for i in eachindex(du)
         du[i] = zero(eltype(du))
-        for j in 1:length(du)
+        for j in eachindex(du)
             du[i] += P[i, j] - P[j, i]
         end
     end
@@ -383,15 +398,20 @@ end
 end
 
 # Same result but more efficient - at least currently for SparseMatrixCSC
-@inline function sum_terms!(du, tmp, P::AbstractSparseMatrix)
-    fill!(tmp, one(eltype(tmp)))
-    mul!(vec(du), P, tmp)
+@inline function sum_terms!(du, tmp, tmp2, P::AbstractSparseMatrix)
+    # row sum coded as matrix vector product
+    fill!(tmp2, one(eltype(tmp2)))
+    mul!(vec(du), P, tmp2)
+    #sum!(vec(du), P)
+
+    #column sum
     sum!(tmp', P)
+
     vec(du) .-= tmp
     return nothing
 end
 
-@inline function sum_terms!(du, tmp, P::Tridiagonal)
+@inline function sum_terms!(du, tmp, tmp2, P::Tridiagonal)
     Base.require_one_based_indexing(du, P.dl, P.du)
     @assert length(du) == length(P.dl) + 1 == length(P.du) + 1
 

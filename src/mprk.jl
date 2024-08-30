@@ -987,8 +987,9 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
-`floatmin` of the floating point type used.
+to avoid divisions by zero. To display the default value for data type `type` evaluate 
+`MPRK43II(gamma).small_constant_function(type)`, where `type` can be, e.g.,
+`Float64`.
 
 ## References
 
@@ -1004,10 +1005,18 @@ struct MPRK43II{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(), small_constant = nothing)
-    if isnothing(small_constant)
-        small_constant_function = floatmin
-    elseif small_constant isa Number
+function small_constant_function_MPRK43II(type)
+    if type == Float64
+        small_constant = 1e-50
+    else
+        small_constant = floatmin(type)
+    end
+    return small_constant
+end
+
+function MPRK43II(gamma; linsolve = LUFactorization(),
+                  small_constant = small_constant_function_MPRK43II)
+    if small_constant isa Number
         small_constant_function = Returns(small_constant)
     else # assume small_constant isa Function
         small_constant_function = small_constant

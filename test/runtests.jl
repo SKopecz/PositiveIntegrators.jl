@@ -3,7 +3,9 @@ using LinearAlgebra
 using SparseArrays
 using Statistics: mean
 
-using StaticArrays: MVector
+using StaticArrays: MVector, @SVector, SA
+
+using Unitful: @u_str, ustrip
 
 using OrdinaryDiffEq
 using PositiveIntegrators
@@ -665,6 +667,249 @@ end
             @test 0.95 < alloc1 / alloc6 < 1.05
         end
 
+        # Here we check that PDSFunctions and ConservativePDSFunctions can be evaluated
+        # at (u, p, t) also in cases where u and t carry units.
+        # This is required when solvers form OrdinarDiffEq are used to solve a PDS
+        # and std_rhs is not specified.
+        @testset "(Conservative)PDSFunction and units" begin
+            @testset "(Conservative)PDSFunction and units (out-of-place)" begin
+                u0 = [0.9u"N", 0.1u"N"]
+                u0_static = @SVector [0.9u"N", 0.1u"N"]
+                t0 = 0.0u"s"
+                tspan = (t0, 2.0u"s")
+
+                f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
+                P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D(u, p, t) = [0.0; 0.0]u"N/s"
+                g = PositiveIntegrators.ConservativePDSFunction{false}(P)
+                h = PositiveIntegrators.PDSFunction{false}(P, D)
+
+                f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
+                P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+                g_static = PositiveIntegrators.ConservativePDSFunction{false}(P_static)
+                h_static = PositiveIntegrators.PDSFunction{false}(P_static, D_static)
+
+                f1 = f(u0, nothing, t0)
+                g1 = g(u0, nothing, t0)
+                h1 = h(u0, nothing, t0)
+                f2 = f_static(u0_static, nothing, t0)
+                g2 = g_static(u0_static, nothing, t0)
+                h2 = h_static(u0_static, nothing, t0)
+
+                @test f1 == g1 == h1 == f2 == g2 == h2
+            end
+            @testset "(Conservative)PDSFunction and units (in-place)" begin
+                u0 = [1.0, 1.5, 2.0, 2.5]u"N"
+                t0 = 0.0u"s"
+
+                function f!(du, u, p, t)
+                    fill!(du, zero(eltype(du)))
+
+                    du[1] = (u[1] - u[2]) / u"s"
+                    du[2] = (3 * u[2] - 2 * u[3] - u[1]) / u"s"
+                    du[3] = (-2 * u[2] + 5 * u[3] - 3 * u[4]) / u"s"
+                    du[4] = (3 * u[4] - 3 * u[3]) / u"s"
+
+                    return nothing
+                end
+                function P!(P, u, p, t)
+                    fill!(P, zero(eltype(P)))
+                    for i in 1:(length(u) - 1)
+                        P[i, i + 1] = i * u[i] / u"s"
+                        P[i + 1, i] = i * u[i + 1] / u"s"
+                    end
+                    return nothing
+                end
+                function D!(D, u, p, t)
+                    fill!(D, zero(eltype(D)))
+                    return nothing
+                end
+
+                P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3], zeros(4),
+                                            [0.4, 0.5, 0.6])u"N/s"
+                P_dense = Matrix(P_tridiagonal)
+                P_sparse = sparse(P_tridiagonal)
+                D_dense = zeros(4)u"N/s"
+
+                f_dense! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                             p_prototype = P_dense)
+                f_tridiagonal! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                                   p_prototype = P_tridiagonal)
+                f_sparse! = PositiveIntegrators.ConservativePDSFunction{true}(P!,
+                                                                              p_prototype = P_sparse)
+                g_dense! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                 p_prototype = P_dense,
+                                                                 d_prototype = D_dense)
+                g_tridiagonal! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                       p_prototype = P_tridiagonal,
+                                                                       d_prototype = D_dense)
+                g_sparse! = PositiveIntegrators.PDSFunction{true}(P!, D!,
+                                                                  p_prototype = P_sparse,
+                                                                  d_prototype = D_dense)
+
+                du1 = du2 = du3 = du4 = du5 = du6 = du7 = zeros(4)u"N/s"
+
+                f!(du1, u0, nothing, t0)
+                f_dense!(du2, u0, nothing, t0)
+                f_tridiagonal!(du3, u0, nothing, t0)
+                f_sparse!(du4, u0, nothing, t0)
+                g_dense!(du5, u0, nothing, t0)
+                g_tridiagonal!(du6, u0, nothing, t0)
+                g_sparse!(du7, u0, nothing, t0)
+
+                @test du1 == du2 == du3 == du4 == du5 == du6 == du7
+            end
+        end
+
+        @testset "Compatibility of OrdinarDiffEq solvers with (Conservative)PDSProblems and units" begin
+            @testset "out-of-place" begin
+                u0 = [0.9u"N", 0.1u"N"]
+                u0_static = @SVector [0.9u"N", 0.1u"N"]
+                tspan = (0.0u"s", 2.0u"s")
+
+                f(u, p, t) = [u[2] - 5 * u[1]; -u[2] + 5 * u[1]] / u"s"
+                P(u, p, t) = [0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D(u, p, t) = [0.0; 0.0]u"N/s"
+                f_static(u, p, t) = SA[(u[2] - 5 * u[1]) / u"s"; (-u[2] + 5 * u[1]) / u"s"]
+                P_static(u, p, t) = SA[0u"N/s" u[2]/u"s"; 5 * u[1]/u"s" 0u"N/s"]
+                D_static(u, p, t) = SA[0.0u"N/s"; 0.0u"N/s"]
+
+                prob_ode = ODEProblem(f, u0, tspan)
+                prob_cpds = ConservativePDSProblem(P, u0, tspan)
+                prob_pds = PDSProblem(P, D, u0, tspan)
+                prob_cpds_rhs = ConservativePDSProblem(P, u0, tspan; std_rhs = f)
+                prob_pds_rhs = PDSProblem(P, D, u0, tspan; std_rhs = f)
+                prob_ode_static = ODEProblem(f, u0_static, tspan)
+                prob_cpds_static = ConservativePDSProblem(P, u0_static, tspan)
+                prob_pds_static = PDSProblem(P, D, u0_static, tspan)
+                prob_cpds_static_rhs = ConservativePDSProblem(P, u0_static, tspan;
+                                                              std_rhs = f_static)
+                prob_pds_static_rhs = PDSProblem(P, D, u0_static, tspan; std_rhs = f_static)
+
+                # implicit solvers and units don't work
+                # algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(),TRBDF2())
+                algs = (Euler(), Tsit5(), Vern9())
+
+                for alg in algs
+                    sol_ode = solve(prob_ode, alg; dt = 0.1u"s")
+                    sol_cpds = solve(prob_cpds, alg; dt = 0.1u"s")
+                    sol_pds = solve(prob_pds, alg; dt = 0.1u"s")
+                    sol_cpds_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    sol_pds_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
+                    sol_ode_static = solve(prob_ode, alg; dt = 0.1u"s")
+                    sol_cpds_static = solve(prob_cpds, alg; dt = 0.1u"s")
+                    sol_pds_static = solve(prob_pds, alg; dt = 0.1u"s")
+                    sol_cpds_static_rhs = solve(prob_cpds_rhs, alg; dt = 0.1u"s")
+                    sol_pds_static_rhs = solve(prob_pds_rhs, alg; dt = 0.1u"s")
+
+                    @test sol_ode.t ≈ sol_cpds.t
+                    @test sol_ode.t ≈ sol_pds.t
+                    @test sol_ode.t ≈ sol_cpds_rhs.t
+                    @test sol_ode.t ≈ sol_pds_rhs.t
+                    @test sol_ode.t ≈ sol_ode_static.t
+                    @test sol_ode.t ≈ sol_cpds_static.t
+                    @test sol_ode.t ≈ sol_pds_static.t
+                    @test sol_ode.t ≈ sol_cpds_static_rhs.t
+                    @test sol_ode.t ≈ sol_pds_static_rhs.t
+
+                    # isapprox(sol0.u,sol.u) tries to check norm(sol0.u-sol.u) < 0.0,
+                    # which fails, because we have units on the left, but not on the right
+                    # In addition, abstol with units is not allowed.
+                    # Hence, we strip the units.
+                    # For Vector{Quantity{}} like sol.t there is an isapprox method in quantities.jl, which
+                    # takes care of the stripping.
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_ode_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_static.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_cpds_static_rhs.u)
+                    @test ustrip.(sol_ode.u) ≈ ustrip.(sol_pds_static_rhs.u)
+                end
+            end
+            @testset "in-place" begin
+                u0 = [1.0, 1.5, 2.0, 2.5]u"N"
+                tspan = (0.0u"s", 1.0u"s")
+
+                function f!(du, u, p, t)
+                    fill!(du, zero(eltype(du)))
+
+                    du[1] = (u[1] - u[2]) / u"s"
+                    du[2] = (3 * u[2] - 2 * u[3] - u[1]) / u"s"
+                    du[3] = (-2 * u[2] + 5 * u[3] - 3 * u[4]) / u"s"
+                    du[4] = (3 * u[4] - 3 * u[3]) / u"s"
+
+                    return nothing
+                end
+                function P!(P, u, p, t)
+                    fill!(P, zero(eltype(P)))
+                    for i in 1:(length(u) - 1)
+                        P[i, i + 1] = i * u[i] / u"s"
+                        P[i + 1, i] = i * u[i + 1] / u"s"
+                    end
+                    return nothing
+                end
+                function D!(D, u, p, t)
+                    fill!(D, zero(eltype(D)))
+                    return nothing
+                end
+
+                P_tridiagonal = Tridiagonal([0.1, 0.2, 0.3], zeros(4),
+                                            [0.4, 0.5, 0.6])u"N/s"
+                P_dense = Matrix(P_tridiagonal)
+                P_sparse = sparse(P_tridiagonal)
+                D_dense = zeros(4)u"N/s"
+
+                # implicit solvers and units don't work
+                #algs = (Euler(), ImplicitEuler(), Tsit5(), Rosenbrock23(), SDIRK2(), TRBDF2())
+                algs = (Euler(), Tsit5(), Vern9())
+
+                prob0 = ODEProblem(f!, u0, tspan)
+
+                probs = Array{Any}(undef, 14)
+                probs[1] = ConservativePDSProblem(P!, u0, tspan)
+                probs[2] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_dense)
+                probs[3] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_dense,
+                                                  std_rhs = f!)
+                probs[4] = ConservativePDSProblem(P!, u0, tspan;
+                                                  p_prototype = P_tridiagonal)
+                probs[5] = ConservativePDSProblem(P!, u0, tspan;
+                                                  p_prototype = P_tridiagonal, std_rhs = f!)
+                probs[6] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse)
+                probs[7] = ConservativePDSProblem(P!, u0, tspan; p_prototype = P_sparse,
+                                                  std_rhs = f!)
+                probs[8] = PDSProblem(P!, D!, u0, tspan)
+                probs[9] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense)
+                probs[10] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_dense,
+                                       std_rhs = f!)
+                probs[11] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal)
+                probs[12] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_tridiagonal,
+                                       std_rhs = f!)
+                probs[13] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse)
+                probs[14] = PDSProblem(P!, D!, u0, tspan; p_prototype = P_sparse,
+                                       std_rhs = f!)
+
+                for alg in algs
+                    sol0 = solve(prob0, alg; dt = 0.2u"s")
+                    for prob in probs
+                        sol = solve(prob, alg; dt = 0.2u"s")
+
+                        @test sol0.t ≈ sol.t
+                        # isapprox(sol0.u,sol.u) tries to check norm(sol0.u-sol.u) < 0.0,
+                        # which fails, because we have units on the left, but not on the right
+                        # In addition, abstol with units is not allowed.
+                        # Hence, we strip the units.
+                        # For Vector{Quantity{}} like sol.t there is an isapprox method in quantities.jl, which
+                        # takes care of the stripping.
+                        @test ustrip.(sol0.u) ≈ ustrip.(sol.u)
+                    end
+                end
+            end
+        end
+
         # Here we check that production-destruction form and standard ODE form fit together in predefinded problems,
         # i.e. standard solvers using std_rhs should generate results that are equal to those without specifying std_rhs
         @testset "Check that production-destruction form and standard ODE fit together in predefinded problems" begin
@@ -831,6 +1076,41 @@ end
             @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_ip,
                                                                                                  SSPMPRK43(),
                                                                                                  dt = 0.1)
+        end
+
+        # Here we check that algorithms which accept input parameters return constants 
+        # of the same type as the inputs
+        @testset "Constant types" begin
+            algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
+                    MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
+                    SSPMPRK22(0.5f0, 1.0f0))
+            @testset "$i" for (i, alg) in enumerate(algs)
+                @test eltype(PositiveIntegrators.get_constant_parameters(alg)) == Float32
+            end
+
+            algs = (MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
+                    MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
+                    SSPMPRK22(0.5, 1.0))
+            @testset "$i" for (i, alg) in enumerate(algs)
+                @test eltype(PositiveIntegrators.get_constant_parameters(alg)) == Float64
+            end
+        end
+
+        # We check that Float32 inputs result in Float32 outputs
+        # TODO: Use a tool such as LIKWID to check that no double-precision calculations are performed internally
+        @testset "Float32 input data" begin
+            P_linmod(u, p, t) = [0 u[2]; 5*u[1] 0]
+            u0 = [0.9f0, 0.1f0]
+            prob = ConservativePDSProblem(P_linmod, u0, (0.0f0, 2.0f0))
+
+            algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
+                    MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
+                    SSPMPRK22(0.5f0, 1.0f0), SSPMPRK43())
+            for alg in algs
+                sol = solve(prob, alg; dt = 0.1f0, save_everystep = false)
+                @test sol.t isa Vector{Float32}
+                @test sol.u isa Vector{Vector{Float32}}
+            end
         end
 
         # Here we check that MPE equals implicit Euler (IE) for a linear PDS
@@ -1094,14 +1374,6 @@ end
                                         MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                                         MPRK43II(2.0 / 3.0), MPRK43II(0.5),
                                         SSPMPRK22(0.5, 1.0), SSPMPRK43())
-
-                # Something is going wrong on macOS with sparse matrices for MPRK43II, see
-                # https://github.com/SKopecz/PositiveIntegrators.jl/pull/101
-                if Sys.isapple() && (alg isa MPRK43II)
-                    @test_skip false
-                    continue
-                end
-
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
