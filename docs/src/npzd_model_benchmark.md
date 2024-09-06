@@ -2,7 +2,7 @@
 
 We use the NPZD model [`prob_pds_npzd`](@ref) to assess the efficiency of different solvers.
 
-Standard procedures have difficulties to solve this problem accurately, at least for low tolerances.
+Standard methods have difficulties to solve this problem accurately, at least for low tolerances.
 
 ```@example NPZD
 using OrdinaryDiffEq, PositiveIntegrators
@@ -84,7 +84,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
 #plot
 plot(wp, title = "NPZD benchmark", legend = :topright,
      color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]),
-     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10)
+     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
+     xlims = (10 ^ -7, 10 ^ 0), xticks =10 .^ (-6:1:0))
 ```
 
 The second- and third-order methods behave very similarly. For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the schemes with the smallest error for the initial tolerances, respectively. These are `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)`.
@@ -144,7 +145,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
                       verbose = false)
 plot(wp, title = "NPZD benchmark", legend = :topright,
      color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
-     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10)
+     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
+     xlims = (10 ^ -7, 10 ^ 0), xticks =10 .^ (-6:1:0))
 ```
 
 Comparison to recommend solvers.
@@ -182,7 +184,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
 #plot                      
 plot(wp, title = "NPZD benchmark", legend = :topright,
      color = permutedims([2, 3, repeat([4], 5)..., 5, repeat([6], 3)...]),
-     ylims = (10^-5, 10^-1), yticks = 10.0 .^ (-5:0.5:-1), minorticks = 10)
+     ylims = (10^-5, 10^-1), yticks = 10.0 .^ (-5:0.5:-1), minorticks = 10,
+     xlims = (10 ^ -7, 10 ^ 0), xticks =10 .^ (-6:1:0))
 ```
 
 ## Literature
