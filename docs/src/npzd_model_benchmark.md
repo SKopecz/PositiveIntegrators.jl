@@ -43,7 +43,8 @@ plot!(sol_Ros23; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
 
 ## Work-Precision diagrams
 
-First we compare different (adaptive) MPRK schemes described in the literature.
+First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
+
 ```@example NPZD
 using DiffEqDevTools #load WorkPrecisionSet
 
@@ -67,8 +68,8 @@ labels = ["MPRK22(0.5)"
           "MPRK43II(2.0/3.0)"]
 
 # set tolerances and error
-abstols = 1.0 ./ 10.0 .^ (2:8)
-reltols = 1.0 ./ 10.0 .^ (1:7)
+abstols = 1.0 ./ 10.0 .^ (2:0.5:8)
+reltols = 1.0 ./ 10.0 .^ (1:0.5:7)
 err_est = :l∞
 
 # create reference solution for `WorkPrecisionSet`
@@ -82,7 +83,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
 
 #plot
 plot(wp, title = "NPZD benchmark", legend = :topright,
-     color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]))
+     color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]),
+     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10)
 ```
 
 The second- and third-order methods behave very similarly. For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the schemes with the smallest error for the initial tolerances, respectively. These are `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)`.
@@ -100,6 +102,9 @@ plot!(p2, sol_MPRK43; denseplot = false, markers = true, ylims = (-1.0, 10.0),
 plot(p1, p2)
 ```
 
+Although the SSPMPRK22 solution seems to be more accurate at first glance, the `l∞`-error of the SSPMPRK22 scheme is 0.506359, whereas the `l∞`-error of the MPRK43 scheme is 0.413915. Both errors occurs at approximately $t=2$, where there is a kink in the first component.
+
+
 Next we compare `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)` with some second and third order methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee positive solutions with these methods, we must select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
@@ -115,7 +120,8 @@ setups = [Dict(:alg => SSPMPRK22(0.5, 1.0)),
     Dict(:alg => KenCarp3(), :isoutofdomain => isnegative),
     Dict(:alg => Rodas3(), :isoutofdomain => isnegative),
     Dict(:alg => ROS2(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS3(), :isoutofdomain => isnegative)]
+    Dict(:alg => ROS3(), :isoutofdomain => isnegative),
+    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative)]
 
 labels = ["SSPMPRK22(0.5,1.0)"
           "MPRK43I(1.0,0.5)"
@@ -128,7 +134,8 @@ labels = ["SSPMPRK22(0.5,1.0)"
           "KenCarp3"
           "Rodas3"
           "ROS2"
-          "ROS3"]
+          "ROS3"
+          "Rosenbrock23"]
 
 # compute work-precision
 wp = WorkPrecisionSet(prob, abstols, reltols, setups;
@@ -136,8 +143,46 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
                       names = labels, print_names = true,                      
                       verbose = false)
 plot(wp, title = "NPZD benchmark", legend = :topright,
-     color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 3)...]))
+     color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10)
+```
 
+Comparison to recommend solvers.
+```@example NPZD
+setups = [Dict(:alg => SSPMPRK22(0.5, 1.0)),
+    Dict(:alg => MPRK43I(1.0, 0.5)),
+    Dict(:alg => Tsit5(), :isoutofdomain => isnegative),
+    Dict(:alg => BS3(), :isoutofdomain => isnegative),
+    Dict(:alg => Vern6(), :isoutofdomain => isnegative),
+    Dict(:alg => Vern7(), :isoutofdomain => isnegative),
+    Dict(:alg => Vern8(), :isoutofdomain => isnegative),
+    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
+    Dict(:alg => Rosenbrock32(), :isoutofdomain => isnegative),
+    Dict(:alg => Rodas5P(), :isoutofdomain => isnegative),
+    Dict(:alg => Rodas4P(), :isoutofdomain => isnegative)]
+
+labels = ["SSPMPRK22(0.5,1.0)"
+          "MPRK43I(1.0,0.5)"
+          "Tsit6"
+          "BS3"
+          "Vern6"
+          "Vern7"
+          "Vern8"
+          "TRBDF2"
+          "Rosenbrock23"
+          "Rodas5P"
+          "Rodas4P"]
+
+# compute work-precision
+wp = WorkPrecisionSet(prob, abstols, reltols, setups;
+                      error_estimate = err_est, appxsol = test_sol,
+                      names = labels, print_names = true,
+                      verbose = false)
+
+#plot                      
+plot(wp, title = "NPZD benchmark", legend = :topright,
+     color = permutedims([2, 3, repeat([4], 5)..., 5, repeat([6], 3)...]),
+     ylims = (10^-5, 10^-1), yticks = 10.0 .^ (-5:0.5:-1), minorticks = 10)
 ```
 
 ## Literature
