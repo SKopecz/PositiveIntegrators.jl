@@ -61,7 +61,7 @@ labels = ["MPRK22(0.5)"
 
 abstols = 1.0 ./ 10.0 .^ (2:8)
 reltols = 1.0 ./ 10.0 .^ (1:7)
-wp = WorkPrecisionSet(prob, abstols reltols, setups;
+wp = WorkPrecisionSet(prob, abstols, reltols, setups;
                       error_estimate = :l∞, appxsol = ref_sol,
                       names = labels, print_names = true,
                       verbose = false)
