@@ -47,10 +47,6 @@ First we compare different (adaptive) MPRK schemes described in the literature.
 ```@example NPZD
 using DiffEqDevTools #load WorkPrecisionSet
 
-# create reference solution
-sol = solve(prob, Vern7(), abstol = 1 / 10^14, reltol = 1 / 10^13)
-ref_sol = TestSolution(sol)
-
 # choose methods to compare
 setups = [Dict(:alg => MPRK22(0.5))
           Dict(:alg => MPRK22(2.0 / 3.0))
@@ -75,9 +71,12 @@ abstols = 1.0 ./ 10.0 .^ (2:8)
 reltols = 1.0 ./ 10.0 .^ (1:7)
 err_est = :l∞
 
+# create reference solution for `WorkPrecisionSet`
+test_sol = TestSolution(ref_sol)
+
 # compute work-precision
 wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = ref_sol,
+                      error_estimate = err_est, appxsol = test_sol,
                       names = labels, print_names = true,
                       verbose = false)
 
@@ -100,6 +99,8 @@ plot!(p2, sol_MPRK43; denseplot = false, markers = true, ylims = (-1.0, 10.0),
      title = "MPRK43I(1.0, 0.5)")
 plot(p1, p2)
 ```
+
+Next we compare `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)` with some second and third order methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee positive solutions with these methods, we must select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
 # select methods
@@ -131,15 +132,13 @@ labels = ["SSPMPRK22(0.5,1.0)"
 
 # compute work-precision
 wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = ref_sol,
+                      error_estimate = err_est, appxsol = test_sol,
                       names = labels, print_names = true,                      
                       verbose = false)
 plot(wp, title = "NPZD benchmark", legend = :topright,
      color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 3)...]))
 
 ```
-
-
 
 ## Literature
 - Kopecz, Meister 2nd order
