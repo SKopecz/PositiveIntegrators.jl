@@ -23,10 +23,10 @@ sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol)
 # plot solutions
 p1 = plot(ref_sol, linestyle = :dash, label = "", legend = :right)
 plot!(p1, sol_Ros23; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
-      title = "Rosenbrock23")
+      title = "Rosenbrock23", label = ["N" "P" "Z" "D"])
 p2 = plot(ref_sol, linestyle = :dash, label = "", legend = :right)
 plot!(p2, sol_MPRK; denseplot = false, markers = true, ylims = (-1.0, 10.0),
-     title = "MPRK22(1.0)")
+     title = "MPRK22(1.0)", label = ["N" "P" "Z" "D"])
 plot(p1, p2)
 ```
 
@@ -38,7 +38,7 @@ sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol,
 
 plot(ref_sol, linestyle = :dash, label = "", legend = :right)
 plot!(sol_Ros23; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
-          title = "Rosenbrock23")
+          title = "Rosenbrock23", label = ["N" "P" "Z" "D"])
 ```
 
 ## Work-Precision diagrams
@@ -96,14 +96,14 @@ sol_MPRK43 = solve(prob, MPRK43I(1.0, 0.5); abstol, reltol)
 
 p1 = plot(ref_sol, linestyle = :dash, label = "", legend = :right)
 plot!(p1, sol_SSPMPRK22; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
-      title = "SSPMPRK22(0.5, 1.0)")
+      title = "SSPMPRK22(0.5, 1.0)", label = ["N" "P" "Z" "D"])
 p2 = plot(ref_sol, linestyle = :dash, label = "", legend = :right)
 plot!(p2, sol_MPRK43; denseplot = false, markers = true, ylims = (-1.0, 10.0),
-     title = "MPRK43I(1.0, 0.5)")
+     title = "MPRK43I(1.0, 0.5)", label = ["N" "P" "Z" "D"])
 plot(p1, p2)
 ```
 
-Although the SSPMPRK22 solution seems to be more accurate at first glance, the `l∞`-error of the SSPMPRK22 scheme is 0.506359, whereas the `l∞`-error of the MPRK43 scheme is 0.413915. Both errors occurs at approximately $t=2$, where there is a kink in the first component.
+Although the SSPMPRK22 solution seems to be more accurate at first glance, the `l∞`-error of the SSPMPRK22 scheme is 0.506359, whereas the `l∞`-error of the MPRK43 scheme is 0.413915. Both errors occurs at approximately $t=2$, where there is a sharp kink in the first component.
 
 
 Next we compare `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)` with some second and third order methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee positive solutions with these methods, we must select the solver option `isoutofdomain = isnegative`.

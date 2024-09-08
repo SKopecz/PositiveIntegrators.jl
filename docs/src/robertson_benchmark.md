@@ -1,6 +1,6 @@
 # [Benchmark: Solution of the Robertson problem](@id benchmark-robertson)
 
-We use the stiff Robertson model [`prob_pds_npzd`](@ref) to assess the efficiency of different solvers.
+We use the stiff Robertson model [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers.
 
 
 ```@example ROBER
@@ -20,10 +20,10 @@ sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol)
 sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol)
 
 # plot solutions
-p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right)
-plot!(p1, sol_Ros23; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "Rosenbrock23", xticks =10.0 .^ (-6:4:10))
-p2 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right)
-plot!(p2, sol_MPRK; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK22(1.0)", xticks =10.0 .^ (-6:4:10))
+p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
+plot!(p1, sol_Ros23; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "Rosenbrock23", xticks =10.0 .^ (-6:4:10));
+p2 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
+plot!(p2, sol_MPRK; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK22(1.0)", xticks =10.0 .^ (-6:4:10));
 plot(p1, p2)
 ```
 
@@ -33,7 +33,7 @@ Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) 
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol, 
                   isoutofdomain = isnegative) #reject negative solutions
 
-plot(ref_sol, tspan = (1e-7, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right)
+plot(ref_sol, tspan = (1e-7, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
 plot!(sol_Ros23; tspan = (1e-7, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "Rosenbrock23", xticks =10.0 .^ (-6:4:10))
 ```
 
@@ -45,19 +45,19 @@ First we compare different (adaptive) MPRK schemes described in the literature. 
 using DiffEqDevTools #load WorkPrecisionSet
 
 # choose methods to compare
-setups = [#Dict(:alg => MPRK22(0.5))  FAIL!
+setups = [Dict(:alg => MPRK22(0.5))  
           Dict(:alg => MPRK22(2.0 / 3.0))
           Dict(:alg => MPRK22(1.0))
-          #Dict(:alg => SSPMPRK22(0.5, 1.0))  FAIL!
+          Dict(:alg => SSPMPRK22(0.5, 1.0))  
           Dict(:alg => MPRK43I(1.0, 0.5))
           Dict(:alg => MPRK43I(0.5, 0.75))
           Dict(:alg => MPRK43II(0.5))
           Dict(:alg => MPRK43II(2.0 / 3.0))]
 
-labels = [#"MPRK22(0.5)"
+labels = ["MPRK22(0.5)"
           "MPPRK22(2/3)"
           "MPRK22(1.0)"
-          #"SSPMPRK22(0.5,1.0)"
+          "SSPMPRK22(0.5,1.0)"
           "MPRK43I(1.0,0.5)"
           "MPRK43I(0.5,0.75)"
           "MPRK43II(0.5)"
@@ -79,12 +79,31 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
 
 #plot
 plot(wp, title = "Robertson benchmark", legend = :topright,
-     color = permutedims([repeat([1],2)...,repeat([3],2)...,repeat([4],2)...]),
-     ylims = (10 ^ -5, 10 ^ -2), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
+     color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]),
+     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
      xlims = (2 *10 ^ -6, 2*10 ^ -2), xticks =10.0 .^ (-5:1:0))
 ```
 
-All methods behave similarly. For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(1.0, 0.5)`.
+Besides `SSPMPRK22` and `MPRK22(0.5)` all methods behave similarly. `SSPMPRK22` generates oscillatory solutions.
+
+```@example ROBER
+sol1 = solve(prob, SSPMPRK22(0.5, 1.0), abstol=1e-5, reltol = 1e-4);
+
+# plot solutions
+p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
+plot!(p1, sol1; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "SSPMPRK22(1.0, 0.5)", xticks =10.0 .^ (-6:4:10))
+```
+
+With `abstol=1e-6` and `reltol = 1e-5` the `MPRK22(0.5)` schemes needs over 800.000 steps to integrate the Robertson problem. In comparison, `MPRK22(0.5)` needs less than 1.000.
+
+```@example ROBER
+sol1 = solve(prob, MPRK22(1.0), abstol=1e-6, reltol = 1e-5);
+sol2 = solve(prob, MPRK22(0.5), abstol=1e-6, reltol = 1e-5);
+
+length(sol1), length(sol2)
+```
+
+For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(1.0, 0.5)`.
 
 ```@example ROBER
 sol_MPRK22 = solve(prob, MPRK22(1.0); abstol, reltol)
@@ -132,8 +151,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
                       verbose = false)
 plot(wp, title = "Robertson benchmark", legend = :topright,
      color = permutedims([2, 3, repeat([5], 4)..., repeat([6], 4)...]),
-     ylims = (10 ^ -5, 10 ^ -2), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     xlims = (2 *10 ^ -6, 2*10 ^ -2), xticks =10.0 .^ (-5:1:0))
+     ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
+     xlims = (1 *10 ^ -8, 2*10 ^ -2), xticks =10.0 .^ (-7:1:0))
 ```
 
 Comparison to recommend solvers.
@@ -141,7 +160,7 @@ Comparison to recommend solvers.
 setups = [Dict(:alg => MPRK22(1.0)),
     Dict(:alg => MPRK43I(1.0, 0.5)),
     Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock32(), :isoutofdomain => isnegative),
+    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative),
     Dict(:alg => Rodas5P(), :isoutofdomain => isnegative),
     Dict(:alg => Rodas4P(), :isoutofdomain => isnegative)]
 
@@ -161,8 +180,8 @@ wp = WorkPrecisionSet(prob, abstols, reltols, setups;
 #plot                      
 plot(wp, title = "Robertson benchmark", legend = :topright,
      color = permutedims([2, 3, 5, repeat([6], 3)...]),
-     ylims = (10 ^ -5, 10 ^ -2), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     xlims = (2 *10 ^ -6, 2*10 ^ -2), xticks =10.0 .^ (-5:1:0))
+     ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
+     xlims = (1 *10 ^ -9, 2*10 ^ -2), xticks =10.0 .^ (-8:1:0))
 ```
 
 ## Literature
