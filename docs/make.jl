@@ -82,6 +82,7 @@ makedocs(modules = [PositiveIntegrators],
                  "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
              ],
              "Benchmarks" => [
+                 "Experimental order of convergence" => "convergence.md",
                  "NPZD model" => "npzd_model_benchmark.md",
                  "Robertson problem" => "robertson_benchmark.md",
                  "Stratospheric reaction problem" => "stratospheric_reaction_benchmark.md",
