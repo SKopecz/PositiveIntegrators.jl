@@ -41,6 +41,7 @@ using PrettyTables
 # collect data and create headers
 data = Matrix{Float64}(undef, length(dts), 1 + 2*length(algs))
 data[:,1] = dts
+#=
 header = ["Δt"]
 subheader = [""]
 for i in eachindex(algs)
@@ -53,12 +54,13 @@ end
 pretty_table(data, header = (header, subheader),
              formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8]),
                            ft_printf("%5.4f", [3, 5, 7, 9])))
+=#                           
 ```
 
 ## Third order MPRK schemes
 
 ```@example eoc
-
+#=
 #select schemes
 algs = [MPRK43I(1.0, 0.5)
         MPRK43I(0.5, 0.75)
@@ -98,4 +100,5 @@ end
 pretty_table(data, header = (header, subheader),
              formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8, 10]),
                            ft_printf("%5.4f", [3, 5, 7, 9, 11])))
+=#                           
 ```
