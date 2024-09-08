@@ -39,7 +39,8 @@ end
 using PrettyTables
 
 # collect data and create headers
-data = dts
+data = Matrix{Float64}(undef, length(dts), 1 + 2*length(algs))
+data[:,1] = dts
 header = ["Δt"]
 subheader = [""]
 for i in eachindex(algs)
@@ -84,7 +85,8 @@ for i in eachindex(algs)
 end
 
 # collect data and create headers
-data = dts
+data = Matrix{Float64}(undef, length(dts), 1 + 2*length(algs))
+data[:,1] = dts
 header = ["Δt"]
 subheader = [""]
 for i in eachindex(algs)
