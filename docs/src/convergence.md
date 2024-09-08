@@ -39,23 +39,29 @@ end
 using PrettyTables
 
 # collect data and create headers
-data = Matrix{Float64}(undef, length(dts), 1 + 2*length(algs))
+N =  1 + 2*length(algs)
+data = Matrix{Float64}(undef, length(dts), N)
 data[:,1] = dts
-
-header = ["Δt"]
-subheader = [""]
+header = Matrix{String}(undef, 1, N)
+header[1] = "Δt"
+subheader = Matrix{String}(undef, 1, N)
+subheader[1] = ""
 for i in eachindex(algs)
     #data = [data err[i] [NaN; eoc[i]]]
     data[:, 2*i-1] = err[i]
     data[:, 2*i] = [NaN; eoc[i]]
-    header = [header names[i] names[i]]
-    subheader = [subheader "Error" "EOC"]
+    #header = [header names[i] names[i]]
+    header[1, 2*i-1] = names[i]
+    header[1, 2*i] = names[i]
+    #subheader = [subheader "Error" "EOC"]
+    subheader[1, 2*i-1] = "Error"
+    subheader[1, 2*i] = "EOC"
 end
 
 # print table
-#pretty_table(data; header = (header, subheader),
-#             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8]),
-#                           ft_printf("%5.4f", [3, 5, 7, 9])))
+pretty_table(data; header = (header, subheader),
+             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8]),
+                           ft_printf("%5.4f", [3, 5, 7, 9])))
                            
 ```
 
