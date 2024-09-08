@@ -66,3 +66,54 @@ pretty_table(data; header = (header, subheader),
 ```
 
 ## Third order MPRK schemes
+
+
+```@example eoc
+algs = [MPRK43I(1.0, 0.5)
+        MPRK43I(0.5, 0.75)
+        MPRK43II(0.5)
+        MPRK43II(2.0 / 3.0)
+        SSPMPRK43()]
+
+names = ["MPRK43I(1.0,0.5)"
+         "MPRK43I(0.5, 0.75)"
+         "MPRK43II(0.5)"
+         "MPRK43II(2.0/3.0)"
+         "SSPMPRK43()"]
+
+
+dts = 0.5 .^ (5:10)
+err = Vector{Vector{Float64}}(undef, length(algs))
+eoc = Vector{Vector{Float64}}(undef, length(algs))
+
+#compute errors and experimental order of convergence
+for i in eachindex(algs)
+    sim = test_convergence(dts, prob, algs[i])
+    err[i] = sim.errors[:l∞]
+    eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
+end
+
+# collect data and create headers
+N =  1 + 2*length(algs)
+data = Matrix{Float64}(undef, length(dts), N)
+data[:,1] = dts
+header = Matrix{String}(undef, 1, N)
+header[1] = "Δt"
+subheader = Matrix{String}(undef, 1, N)
+subheader[1] = ""
+for i in eachindex(algs)
+    #data = [data err[i] [NaN; eoc[i]]]
+    data[:, 2*i] = err[i]
+    data[:, 2*i+1] = [NaN; eoc[i]]
+    #header = [header names[i] names[i]]
+    header[1, 2*i] = names[i]
+    header[1, 2*i+1] = names[i]
+    #subheader = [subheader "Error" "EOC"]
+    subheader[1, 2*i] = "Error"
+    subheader[1, 2*i+1] = "EOC"
+end
+
+pretty_table(data, header = (header, subheader),
+             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8, 10]),
+                           ft_printf("%5.4f", [3, 5, 7, 9, 11])))
+```
