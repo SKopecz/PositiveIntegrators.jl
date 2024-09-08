@@ -48,14 +48,14 @@ subheader = Matrix{String}(undef, 1, N)
 subheader[1] = ""
 for i in eachindex(algs)
     #data = [data err[i] [NaN; eoc[i]]]
-    data[:, 2*i-1] = err[i]
-    data[:, 2*i] = [NaN; eoc[i]]
+    data[:, 2*i] = err[i]
+    data[:, 2*i+1] = [NaN; eoc[i]]
     #header = [header names[i] names[i]]
-    header[1, 2*i-1] = names[i]
     header[1, 2*i] = names[i]
+    header[1, 2*i+1] = names[i]
     #subheader = [subheader "Error" "EOC"]
-    subheader[1, 2*i-1] = "Error"
-    subheader[1, 2*i] = "EOC"
+    subheader[1, 2*i] = "Error"
+    subheader[1, 2*i+1] = "EOC"
 end
 
 # print table
