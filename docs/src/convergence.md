@@ -44,14 +44,16 @@ data[:,1] = dts
 
 header = ["Δt"]
 subheader = [""]
-#for i in eachindex(algs)
-#    data = [data err[i] [NaN; eoc[i]]]
-#    header = [header names[i] names[i]]
-#    subheader = [subheader "Error" "EOC"]
-#end
+for i in eachindex(algs)
+    #data = [data err[i] [NaN; eoc[i]]]
+    data[:, 2*i-1] = err[i]
+    data[:, 2*i] = [NaN; eoc[i]]
+    header = [header names[i] names[i]]
+    subheader = [subheader "Error" "EOC"]
+end
 
 # print table
-#pretty_table(data, header = (header, subheader),
+#pretty_table(data; header = (header, subheader),
 #             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8]),
 #                           ft_printf("%5.4f", [3, 5, 7, 9])))
                            
