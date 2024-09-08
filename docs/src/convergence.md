@@ -44,11 +44,11 @@ data[:,1] = dts
 
 header = ["Δt"]
 subheader = [""]
-for i in eachindex(algs)
-    data = [data err[i] [NaN; eoc[i]]]
-    header = [header names[i] names[i]]
-    subheader = [subheader "Error" "EOC"]
-end
+#for i in eachindex(algs)
+#    data = [data err[i] [NaN; eoc[i]]]
+#    header = [header names[i] names[i]]
+#    subheader = [subheader "Error" "EOC"]
+#end
 
 # print table
 #pretty_table(data, header = (header, subheader),
