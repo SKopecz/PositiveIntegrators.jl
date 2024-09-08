@@ -2,7 +2,7 @@
 
 ## Second order MPRK schemes
 
-```@example convergence
+```@example eoc
 using PositiveIntegrators
 
 # choose schemes
@@ -20,7 +20,7 @@ prob = prob_pds_linmod
 
 nothing #hide
 ```
-```@example convergence
+```@example eoc
 using DiffEqDevTools
 
 dts = 0.5 .^ (5:10)
@@ -34,7 +34,8 @@ for i in eachindex(algs)
     eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
 end
 ```
-```@example convergence
+
+```@example eoc
 using PrettyTables
 
 # collect data and create headers
@@ -44,7 +45,7 @@ subheader = [""]
 for i in eachindex(algs)
     data = [data err[i] [NaN; eoc[i]]]
     header = [header names[i] names[i]]
-    subheader = [subheader "error" "order"]
+    subheader = [subheader "Error" "EOC"]
 end
 
 # print table
@@ -55,7 +56,7 @@ pretty_table(data, header = (header, subheader),
 
 ## Third order MPRK schemes
 
-```@example convergence
+```@example eoc
 
 #select schemes
 algs = [MPRK43I(1.0, 0.5)
@@ -87,7 +88,7 @@ subheader = [""]
 for i in eachindex(algs)
     data = [data err[i] [NaN; p[i]]]
     header = [header names[i] names[i]]
-    subheader = [subheader "error" "order"]
+    subheader = [subheader "Error" "EOC"]
 end
 
 pretty_table(data, header = (header, subheader),
