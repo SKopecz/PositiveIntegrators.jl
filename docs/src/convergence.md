@@ -30,7 +30,6 @@ eoc = Vector{Vector{Float64}}(undef, length(algs))
 #compute errors and experimental order of convergence
 for i in eachindex(algs)
     sim = test_convergence(dts, prob, algs[i])
-    sims[i] = sim
     err[i] = sim.errors[:l∞]
     eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
 end
@@ -77,7 +76,6 @@ err = Vector{Vector{Float64}}(undef, length(algs))
 p = Vector{Vector{Float64}}(undef, length(algs))
 for i in eachindex(algs)
     sim = test_convergence(dts, prob, algs[i])
-    sims[i] = sim
     err[i] = sim.errors[:l∞]
     p[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
 end
