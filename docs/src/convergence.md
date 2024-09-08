@@ -18,9 +18,9 @@ names = ["MPRK22(0.5)"
 
 prob = prob_pds_linmod
 
-nothing #hide
-```
-```@example eoc
+#nothing #hide
+#```
+#```@example eoc
 using DiffEqDevTools
 
 dts = 0.5 .^ (5:10)
@@ -33,9 +33,9 @@ for i in eachindex(algs)
     err[i] = sim.errors[:l∞]
     eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
 end
-```
-
-```@example eoc
+#```
+#
+#```@example eoc
 using PrettyTables
 
 # collect data and create headers
@@ -71,14 +71,16 @@ names = ["MPRK43I(1.0,0.5)"
          "MPRK43II(2.0/3.0)"
          "SSPMPRK43()"]
 
-#compute errors and experimental order of convergence
-sims = Vector{ConvergenceSimulation}(undef, length(algs))
+
+dts = 0.5 .^ (5:10)
 err = Vector{Vector{Float64}}(undef, length(algs))
-p = Vector{Vector{Float64}}(undef, length(algs))
+eoc = Vector{Vector{Float64}}(undef, length(algs))
+
+#compute errors and experimental order of convergence
 for i in eachindex(algs)
     sim = test_convergence(dts, prob, algs[i])
     err[i] = sim.errors[:l∞]
-    p[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
+    eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
 end
 
 # collect data and create headers
@@ -86,7 +88,7 @@ data = dts
 header = ["Δt"]
 subheader = [""]
 for i in eachindex(algs)
-    data = [data err[i] [NaN; p[i]]]
+    data = [data err[i] [NaN; eoc[i]]]
     header = [header names[i] names[i]]
     subheader = [subheader "Error" "EOC"]
 end
