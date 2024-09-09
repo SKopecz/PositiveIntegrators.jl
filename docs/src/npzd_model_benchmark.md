@@ -14,7 +14,7 @@ prob = prob_pds_npzd
 # compute reference solution (standard tolerances are too low)
 ref_sol = solve(prob, Vern7(); abstol = 1e-14, reltol = 1e-13)
 
-# compute solutions with low tolerances
+# compute solutions with lose tolerances
 abstol = 1e-2
 reltol = 1e-1
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol)
