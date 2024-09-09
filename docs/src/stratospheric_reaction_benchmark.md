@@ -6,11 +6,36 @@ We use the stiff stratospheric reacation problem [`prob_pds_stratreac`](@ref) to
 ```@example stratreac
 using OrdinaryDiffEq, PositiveIntegrators
 using Plots
+include("docs/src/utilities.jl")
 
 # select problem
 prob = prob_pds_stratreac
 
 # compute reference solution 
+tspan = prob.tspan
+dt_ref = (last(tspan) - first(tspan)) ./ 1e5
+sol_ref = solve(prob, Rodas4P(); dt = dt_ref, adaptive = false, save_everystep = false);
+sol_ref = sol_ref.u[end]
+
+
+dt0 = 48 * 60 #48 minutes
+dts = dt0 ./ 2 .^ (0:3)
+
+algs = [MPE()
+        MPRK22(1.0)]
+
+names = ["MPE"
+         "MPRK22(1.0)"]
+
+wp = workprecision_fixed(prob, algs, names, sol_ref, dts)
+
+
+plot(wp, names,
+     color = permutedims([repeat([1], 2)...]), legend = :top)
+
+```
+
+```@example
 ref_sol = solve(prob, Rodas4P(); abstol = 1e-11, reltol = 1e-10);
 
 # compute solutions with low tolerances
