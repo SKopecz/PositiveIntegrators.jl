@@ -55,11 +55,58 @@ l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
 ```
 
 ### Fixed time steps sizes
+```@example
+# set time step sizes
+dts = 1.0 ./ 2.0 .^ (0:1:12)
+```
 
+#### L∞
+```@example NPZD
+# choose methods to compare
+algs = [MPRK22(0.5)
+        MPRK22(2.0 / 3.0)
+        MPRK22(1.0)
+        SSPMPRK22(0.5, 1.0)
+        MPRK43I(1.0, 0.5)
+        MPRK43I(0.5, 0.75)
+        MPRK43II(0.5)
+        MPRK43II(2.0 / 3.0)]
+
+names = ["MPRK22(0.5)"
+         "MPPRK22(2/3)"
+         "MPRK22(1.0)"
+         "SSPMPRK22(0.5,1.0)"
+         "MPRK43I(1.0,0.5)"
+         "MPRK43I(0.5,0.75)"
+         "MPRK43II(0.5)"
+         "MPRK43II(2.0/3.0)"]
+
+# compute work-precision
+wp_l∞ = workprecision_fixed(prob, algs, names, sol_ref, dts;
+                               compute_error = l∞_error)
+
+plot(wp_l∞, names; title = "NPZD benchmark (l∞)", legend = :bottomleft,     
+     color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-10, 5*10^-1), xticks = 10.0 .^ (-5:1:0),
+     ylims = (5*10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10
+     )
+```
+#### L2
+```@example NPZD
+
+# compute work-precision
+wp_l2 = workprecision_fixed(prob, algs, names, sol_ref, dts;
+                               compute_error = l2_error)
+
+plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :topright,     
+     color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-10, 5*10^-1), xticks = 10.0 .^ (-10:1:0),
+     ylims = (5*10^-6, 10^-1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+```
 ### Adaptive schemes
 First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
 ```@example
-# set tolerances and error
+# set tolerances
 abstols = 1.0 ./ 10.0 .^ (2:1:8)
 reltols = abstols ./ 10.0
 ```

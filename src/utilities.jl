@@ -47,19 +47,20 @@ isnonnegative(args...) = !isnegative(args...)
 
 ### Work-precision #########################################################################
 
-# Taken from Sandu (2001)
+# relative errors
 function l2_error(sol, sol_ref)
     sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
 end
 
 function l1_error(sol, sol_ref)
-    sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
+    sum(abs.((sol .- sol_ref) ./ sol_ref)) / length(sol_ref)
 end
 
 function l∞_error(sol, sol_ref)
     maximum(abs.((sol .- sol_ref) ./ sol_ref))
 end
 
+# functions to compute data for workprecision diagrams
 function workprecision_fixed!(dict, prob, algs, names, sol_ref, dts;
                               compute_error = l∞_error, seconds = 2,
                               numruns = 20)
