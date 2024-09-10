@@ -11,7 +11,7 @@ using Plots
 prob = prob_pds_stratreac
 
 # compute reference solution 
-ref_sol = solve(prob, Rodas4P(); abstol = 1e-11, reltol = 1e-10);
+ref_sol = solve(prob, Rodas4P(); abstol = 1e-12, reltol = 1e-11);
 
 # compute solutions with low tolerances
 abstol = 1e-2
@@ -60,30 +60,52 @@ plot!(sol_MPRK, label = "MPRK22(1.0)", denseplot = false, markers = :circle)
 
 ## Work-Precision diagrams
 
-First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
+```@example stratreac
+# compute reference solution
+tspan = prob.tspan
+dt_ref = (last(tspan) - first(tspan)) ./ 1e5
+sol_ref = solve(prob, Rodas4P(); dt = dt_ref, adaptive = false, save_everystep = false);
+sol_ref = sol_ref.u[end]
+
+# define error functions
+l2_error(sol, sol_ref) = sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
+l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
+nothing #hide output
+```
+### Adaptive time stepping
 
 ```@example stratreac
-using DiffEqDevTools #load WorkPrecisionSet
+abstols = 1.0 ./ 10.0 .^ (2:1:5)
+reltols = 10.0 .* abstols
+nothing # hide output
+```
+
+Remark: Stricter tolerances will require more than a million steps!
+
+#### L∞ errors
+
+First we compare different (adaptive) MPRK schemes described in the literature. 
+
+```@example stratreac
 
 # choose methods to compare
-setups = [#Dict(:alg => MPRK22(0.5)) # fail
-          #Dict(:alg => MPRK22(0.5, small_constant = 1e-6)) #fail
-          #Dict(:alg => MPRK22(2.0 / 3.0)) #fail
-          #Dict(:alg => MPRK22(2.0 / 3.0, small_constant = 1e-6)) #fail
-          Dict(:alg => MPRK22(1.0))
-          Dict(:alg => MPRK22(1.0, small_constant = 1e-6))
-          #Dict(:alg => SSPMPRK22(0.5, 1.0)) # takes too long
-          Dict(:alg => MPRK43I(1.0, 0.5))
-          Dict(:alg => MPRK43I(1.0, 0.5, small_constant = 1e-6))
-          Dict(:alg => MPRK43I(0.5, 0.75))
-          Dict(:alg => MPRK43I(0.5, 0.75, small_constant = 1e-6))
-          Dict(:alg => MPRK43II(0.5))
-          Dict(:alg => MPRK43II(0.5, small_constant = 1e-6))
-          Dict(:alg => MPRK43II(2.0 / 3.0))
-          Dict(:alg => MPRK43II(2.0 / 3.0, small_constant = 1e-6))
-          ]
+algs = [#MPRK22(0.5) # fail
+        #MPRK22(0.5, small_constant = 1e-6) #fail
+        #MPRK22(2.0 / 3.0) #fail
+        #MPRK22(2.0 / 3.0, small_constant = 1e-6) #fail
+         MPRK22(1.0)
+         MPRK22(1.0, small_constant = 1e-6)
+        #SSPMPRK22(0.5, 1.0) # takes too long
+         MPRK43I(1.0, 0.5)
+         MPRK43I(1.0, 0.5, small_constant = 1e-6)
+         MPRK43I(0.5, 0.75)
+         MPRK43I(0.5, 0.75, small_constant = 1e-6)
+         MPRK43II(0.5)
+         MPRK43II(0.5, small_constant = 1e-6)
+         MPRK43II(2.0 / 3.0)
+         MPRK43II(2.0 / 3.0, small_constant = 1e-6)]
 
-labels = [#"MPRK22(0.5)"
+names = [#"MPRK22(0.5)"
           #"MPRK22(0.5, sc=1e-6)"
           #"MPPRK22(2/3)"
           #"MPPRK22(2/3, sc=1e-6)"
@@ -100,26 +122,14 @@ labels = [#"MPRK22(0.5)"
           "MPRK43II(2.0/3.0, sc=1e-6)"
           ]
 
-# set tolerances and error
-abstols = 1.0 ./ 10.0 .^ (2:0.5:5)
-reltols = 1.0 ./ 10.0 .^ (1:0.5:4)
-err_est = :l∞
-
-# create reference solution for `WorkPrecisionSet`
-test_sol = TestSolution(ref_sol)
-
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
+                               compute_error = l∞_error)
 
-#plot
-plot(wp, title = "Stratospheric reaction benchmark", legend = :bottomleft,
+plot(wp_l∞, names; title = "Stratospheric reaction benchmark (l∞)", legend = :bottomleft,     
      color = permutedims([repeat([1],2)...,repeat([3],4)...,repeat([4],4)...]),
-     #ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     #xlims = (2 *10 ^ -6, 2*10 ^ -2), xticks =10.0 .^ (-5:1:0),
-     )
+     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
 
@@ -128,20 +138,17 @@ For comparisons with other second and third order schemes from [OrdinaryDiffEq.j
 
 ```@example stratreac
 # select methods
-setups = [
-    Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => SDIRK2(), :isoutofdomain => isnegative),
-    Dict(:alg => Kvaerno3(), :isoutofdomain => isnegative),
-    Dict(:alg => KenCarp3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas3(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS2(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative)]
+algs2 = [MPRK43I(1.0, 0.5)
+    TRBDF2()
+    Kvaerno3()
+    KenCarp3()
+    Rodas3()
+    ROS2()
+    ROS3()
+    Rosenbrock23()]
 
-labels = ["MPRK43I(1.0,0.5)"
+names2 = ["MPRK43I(1.0,0.5)"
           "TRBDF2"
-          "SDIRK2"
           "Kvearno3"
           "KenCarp3"
           "Rodas3"
@@ -150,43 +157,35 @@ labels = ["MPRK43I(1.0,0.5)"
           "Rosenbrock23"]
 
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,                     
-                      verbose = false)
-plot(wp, title = "Stratospheric reaction benchmark", legend = :topright,
-     color = permutedims([3, repeat([5], 4)..., repeat([6], 4)...]),
-     #ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
-     #xlims = (1 *10 ^ -8, 2*10 ^ -2), xticks =10.0 .^ (-7:1:0)
-     )
+wp_l∞ = workprecision_adaptive(prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error = l∞_error)
+
+plot(wp_l∞, names2; title = "Stratospheric reaction benchmark (l∞)", legend = :topright,     
+     color = permutedims([3, repeat([4], 3)..., repeat([5], 4)...]),
+     xlims = (10^-7, 10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-3, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-Comparison to recommend solvers.
+#### L2 errors
+
 ```@example stratreac
-setups = [Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas5P(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas4P(), :isoutofdomain => isnegative)]
+wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
+                               compute_error = l2_error)
 
-labels = ["MPRK43I(1.0,0.5)"
-          "TRBDF2"
-          "Rosenbrock23"
-          "Rodas5P"
-          "Rodas4P"]
+plot(wp_l2, names; title = "Stratospheric reaction benchmark (l2)", legend = :bottomleft,     
+     color = permutedims([repeat([1],2)...,repeat([3],4)...,repeat([4],4)...]),
+     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+```
 
-# compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+```@example stratreac
+wp_l2 = workprecision_adaptive(prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error = l2_error)
 
-#plot                      
-plot(wp, title = "Robertson benchmark", legend = :topright,
-     color = permutedims([3, 5, repeat([6], 3)...]),
-     #ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
-     #xlims = (1 *10 ^ -9, 2*10 ^ -2), xticks =10.0 .^ (-8:1:0)
-     )
+plot(wp_l2, names2; title = "Stratospheric reaction benchmark (l2)", legend = :topright,     
+     color = permutedims([3, repeat([4], 3)..., repeat([5], 4)...]),
+     xlims = (10^-7, 10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-3, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
 ## Literature

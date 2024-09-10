@@ -54,7 +54,7 @@ nothing #hide output
 
 ```@example ROBER
 abstols = 1.0 ./ 10.0 .^ (2:1:11)
-reltols = 1.0 ./ 10.0 .^ (1:1:10)
+reltols = abstols .* 10.0
 nothing # hide output
 ```
 
@@ -218,7 +218,6 @@ plot(wp_l2, [names1; names2]; title = "Robertson benchmark (l2)", legend = :bott
 ```
 
 ```@example ROBER
-
 # compute work-precision
 compute_error = l2_error
 wp_l2 = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
