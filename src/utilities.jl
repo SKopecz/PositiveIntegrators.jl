@@ -105,7 +105,7 @@ end
 
 function workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, reltols;
                                  compute_error = l∞_error,
-                                 seconds = 2, numruns = 20)
+                                 seconds = 2, numruns = 20, kwargs...)
     for (alg, name) in zip(algs, names)
         println(name)
         error_time = Vector{Tuple{Float64, Float64}}(undef, length(abstols))
@@ -113,14 +113,16 @@ function workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, relt
         for (i, dt) in enumerate(abstols)
             abstol = abstols[i]
             reltol = reltols[i]
-            sol = solve(prob, alg; dt, abstol, reltol, save_everystep = false)
+            sol = solve(prob, alg; dt, abstol, reltol, save_everystep = false, kwargs...)
             error = compute_error(sol.u[end], sol_ref)
 
             #time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
             ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
-            benchmark_f = let abstol = abstol, reltol = reltol, prob = prob, alg = alg
+            benchmark_f = let abstol = abstol, reltol = reltol, prob = prob, alg = alg,
+                kwargs = kwargs
+
                 () -> @elapsed solve(prob, alg; abstol, reltol, adaptive = true,
-                                     save_everystep = false)
+                                     save_everystep = false, kwargs...)
             end
 
             benchmark_f() # pre-compile
@@ -142,11 +144,11 @@ end
 
 function workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
                                 compute_error = l∞_error, seconds = 2,
-                                numruns = 20)
+                                numruns = 20, kwargs...)
     dict = Dict(name => [] for name in names)
     workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, reltols;
                             compute_error, seconds,
-                            numruns)
+                            numruns, kwargs...)
     return dict
 end
 

@@ -42,20 +42,31 @@ plot!(sol_Ros23; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
 ```
 
 ## Work-Precision diagrams
-
-### Fixed time steps sizes
-
-### Adaptive schemes
-First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
-
-#### L∞ error
-
 ```@example NPZD
+# compute reference solution
 tspan = prob.tspan
 dt_ref = (last(tspan) - first(tspan)) ./ 1e5
 sol_ref = solve(prob, Vern7(); dt = dt_ref, adaptive = false, save_everystep = false);
 sol_ref = sol_ref.u[end]
 
+# define error functions
+l2_error(sol, sol_ref) = sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
+l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
+```
+
+### Fixed time steps sizes
+
+### Adaptive schemes
+First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
+```@example
+# set tolerances and error
+abstols = 1.0 ./ 10.0 .^ (2:1:8)
+reltols = abstols ./ 10.0
+```
+
+#### L∞ error
+
+```@example NPZD
 # choose methods to compare
 algs = [MPRK22(0.5)
         MPRK22(2.0 / 3.0)
@@ -75,27 +86,14 @@ names = ["MPRK22(0.5)"
          "MPRK43II(0.5)"
          "MPRK43II(2.0/3.0)"]
 
-# set tolerances and error
-abstols = 1.0 ./ 10.0 .^ (2:1:8)
-reltols = abstols ./ 10.0
-
 # compute work-precision
-wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols)
+wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols,
+                               compute_error = l∞_error)
 
 plot(wp_l∞, names; title = "NPZD benchmark (l∞)", legend = :topright,     
      color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10,)
-```
-
-#### L2 error
-```@example
-wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols, compute_error = PositiveIntegrators.l2_error)
-
-plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :topright,     
-          color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
-          xlims = (1 * 10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
-          ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10,)
 ```
 
 The second- and third-order methods behave very similarly. For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the schemes with the smallest error for the initial tolerances, respectively. These are `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)`.
@@ -120,23 +118,25 @@ Next we compare `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)` with some second a
 
 ```@example NPZD
 # select methods
-setups = [Dict(:alg => SSPMPRK22(0.5, 1.0)),
-    Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => Midpoint(), :isoutofdomain => isnegative),
-    Dict(:alg => Heun(), :isoutofdomain => isnegative),
-    Dict(:alg => Ralston(), :isoutofdomain => isnegative),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => SDIRK2(), :isoutofdomain => isnegative),
-    Dict(:alg => Kvaerno3(), :isoutofdomain => isnegative),
-    Dict(:alg => KenCarp3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas3(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS2(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative)]
+algs1 = [SSPMPRK22(0.5, 1.0)
+         MPRK43I(1.0, 0.5)]
 
-labels = ["SSPMPRK22(0.5,1.0)"
-          "MPRK43I(1.0,0.5)"
-          "Midpoint"
+algs2 = [Midpoint()
+         Heun()
+         Ralston()
+         TRBDF2()
+         SDIRK2()
+         Kvaerno3()
+         KenCarp3()
+         Rodas3()
+         ROS2()
+         ROS3()
+         Rosenbrock23()]
+
+names1 = ["SSPMPRK22(0.5,1.0)"
+          "MPRK43I(1.0,0.5)"]
+
+names2 = ["Midpoint"
           "Heun"
           "Ralston"
           "TRBDF2"
@@ -148,34 +148,32 @@ labels = ["SSPMPRK22(0.5,1.0)"
           "ROS3"
           "Rosenbrock23"]
 
-# compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,                      
-                      verbose = false)
-plot(wp, title = "NPZD benchmark", legend = :topright,
+compute_error = l∞_error
+wp_l∞ = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)
+workprecision_adaptive!(wp_l∞, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l∞, [names1; names2]; title = "NPZD benchmark (l∞)", legend = :topright,
      color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
-     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     xlims = (10 ^ -7, 10 ^ 0), xticks =10.0 .^ (-6:1:0))
+     xlims = (10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
 ```
 
 Comparison to recommend solvers.
 ```@example NPZD
-setups = [Dict(:alg => SSPMPRK22(0.5, 1.0)),
-    Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => Tsit5(), :isoutofdomain => isnegative),
-    Dict(:alg => BS3(), :isoutofdomain => isnegative),
-    Dict(:alg => Vern6(), :isoutofdomain => isnegative),
-    Dict(:alg => Vern7(), :isoutofdomain => isnegative),
-    Dict(:alg => Vern8(), :isoutofdomain => isnegative),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock32(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas5P(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas4P(), :isoutofdomain => isnegative)]
+algs2 = [Tsit5(),
+    BS3(),
+    Vern6(),
+    Vern7(),
+    Vern8(),
+    TRBDF2(),
+    Rosenbrock32(),
+    Rodas5P(),
+    Rodas4P()]
 
-labels = ["SSPMPRK22(0.5,1.0)"
-          "MPRK43I(1.0,0.5)"
-          "Tsit6"
+names2 = ["Tsit6"
           "BS3"
           "Vern6"
           "Vern7"
@@ -185,18 +183,107 @@ labels = ["SSPMPRK22(0.5,1.0)"
           "Rodas5P"
           "Rodas4P"]
 
-# compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+compute_error = l∞_error
+wp_l∞ = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)                             
+workprecision_adaptive!(wp_l∞, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
 
-#plot                      
-plot(wp, title = "NPZD benchmark", legend = :topright,
-     color = permutedims([2, 3, repeat([4], 5)..., 5, repeat([6], 3)...]),
-     ylims = (10^-5, 10^-1), yticks = 10.0 .^ (-5:0.5:-1), minorticks = 10,
-     xlims = (10 ^ -7, 10 ^ 0), xticks =10.0 .^ (-6:1:0))
+plot(wp_l∞, [names1; names2]; title = "NPZD benchmark (l∞)", legend = :topright,
+     color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (10^-11, 10^-1), xticks = 10.0 .^ (-11:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
 ```
+
+#### L2 error
+```@example
+wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols,
+                               compute_error = l2_error)
+
+plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :topright,     
+          color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+          xlims = (1 * 10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
+          ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10,)
+```
+```@example NPZD
+# select methods
+algs1 = [SSPMPRK22(0.5, 1.0)
+         MPRK43I(1.0, 0.5)]
+
+algs2 = [Midpoint()
+         Heun()
+         Ralston()
+         TRBDF2()
+         SDIRK2()
+         Kvaerno3()
+         KenCarp3()
+         Rodas3()
+         ROS2()
+         ROS3()
+         Rosenbrock23()]
+
+names1 = ["SSPMPRK22(0.5,1.0)"
+          "MPRK43I(1.0,0.5)"]
+
+names2 = ["Midpoint"
+          "Heun"
+          "Ralston"
+          "TRBDF2"
+          "SDIRK2"
+          "Kvearno3"
+          "KenCarp3"
+          "Rodas3"
+          "ROS2"
+          "ROS3"
+          "Rosenbrock23"]
+
+compute_error = l2_error
+wp_l2 = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)
+workprecision_adaptive!(wp_l2, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l2, [names1; names2]; title = "NPZD benchmark (l2)", legend = :topright,
+     color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
+```
+```@example NPZD
+algs2 = [Tsit5(),
+    BS3(),
+    Vern6(),
+    Vern7(),
+    Vern8(),
+    TRBDF2(),
+    Rosenbrock32(),
+    Rodas5P(),
+    Rodas4P()]
+
+names2 = ["Tsit6"
+          "BS3"
+          "Vern6"
+          "Vern7"
+          "Vern8"
+          "TRBDF2"
+          "Rosenbrock23"
+          "Rodas5P"
+          "Rodas4P"]
+
+compute_error = l2_error
+wp_l2 = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)                             
+workprecision_adaptive!(wp_l2, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l2, [names1; names2]; title = "NPZD benchmark (l2)", legend = :topright,
+     color = permutedims([2, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (10^-11, 10^-1), xticks = 10.0 .^ (-11:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
+```
+
 
 ## Literature
 - Kopecz, Meister 2nd order
