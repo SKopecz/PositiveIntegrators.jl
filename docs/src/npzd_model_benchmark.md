@@ -280,20 +280,29 @@ plot(wp_l∞, names; title = "NPZD benchmark (l∞)", legend = :bottomleft,
 ```
 
 ```@example NPZD
-algs = [MPRK22(1.0)
+algs2 = [MPRK22(1.0)
         MPRK43I(1.0, 0.5)
-        ROS3()]
+        ROS3()
+        Rodas3()
+        Rosenbrock23()
+        Tsit5()
+        Vern7()]
 
-names = ["MPRK22(1.0)"     
-         "MPRK43I(1.0,0.5)"]
+names2 = ["MPRK22(1.0)"     
+         "MPRK43I(1.0,0.5)"
+         "ROS3"
+         "Rodas3"
+         "Rosenbrock23"
+         "Tsit5"
+         "Vern7"]
          
-wp_l∞ = workprecision_fixed(prob, algs, names, sol_ref, dts;
+wp_l∞ = workprecision_fixed(prob, algs2, names2, sol_ref, dts;
                                compute_error = l∞_error)
 
-plot(wp_l∞, [names1; names2]; title = "NPZD benchmark (l∞)", legend = :topright,
-     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
-     xlims = (10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
-     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
+plot(wp_l∞, names2; title = "NPZD benchmark (l∞)", legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)...]),
+     xlims = (10^-13, 10^-1), xticks = 10.0 .^ (-12:1:0),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
 #### L2
@@ -307,6 +316,16 @@ plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :bottomleft,
      color = permutedims([5,repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...,6]),
      xlims = (10^-10, 5*10^-1), xticks = 10.0 .^ (-10:1:0),
      ylims = (5*10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
+```
+
+```@example NPZD
+wp_l2 = workprecision_fixed(prob, algs2, names2, sol_ref, dts;
+                               compute_error = l2_error)
+
+plot(wp_l2, names2; title = "NPZD benchmark (l2)", legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)...]),
+     xlims = (10^-13, 10^-1), xticks = 10.0 .^ (-12:1:0),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
 ## Literature
