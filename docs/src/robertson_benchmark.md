@@ -11,13 +11,13 @@ using Plots
 prob = prob_pds_robertson
 
 # compute reference solution 
-ref_sol = solve(prob, Rodas4P(); abstol = 1e-14, reltol = 1e-13)
+ref_sol = solve(prob, Rodas4P(); abstol = 1e-14, reltol = 1e-13);
 
 # compute solutions with low tolerances
 abstol = 1e-2
 reltol = 1e-1
-sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol)
-sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol)
+sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol);
+sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
 
 # plot solutions
 p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
@@ -39,49 +39,57 @@ plot!(sol_Ros23; tspan = (1e-7, 1e11),  xaxis = :log, denseplot = false, markers
 
 ## Work-Precision diagrams
 
-First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
+```@example ROBER
+# compute reference solution
+tspan = prob.tspan
+sol_ref = solve(prob, Rodas4P(); abstol = 1e-15, reltol = 1e-14, save_everystep = false);
+sol_ref = sol_ref.u[end]
+
+# define error functions
+l2_error(sol, sol_ref) = sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
+l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
+nothing #hide output
+```
+### Adaptive time stepping
 
 ```@example ROBER
-using DiffEqDevTools #load WorkPrecisionSet
+abstols = 1.0 ./ 10.0 .^ (2:1:11)
+reltols = 1.0 ./ 10.0 .^ (1:1:10)
+nothing # hide output
+```
 
-# choose methods to compare
-setups = [Dict(:alg => MPRK22(0.5))  
-          Dict(:alg => MPRK22(2.0 / 3.0))
-          Dict(:alg => MPRK22(1.0))
-          Dict(:alg => SSPMPRK22(0.5, 1.0))  
-          Dict(:alg => MPRK43I(1.0, 0.5))
-          Dict(:alg => MPRK43I(0.5, 0.75))
-          Dict(:alg => MPRK43II(0.5))
-          Dict(:alg => MPRK43II(2.0 / 3.0))]
+#### L∞ errors
 
-labels = ["MPRK22(0.5)"
-          "MPPRK22(2/3)"
-          "MPRK22(1.0)"
-          "SSPMPRK22(0.5,1.0)"
-          "MPRK43I(1.0,0.5)"
-          "MPRK43I(0.5,0.75)"
-          "MPRK43II(0.5)"
-          "MPRK43II(2.0/3.0)"]
+First we compare different (adaptive) MPRK schemes described in the literature. 
 
-# set tolerances and error
-abstols = 1.0 ./ 10.0 .^ (2:0.5:8)
-reltols = 1.0 ./ 10.0 .^ (1:0.5:7)
-err_est = :l∞
+```@example ROBER
+algs = [#MPRK22(0.5)
+        MPRK22(2.0 / 3.0)
+        MPRK22(1.0)
+        #SSPMPRK22(0.5, 1.0)
+        MPRK43I(1.0, 0.5)
+        MPRK43I(0.5, 0.75)
+        MPRK43II(0.5)
+        MPRK43II(2.0 / 3.0)]
 
-# create reference solution for `WorkPrecisionSet`
-test_sol = TestSolution(ref_sol)
+names = [#"MPRK22(0.5)"
+         "MPPRK22(2/3)"
+         "MPRK22(1.0)"
+         #"SSPMPRK22(0.5,1.0)"
+         "MPRK43I(1.0,0.5)"
+         "MPRK43I(0.5,0.75)"
+         "MPRK43II(0.5)"
+         "MPRK43II(2.0/3.0)"]
 
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
+                               compute_error = l∞_error)
 
-#plot
-plot(wp, title = "Robertson benchmark", legend = :topright,
-     color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]),
-     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     xlims = (2 *10 ^ -6, 2*10 ^ -2), xticks =10.0 .^ (-5:1:0))
+plot(wp_l∞, names; title = "Robertson benchmark (l∞)", legend = :bottomleft,     
+     color = permutedims([repeat([1], 2)..., repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10
+     )
 ```
 
 Besides `SSPMPRK22` and `MPRK22(0.5)` all methods behave similarly. `SSPMPRK22` generates oscillatory solutions.
@@ -103,40 +111,38 @@ sol2 = solve(prob, MPRK22(0.5), abstol=1e-6, reltol = 1e-5);
 length(sol1), length(sol2)
 ```
 
-For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(1.0, 0.5)`.
+For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(0.5, 0.75)`.
 
 ```@example ROBER
 sol_MPRK22 = solve(prob, MPRK22(1.0); abstol, reltol)
-sol_MPRK43 = solve(prob, MPRK43I(1.0, 0.5); abstol, reltol)
+sol_MPRK43 = solve(prob, MPRK43I(0.5, 0.75); abstol, reltol)
 
-p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right)
-plot!(p1, sol_MPRK22; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK22(1.0)", xticks =10.0 .^ (-6:4:10))
-p2 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right)
-plot!(p2, sol_MPRK43; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK43I(1.0, 0.5)", xticks =10.0 .^ (-6:4:10))
+p1 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
+plot!(p1, sol_MPRK22; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK22(1.0)", xticks =10.0 .^ (-6:4:10));
+p2 = plot(ref_sol, tspan = (1e-6, 1e11),  xaxis = :log, idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], linestyle = :dash, label = "", legend = :right);
+plot!(p2, sol_MPRK43; tspan = (1e-6, 1e11),  xaxis = :log, denseplot = false, markers = :circle, ylims = (-0.2, 1.2), idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)], title = "MPRK43I(0.5, 0.75)", xticks =10.0 .^ (-6:4:10));
 plot(p1, p2)
 ```
 
-# <span style="color:red">**We need relative errors!**</span>.
-
-Next we compare `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` with some second and third order methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee positive solutions with these methods, we must select the solver option `isoutofdomain = isnegative`.
+Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some second and third order methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee positive solutions with these methods, we must select the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # select methods
-setups = [Dict(:alg => MPRK22(1.0)),
-    Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => SDIRK2(), :isoutofdomain => isnegative),
-    Dict(:alg => Kvaerno3(), :isoutofdomain => isnegative),
-    Dict(:alg => KenCarp3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas3(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS2(), :isoutofdomain => isnegative),
-    Dict(:alg => ROS3(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative)]
+algs1 = [MPRK22(1.0),
+         MPRK43I(0.5, 0.75)]
 
-labels = ["MPRK22(1.0)"
-          "MPRK43I(1.0,0.5)"
-          "TRBDF2"
-          "SDIRK2"
+algs2 = [TRBDF2()
+         Kvaerno3()
+         KenCarp3()
+         Rodas3()
+         ROS2()
+         ROS3()
+         Rosenbrock23()]
+
+names1 = ["MPRK22(1.0)"
+          "MPRK43I(0.5,0.75)"]
+
+names2 = ["TRBDF2"
           "Kvearno3"
           "KenCarp3"
           "Rodas3"
@@ -145,44 +151,88 @@ labels = ["MPRK22(1.0)"
           "Rosenbrock23"]
 
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,                     
-                      verbose = false)
-plot(wp, title = "Robertson benchmark", legend = :topright,
-     color = permutedims([2, 3, repeat([5], 4)..., repeat([6], 4)...]),
-     ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
-     xlims = (1 *10 ^ -8, 2*10 ^ -2), xticks =10.0 .^ (-7:1:0))
+compute_error = l∞_error
+wp_l∞ = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)
+workprecision_adaptive!(wp_l∞, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l∞, [names1; names2]; title = "Robertson benchmark (l∞)", legend = :bottomleft,
+     color = permutedims([2, 3, repeat([5], 3)..., repeat([6], 4)...]),
+     xlims = (10^-14, 10^2), xticks = 10.0 .^ (-14:2:2),
+     ylims = (10^-5, 1.5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
 Comparison to recommend solvers.
 ```@example ROBER
-setups = [Dict(:alg => MPRK22(1.0)),
-    Dict(:alg => MPRK43I(1.0, 0.5)),
-    Dict(:alg => TRBDF2(), :isoutofdomain => isnegative),
-    Dict(:alg => Rosenbrock23(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas5P(), :isoutofdomain => isnegative),
-    Dict(:alg => Rodas4P(), :isoutofdomain => isnegative)]
+algs3 = [TRBDF2()
+         Rosenbrock23()
+         Rodas5P()
+         Rodas4P()]
 
-labels = ["MPRK22(1.0)"
-          "MPRK43I(1.0,0.5)"
-          "TRBDF2"
+names3 = ["TRBDF2"
           "Rosenbrock23"
           "Rodas5P"
           "Rodas4P"]
 
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+compute_error = l∞_error
+wp_l∞ = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)                             
+workprecision_adaptive!(wp_l∞, prob, algs3, names3, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
 
-#plot                      
-plot(wp, title = "Robertson benchmark", legend = :topright,
+plot(wp_l∞, [names1; names3]; title = "NPZD benchmark (l∞)", legend = :topright,
      color = permutedims([2, 3, 5, repeat([6], 3)...]),
-     ylims = (10 ^ -5, 10 ^ 0), yticks = 10.0 .^ (-5:.5:0), minorticks=10,
-     xlims = (1 *10 ^ -9, 2*10 ^ -2), xticks =10.0 .^ (-8:1:0))
+     xlims = (10^-8, 2*10^0), xticks = 10.0 .^ (-11:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
 ```
+
+#### L2 errors
+
+```@example ROBER
+# compute work-precision
+wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
+                               compute_error = l2_error)
+
+plot(wp_l2, names; title = "Robertson benchmark (l2)", legend = :bottomleft,     
+     color = permutedims([repeat([1], 2)..., repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10
+     )
+```
+
+```@example ROBER
+# compute work-precision
+compute_error = l2_error
+wp_l2 = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)
+workprecision_adaptive!(wp_l2, prob, algs2, names2, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l2, [names1; names2]; title = "Robertson benchmark (l2)", legend = :bottomleft,
+     color = permutedims([2, 3, repeat([5], 3)..., repeat([6], 4)...]),
+     xlims = (10^-14, 10^2), xticks = 10.0 .^ (-14:2:2),
+     ylims = (10^-5, 1.5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+```
+
+```@example ROBER
+
+# compute work-precision
+compute_error = l2_error
+wp_l2 = workprecision_adaptive(prob, algs1, names1, sol_ref, abstols, reltols;
+                               compute_error)                             
+workprecision_adaptive!(wp_l2, prob, algs3, names3, sol_ref, abstols, reltols;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp_l2, [names1; names3]; title = "NPZD benchmark (l2)", legend = :topright,
+     color = permutedims([2, 3, 5, repeat([6], 3)...]),
+     xlims = (10^-8, 2*10^0), xticks = 10.0 .^ (-11:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+
+```
+
 
 ## Literature
 - Kopecz, Meister 2nd order
