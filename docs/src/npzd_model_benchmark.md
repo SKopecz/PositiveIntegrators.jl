@@ -55,7 +55,7 @@ l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
 ```
 
 ### Fixed time steps sizes
-```@example
+```@example NPZD
 # set time step sizes
 dts = 1.0 ./ 2.0 .^ (0:1:12)
 ```
@@ -105,7 +105,7 @@ plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :topright,
 ```
 ### Adaptive schemes
 First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
-```@example
+```@example NPZD
 # set tolerances
 abstols = 1.0 ./ 10.0 .^ (2:1:8)
 reltols = abstols ./ 10.0
@@ -244,7 +244,7 @@ plot(wp_l∞, [names1; names2]; title = "NPZD benchmark (l∞)", legend = :topri
 ```
 
 #### L2 error
-```@example
+```@example NPZD
 wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols,
                                compute_error = l2_error)
 
