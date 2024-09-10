@@ -38,6 +38,8 @@ import OrdinaryDiffEq: alg_order, isfsal,
                        _ode_interpolant, _ode_interpolant!,
                        get_fsalfirstlast
 
+using RecipesBase
+
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
@@ -50,6 +52,8 @@ export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac, prob_pds_minmapk
 
 export isnegative, isnonnegative
+export workprecision_adaptive, workprecision_adaptive!, workprecision_fixed,
+       workprecision_fixed!
 
 # 3. Load source code
 

@@ -43,49 +43,59 @@ plot!(sol_Ros23; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
 
 ## Work-Precision diagrams
 
+### Fixed time steps sizes
+
+### Adaptive schemes
 First we compare different (adaptive) MPRK schemes described in the literature. The chosen `l∞` error computes the maximum of the absolute values of the difference between the numerical solution and the reference solution over all components and all time steps.
 
+#### L∞ error
+
 ```@example NPZD
-using DiffEqDevTools #load WorkPrecisionSet
+tspan = prob.tspan
+dt_ref = (last(tspan) - first(tspan)) ./ 1e5
+sol_ref = solve(prob, Vern7(); dt = dt_ref, adaptive = false, save_everystep = false);
+sol_ref = sol_ref.u[end]
 
 # choose methods to compare
-setups = [Dict(:alg => MPRK22(0.5))
-          Dict(:alg => MPRK22(2.0 / 3.0))
-          Dict(:alg => MPRK22(1.0))
-          Dict(:alg => SSPMPRK22(0.5, 1.0))
-          Dict(:alg => MPRK43I(1.0, 0.5))
-          Dict(:alg => MPRK43I(0.5, 0.75))
-          Dict(:alg => MPRK43II(0.5))
-          Dict(:alg => MPRK43II(2.0 / 3.0))]
+algs = [MPRK22(0.5)
+        MPRK22(2.0 / 3.0)
+        MPRK22(1.0)
+        SSPMPRK22(0.5, 1.0)
+        MPRK43I(1.0, 0.5)
+        MPRK43I(0.5, 0.75)
+        MPRK43II(0.5)
+        MPRK43II(2.0 / 3.0)]
 
-labels = ["MPRK22(0.5)"
-          "MPPRK22(2/3)"
-          "MPRK22(1.0)"
-          "SSPMPRK22(0.5,1.0)"
-          "MPRK43I(1.0,0.5)"
-          "MPRK43I(0.5,0.75)"
-          "MPRK43II(0.5)"
-          "MPRK43II(2.0/3.0)"]
+names = ["MPRK22(0.5)"
+         "MPPRK22(2/3)"
+         "MPRK22(1.0)"
+         "SSPMPRK22(0.5,1.0)"
+         "MPRK43I(1.0,0.5)"
+         "MPRK43I(0.5,0.75)"
+         "MPRK43II(0.5)"
+         "MPRK43II(2.0/3.0)"]
 
 # set tolerances and error
-abstols = 1.0 ./ 10.0 .^ (2:0.5:8)
-reltols = 1.0 ./ 10.0 .^ (1:0.5:7)
-err_est = :l∞
-
-# create reference solution for `WorkPrecisionSet`
-test_sol = TestSolution(ref_sol)
+abstols = 1.0 ./ 10.0 .^ (2:1:8)
+reltols = abstols ./ 10.0
 
 # compute work-precision
-wp = WorkPrecisionSet(prob, abstols, reltols, setups;
-                      error_estimate = err_est, appxsol = test_sol,
-                      names = labels, print_names = true,
-                      verbose = false)
+wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols)
 
-#plot
-plot(wp, title = "NPZD benchmark", legend = :topright,
-     color = permutedims([repeat([1],3)...,2,repeat([3],2)...,repeat([4],2)...]),
-     ylims = (10 ^ -5, 10 ^ -1), yticks = 10.0 .^ (-5:.5:-1), minorticks=10,
-     xlims = (10 ^ -7, 10 ^ 0), xticks =10.0 .^ (-6:1:0))
+plot(wp_l∞, names; title = "NPZD benchmark (l∞)", legend = :topright,     
+     color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10,)
+```
+
+#### L2 error
+```@example
+wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols, compute_error = PositiveIntegrators.l2_error)
+
+plot(wp_l2, names; title = "NPZD benchmark (l2)", legend = :topright,     
+          color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+          xlims = (1 * 10^-8, 10^-1), xticks = 10.0 .^ (-8:1:0),
+          ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10,)
 ```
 
 The second- and third-order methods behave very similarly. For comparisons with other schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the schemes with the smallest error for the initial tolerances, respectively. These are `SSPMPRK22(0.5, 1.0)` and `MPRK43I(1.0, 0.5)`.
