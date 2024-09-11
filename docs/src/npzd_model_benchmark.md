@@ -280,26 +280,38 @@ plot(wp_l∞, names; title = "NPZD benchmark (l∞)", legend = :bottomleft,
 
 ```@example NPZD
 algs2 = [MPRK22(1.0)
-        MPRK43I(1.0, 0.5)
-        ROS3()
-        Rodas3()
-        Rosenbrock23()
-        Tsit5()
-        Vern7()]
+         MPRK43I(1.0, 0.5)
+         Midpoint()
+         Heun()
+         Ralston()
+         TRBDF2()
+         SDIRK2()
+         Kvaerno3()
+         KenCarp3()
+         Rodas3()
+         ROS2()
+         ROS3()
+         Rosenbrock23()]
 
-names2 = ["MPRK22(1.0)"     
-         "MPRK43I(1.0,0.5)"
-         "ROS3"
-         "Rodas3"
-         "Rosenbrock23"
-         "Tsit5"
-         "Vern7"]
-         
+names2 = ["MPRK22(1.0)"
+          "MPRK43I(1.0,0.5)"
+          "Midpoint"
+          "Heun"
+          "Ralston"
+          "TRBDF2"
+          "SDIRK2"
+          "Kvearno3"
+          "KenCarp3"
+          "Rodas3"
+          "ROS2"
+          "ROS3"
+          "Rosenbrock23"]
+
 wp_l∞ = workprecision_fixed(prob, algs2, names2, sol_ref, dts;
                                compute_error = l∞_error)
 
-plot(wp_l∞, names2; title = "NPZD benchmark (l∞)", legend = :topright,
-     color = permutedims([1, 3, repeat([4], 3)...]),
+plot(wp_l∞, names2; title = "NPZD benchmark (l∞)", legend = :bottomleft,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
      xlims = (10^-13, 10^-1), xticks = 10.0 .^ (-12:1:0),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
