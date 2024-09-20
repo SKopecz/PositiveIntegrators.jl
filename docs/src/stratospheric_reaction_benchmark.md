@@ -67,6 +67,8 @@ dt_ref = (last(tspan) - first(tspan)) ./ 1e5
 sol_ref = solve(prob, Rodas4P(); dt = dt_ref, adaptive = false, save_everystep = false);
 sol_ref = sol_ref.u[end]
 
+alg_ref = Rodas4P()
+
 # define error functions
 l2_error(sol, sol_ref) = sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
 l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
@@ -123,8 +125,8 @@ names = [#"MPRK22(0.5)"
           ]
 
 # compute work-precision
-wp_l∞ = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
-                               compute_error = l∞_error)
+wp_l∞ = workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
+                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
 
 plot(wp_l∞, names; title = "Stratospheric reaction benchmark (l∞)", legend = :bottomleft,     
      color = permutedims([repeat([1],2)...,repeat([3],4)...,repeat([4],4)...]),
@@ -157,35 +159,14 @@ names2 = ["MPRK43I(1.0,0.5)"
           "Rosenbrock23"]
 
 # compute work-precision
-wp_l∞ = workprecision_adaptive(prob, algs2, names2, sol_ref, abstols, reltols;
-                               compute_error = l∞_error)
+wp_l∞ = workprecision_adaptive(prob, algs2, names2, abstols, reltols, alg_ref;
+                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
 
+#
 plot(wp_l∞, names2; title = "Stratospheric reaction benchmark (l∞)", legend = :topright,     
      color = permutedims([3, repeat([4], 3)..., repeat([5], 4)...]),
      xlims = (10^-7, 10^-1), xticks = 10.0 .^ (-8:1:0),
      ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
-```
-
-#### L2 errors
-
-```@example stratreac
-wp_l2 = workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
-                               compute_error = l2_error)
-
-plot(wp_l2, names; title = "Stratospheric reaction benchmark (l2)", legend = :bottomleft,     
-     color = permutedims([repeat([1],2)...,repeat([3],4)...,repeat([4],4)...]),
-     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
-     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
-```
-
-```@example stratreac
-wp_l2 = workprecision_adaptive(prob, algs2, names2, sol_ref, abstols, reltols;
-                               compute_error = l2_error)
-
-plot(wp_l2, names2; title = "Stratospheric reaction benchmark (l2)", legend = :topright,     
-     color = permutedims([3, repeat([4], 3)..., repeat([5], 4)...]),
-     xlims = (10^-7, 10^-1), xticks = 10.0 .^ (-8:1:0),
-     ylims = (10^-3, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
 ### Fixed time steps sizes
@@ -243,8 +224,8 @@ names = ["MPE()"
 
 
 # compute work-precision
-wp_l∞ = workprecision_fixed(prob, algs, names, sol_ref, dts;
-                               compute_error = l∞_error)
+wp_l∞ = workprecision_fixed(prob, algs, names, dts, alg_ref;
+                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
 
 plot(wp_l∞, names; title = "Stratospheric reaction benchmark (l∞)", legend = :topright,     
      color = permutedims([repeat([5],2)...,repeat([1], 2)..., repeat([3], 4)..., repeat([4], 4)...,repeat([6],2)...]),
@@ -278,12 +259,12 @@ names4 = ["TRBDF2"
           "Kvearno3"
           "KenCarp3"]
 
-compute_error = l∞_error
-wp_l∞ = workprecision_fixed(prob, algs2, names2, sol_ref, dts;
+compute_error = PositiveIntegrators.rel_l∞_error_at_end
+wp_l∞ = workprecision_fixed(prob, algs2, names2, dts, alg_ref;
                                compute_error)
-workprecision_fixed!(wp_l∞, prob, algs3, names3, sol_ref, dts[3:end];
+workprecision_fixed!(wp_l∞, prob, algs3, names3, dts[3:end], alg_ref;
                                compute_error)
-workprecision_fixed!(wp_l∞, prob, algs4, names4, sol_ref, dts[5:end];
+workprecision_fixed!(wp_l∞, prob, algs4, names4, dts[5:end], alg_ref;
                                compute_error)
 
 plot(wp_l∞, [names2; names3; names4]; title = "Stratospheric reaction benchmark (l∞)", legend = :bottomleft,
