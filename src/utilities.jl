@@ -47,66 +47,128 @@ isnonnegative(args...) = !isnegative(args...)
 
 ### Work-precision #########################################################################
 
+# The following function take sol.u and sol_ref.u as inputs
 # relative errors
-function l2_error(sol, sol_ref)
-    sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
+function rel_l2_error_at_end(sol, sol_ref)
+    sqrt(sum(((sol[end] .- sol_ref[end]) ./ sol_ref[end]) .^ 2) / length(sol_ref[end]))
 end
 
-function l1_error(sol, sol_ref)
-    sum(abs.((sol .- sol_ref) ./ sol_ref)) / length(sol_ref)
+function rel_l1_error_at_end(sol, sol_ref)
+    sum(abs.((sol[end] .- sol_ref[end]) ./ sol_ref[end])) / length(sol_ref[end])
 end
 
-function l∞_error(sol, sol_ref)
-    maximum(abs.((sol .- sol_ref) ./ sol_ref))
+function rel_l∞_error_at_end(sol, sol_ref)
+    maximum(abs.((sol[end] .- sol_ref[end]) ./ sol_ref[end]))
+end
+
+function rel_l∞_error_all(sol, sol_ref)
+    err = zero(eltype(eltype(sol)))
+    for i in eachindex(sol)
+        max_err_i = maximum(abs.((sol[i] .- sol_ref[i]) ./ sol_ref[i]))
+        if max_err_i > err
+            err = max_err_i
+        end
+    end
+    return err
+end
+
+function compute_time_fixed(dt, prob, alg, seconds, numruns)
+    # using bechmarktools is too slow 
+    # time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
+
+    ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
+    benchmark_f = let dt = dt, prob = prob, alg = alg
+        () -> @elapsed solve(prob, alg; dt, adaptive = false,
+                             save_everystep = false)
+    end
+
+    benchmark_f() # pre-compile
+
+    b_t = benchmark_f()
+    if b_t > seconds
+        time = b_t
+    else
+        time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
+    end
+    ##########################################################################
+    return time
+end
+
+function compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns, kwargs...)
+    # using bechmarktools is too slow 
+    # time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
+    ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
+    benchmark_f = let abstol = abstol, reltol = reltol, prob = prob, alg = alg,
+        kwargs = kwargs
+
+        () -> @elapsed solve(prob, alg; abstol, reltol, adaptive = true,
+                             save_everystep = false, kwargs...)
+    end
+
+    benchmark_f() # pre-compile
+
+    b_t = benchmark_f()
+    if b_t > seconds
+        time = b_t
+    else
+        time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
+    end
+    ##########################################################################
+    return time
 end
 
 # functions to compute data for workprecision diagrams
-function workprecision_fixed!(dict, prob, algs, names, sol_ref, dts;
-                              compute_error = l∞_error, seconds = 2,
+function workprecision_fixed!(dict, prob, algs, names, dts, alg_ref;
+                              compute_error = rel_l∞_error_at_end, seconds = 2,
                               numruns = 20)
-    for (alg, name) in zip(algs, names)
-        println(name)
-        error_time = Vector{Tuple{Float64, Float64}}(undef, length(dts))
+    tspan = prob.tspan
+    dt_ref = (last(tspan) - first(tspan)) ./ 1e5
+    sol_ref = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
 
-        for (i, dt) in enumerate(dts)
-            sol = solve(prob, alg; dt, adaptive = false, save_everystep = false)
-            error = compute_error(sol.u[end], sol_ref)
+    let sol_ref = sol_ref
+        for (alg, name) in zip(algs, names)
+            println(name)
+            error_time = Vector{Tuple{Float64, Float64}}(undef, length(dts))
 
-            # using bechmarktools is too slow to 
-            #time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
+            for (i, dt) in enumerate(dts)
+                sol = solve(prob, alg; dt, adaptive = false, save_everystep = true)
+                if Int(sol.retcode) == 1
+                    error = compute_error(sol.u, sol_ref(sol.t))
+                    time = compute_time_fixed(dt, prob, alg, seconds, numruns)
 
-            ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
-            benchmark_f = let dt = dt, prob = prob, alg = alg
-                () -> @elapsed solve(prob, alg; dt, adaptive = false,
-                                     save_everystep = false)
+                    error_time[i] = (error, time)
+                else
+                    error_time[i] = (Inf, Inf)
+                end
             end
-
-            benchmark_f() # pre-compile
-
-            b_t = benchmark_f()
-            if b_t > seconds
-                time = b_t
-            else
-                time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
-            end
-            ##########################################################################
-            error_time[i] = (error, time)
+            dict[name] = error_time
         end
-        dict[name] = error_time
     end
 end
 
-function workprecision_fixed(prob, algs, names, sol_ref, dts; compute_error = l∞_error,
+function workprecision_fixed(prob, algs, names, dts, alg_ref;
+                             compute_error = rel_l∞_error_at_end,
                              seconds = 2, numruns = 20)
     dict = Dict(name => [] for name in names)
-    workprecision_fixed!(dict, prob, algs, names, sol_ref, dts; compute_error, seconds,
+    workprecision_fixed!(dict, prob, algs, names, dts, alg_ref; compute_error, seconds,
                          numruns)
     return dict
 end
 
-function workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, reltols;
-                                 compute_error = l∞_error,
+function workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_ref;
+                                 adaptive_ref = false,
+                                 abstol_ref = 1e-14, reltol_ref = 1e-13,
+                                 compute_error = rel_l∞_error_at_end,
                                  seconds = 2, numruns = 20, kwargs...)
+    if adaptive_ref
+        sol_ref = solve(prob, alg_ref; adaptive = true, save_everystep = true,
+                        abstol = abstol_ref, reltol = reltol_ref)
+    else
+        tspan = prob.tspan
+        dt_ref = (last(tspan) - first(tspan)) ./ 1e5
+        sol_ref = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
+    end
+
     for (alg, name) in zip(algs, names)
         println(name)
         error_time = Vector{Tuple{Float64, Float64}}(undef, length(abstols))
@@ -114,40 +176,33 @@ function workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, relt
         for (i, dt) in enumerate(abstols)
             abstol = abstols[i]
             reltol = reltols[i]
-            sol = solve(prob, alg; dt, abstol, reltol, save_everystep = false, kwargs...)
-            error = compute_error(sol.u[end], sol_ref)
+            sol = solve(prob, alg; abstol, reltol, save_everystep = true,
+                        kwargs...)
 
-            #time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
-            ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
-            benchmark_f = let abstol = abstol, reltol = reltol, prob = prob, alg = alg,
-                kwargs = kwargs
+            if Int(sol.retcode) == 1
+                error = compute_error(sol.u, sol_ref(sol.t))
+                time = compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns,
+                                             kwargs...)
 
-                () -> @elapsed solve(prob, alg; abstol, reltol, adaptive = true,
-                                     save_everystep = false, kwargs...)
-            end
-
-            benchmark_f() # pre-compile
-
-            b_t = benchmark_f()
-            if b_t > seconds
-                time = b_t
+                error_time[i] = (error, time)
             else
-                time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
+                error_time[i] = (Inf, Inf)
             end
-            ##########################################################################
-
-            error_time[i] = (error, time)
         end
         dict[name] = error_time
     end
+
     return nothing
 end
 
-function workprecision_adaptive(prob, algs, names, sol_ref, abstols, reltols;
-                                compute_error = l∞_error, seconds = 2,
+function workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
+                                adaptive_ref = false,
+                                abstol_ref = 1e-14, reltol_ref = 1e-13,
+                                compute_error = rel_l∞_error_at_end, seconds = 2,
                                 numruns = 20, kwargs...)
     dict = Dict(name => [] for name in names)
-    workprecision_adaptive!(dict, prob, algs, names, sol_ref, abstols, reltols;
+    workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_ref;
+                            adaptive_ref, abstol_ref, reltol_ref,
                             compute_error, seconds,
                             numruns, kwargs...)
     return dict
