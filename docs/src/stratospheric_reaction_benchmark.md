@@ -296,7 +296,7 @@ plot!(sol_MPRK, label = "MPRK22(1.0)", denseplot = false, markers = :circle)
 
 These results were obtained using the following versions.
 ```@example STRATREAC
-vecusing InteractiveUtils
+using InteractiveUtils
 versioninfo()
 println()
 
