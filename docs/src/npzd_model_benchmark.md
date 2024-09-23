@@ -24,7 +24,7 @@ npzd_plot = function(sol, sol_ref = nothing, title = "")
 end
 nothing # hide output
 ```
-Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes.
+Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes, since negative values in the ``N``-component typically result in an ongoing decrease in ``N``. 
 
 ```@example NPZD
 # select NPZD problem
@@ -45,7 +45,7 @@ p2 = npzd_plot(sol_MPRK, ref_sol, "MPRK22(1.0)"); #auxiliary function defined ab
 plot(p1, p2)
 ```
 
-Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used to guarantee nonnegative solutions.
+Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used to guarantee nonnegative solutions. 
 
 ```@example NPZD
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol, 
@@ -56,7 +56,9 @@ npzd_plot(sol_Ros23, ref_sol) #auxiliary function defined above
 
 ## Work-Precision diagrams
 
-In the following we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. First we focus on adaptive methods, afterwards we also show results obtained with fixed time step sizes.
+In the following we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. First we focus on adaptive methods, afterwards we also show [results obtained with fixed time step sizes](#fixed-time-steps-sizes).
+
+Since the NPZD problem is not stiff, we can use an explicit high-order scheme to compute its reference solution.
 
 ```@example NPZD
 # select solver to compute reference solution
@@ -116,7 +118,7 @@ p2 = npzd_plot(sol_MPRK43, ref_sol, "MPRK43I(1.0, 0.5)");
 plot(p1, p2)
 ```
 
-Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some explicit and implicit methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which are also of second or third order. To guarantee positive solutions of these methods, we must select the solver option `isoutofdomain = isnegative`.
+Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some explicit and implicit methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which are also of second or third order. To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
 # select MPRK methods for reference
@@ -144,7 +146,7 @@ plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
 
 We see that for the NPZD problem the use of adaptive MPRK schemes is only beneficial when using the loosest tolerances.
 
-Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we must select the solver option `isoutofdomain = isnegative`.
+Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
 algs3 = [Tsit5(); BS3(); Vern6(); Vern7(); Vern8(); TRBDF2(); Rosenbrock32(); 
@@ -224,7 +226,7 @@ plot(wp, [names1; names3]; title = "NPZD benchmark", legend = :topright,
 
 ### Fixed time steps sizes
 
-Here we use fixed time step sizes instead of adaptive time stepping. Similar to above, standard schemes using a large step size are likely to compute completely inaccurate solutions for the NPZD problem. 
+Here we use fixed time step sizes instead of adaptive time stepping. Similar to above, standard schemes using a large step size are likely to compute negative and as a consequence completely inaccurate solutions for the NPZD problem. 
 
 ```@example NPZD
 sol_Ros23 = solve(prob, Rosenbrock23(), dt = 1.0, adaptive = false);
@@ -285,7 +287,7 @@ plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
-We see that both MPRK schemes are to be preferred here for the rather large step sizes ``Δt ∈ {1.0, 0.5, 0.25, 0.125}``, since the other schemes generate negative approximations which lead to huge errors.
+We see that both MPRK schemes are to be preferred here for the rather large step sizes ``Δt ∈ { 1.0, 0.5, 0.25, 0.125\rbrace``, since the other schemes generate negative approximations which lead to huge errors.
 
 ```@example NPZD
 # solution computed with MPRK43I(1.0, 0.5) and dt = 0.125
