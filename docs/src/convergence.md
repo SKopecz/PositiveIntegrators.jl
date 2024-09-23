@@ -1,119 +1,78 @@
 # [Experimental convergence order of MPRK schemes](@id convergence_mprk)
 
-## Second order MPRK schemes
+In this tutorial we check that the implemented MPRK schemes have the expected order of convergence. 
+As a test problem we choose [`prob_pds_linmod`](@ref).
 
 ```@example eoc
 using PositiveIntegrators
+using Printf # load @sprintf
+using DiffEqDevTools # load test_convergence
+using PrettyTables # load pretty_table
 
-# choose schemes
-algs = [MPRK22(0.5)
-        MPRK22(2.0 / 3.0)
-        MPRK22(1.0)
-        SSPMPRK22(0.5, 1.0)]
-
-names = ["MPRK22(0.5)"
-         "MPRK22(2.0/3.0)"
-         "MPRK22(1.0)"
-         "SSPMPRK22(0.5, 1.0)"]
-
+# choose problem
 prob = prob_pds_linmod
 
-#nothing #hide
-#```
-#```@example eoc
-using DiffEqDevTools
-
+# choose step sizes
 dts = 0.5 .^ (5:10)
-err = Vector{Vector{Float64}}(undef, length(algs))
-eoc = Vector{Vector{Float64}}(undef, length(algs))
+
+nothing # hide output
+```
+
+## Second order MPRK schemes
+
+First, we test the second order MPRK schemes.
+
+```@example eoc
+# select schemes
+algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0)]
+names = ["MPRK22(0.5)"; "MPRK22(2.0/3.0)"; "MPRK22(1.0)"; "SSPMPRK22(0.5, 1.0)"]
 
 #compute errors and experimental order of convergence
+err_eoc = Vector{Any}[]
 for i in eachindex(algs)
-    sim = test_convergence(dts, prob, algs[i])
-    err[i] = sim.errors[:l∞]
-    eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
-end
-#```
-#
-#```@example eoc
-using PrettyTables
+     sim = test_convergence(dts, prob, algs[i])
 
-# collect data and create headers
-N =  1 + 2*length(algs)
-data = Matrix{Float64}(undef, length(dts), N)
-data[:,1] = dts
-header = Matrix{String}(undef, 1, N)
-header[1] = "Δt"
-subheader = Matrix{String}(undef, 1, N)
-subheader[1] = ""
-for i in eachindex(algs)
-    #data = [data err[i] [NaN; eoc[i]]]
-    data[:, 2*i] = err[i]
-    data[:, 2*i+1] = [NaN; eoc[i]]
-    #header = [header names[i] names[i]]
-    header[1, 2*i] = names[i]
-    header[1, 2*i+1] = names[i]
-    #subheader = [subheader "Error" "EOC"]
-    subheader[1, 2*i] = "Error"
-    subheader[1, 2*i+1] = "EOC"
+     err = sim.errors[:l∞]
+     eoc = [NaN; -log2.(err[2:end] ./ err[1:(end - 1)])]
+
+     push!(err_eoc, tuple.(err, eoc))
 end
+
+# gather data for table
+data = hcat(dts, reduce(hcat,err_eoc))
 
 # print table
-pretty_table(data; header = (header, subheader),
-             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8]),
-                           ft_printf("%5.4f", [3, 5, 7, 9])))
-                           
+formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
+pretty_table(data, formatters = formatter, header = ["Δt"; names])                  
 ```
+
+The above table lists the used time step sizes in the first column. The following columns contain the error obtaind with the respective time step size as well as the estimated order of convergence in parenthesis.
 
 ## Third order MPRK schemes
 
 
 ```@example eoc
-algs = [MPRK43I(1.0, 0.5)
-        MPRK43I(0.5, 0.75)
-        MPRK43II(0.5)
-        MPRK43II(2.0 / 3.0)
-        SSPMPRK43()]
-
-names = ["MPRK43I(1.0,0.5)"
-         "MPRK43I(0.5, 0.75)"
-         "MPRK43II(0.5)"
-         "MPRK43II(2.0/3.0)"
-         "SSPMPRK43()"]
-
-
-dts = 0.5 .^ (5:10)
-err = Vector{Vector{Float64}}(undef, length(algs))
-eoc = Vector{Vector{Float64}}(undef, length(algs))
+# select 3rd order schemes
+algs = [MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0); SSPMPRK43()]
+names = ["MPRK43I(1.0,0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"; "SSPMPRK43()"]
 
 #compute errors and experimental order of convergence
+err_eoc = Vector{Any}[]
 for i in eachindex(algs)
-    sim = test_convergence(dts, prob, algs[i])
-    err[i] = sim.errors[:l∞]
-    eoc[i] = -log2.(err[i][2:end] ./ err[i][1:(end - 1)])
+     sim = test_convergence(dts, prob, algs[i])
+
+     err = sim.errors[:l∞]
+     eoc = [NaN; -log2.(err[2:end] ./ err[1:(end - 1)])]
+
+     push!(err_eoc, tuple.(err, eoc))
 end
 
-# collect data and create headers
-N =  1 + 2*length(algs)
-data = Matrix{Float64}(undef, length(dts), N)
-data[:,1] = dts
-header = Matrix{String}(undef, 1, N)
-header[1] = "Δt"
-subheader = Matrix{String}(undef, 1, N)
-subheader[1] = ""
-for i in eachindex(algs)
-    #data = [data err[i] [NaN; eoc[i]]]
-    data[:, 2*i] = err[i]
-    data[:, 2*i+1] = [NaN; eoc[i]]
-    #header = [header names[i] names[i]]
-    header[1, 2*i] = names[i]
-    header[1, 2*i+1] = names[i]
-    #subheader = [subheader "Error" "EOC"]
-    subheader[1, 2*i] = "Error"
-    subheader[1, 2*i+1] = "EOC"
-end
+# gather data for table
+data = hcat(dts, reduce(hcat,err_eoc))
 
-pretty_table(data, header = (header, subheader),
-             formatters = (ft_printf("%5.4e", [1, 2, 4, 6, 8, 10]),
-                           ft_printf("%5.4f", [3, 5, 7, 9, 11])))
+# print table
+formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
+pretty_table(data, formatters = formatter, header = ["Δt"; names])  
 ```
+
+The above table lists the used time step sizes in the first column. The following columns contain the error obtaind with the respective time step size as well as the estimated order of convergence in parenthesis.
