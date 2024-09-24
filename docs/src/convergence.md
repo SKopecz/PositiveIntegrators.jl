@@ -4,19 +4,19 @@ In this tutorial we check that the implemented MPRK schemes have the expected or
 
 ## Conservative PDS
 
-First, we consider conservative PDS and define an academic non-autonomous test problem.
+First, we consider conservative PDS. We define an academic non-autonomous test problem to compute errors and investigate the convergence order.
 
 ```@example eoc
 using PositiveIntegrators
 
-# choose problem
+# define problem
 P(u, p, t) = [0.0 cos.(π * t) .^ 2 * u[2]; sin.(2 * π * t) .^ 2 * u[1] 0.0]
-prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 10.0))
+prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 1.0))
 
 nothing # hide output
 ```
 
-To use `analyticless_test_convergence` from `DiffEqDevTools` we need pick a solver to compute the reference solution and specify tolerances.
+To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need pick a solver to compute the reference solution and specify tolerances.
 Moreover, we need to choose the different time step sizes.
 
 ```@example eoc
@@ -28,11 +28,13 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 
 # choose step sizes
 dts = 0.5 .^ (5:10)
+
+nothing # hide output
 ```
 
 ### Second order MPRK schemes
 
-First, we test the second order MPRK schemes.
+First, we test several second order MPRK schemes.
 
 ```@example eoc
 # select schemes
@@ -40,7 +42,7 @@ algs2 = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0)]
 names2 = ["MPRK22(0.5)"; "MPRK22(2.0/3.0)"; "MPRK22(1.0)"; "SSPMPRK22(0.5, 1.0)"]
 
 #compute errors and experimental order of convergence
-err_eoc = Vector{Any}[]
+err_eoc = []
 for i in eachindex(algs2)
      sim = analyticless_test_convergence(dts, prob, algs2[i], test_setup)
 
@@ -51,7 +53,7 @@ for i in eachindex(algs2)
 end
 ```
 
-Finally, we print a table with the computed data. The table lists the used time step sizes in the first column. The following columns contain the error obtaind with the respective time step size as well as the estimated order of convergence in parenthesis.
+Next, we print a table with the computed data. The table lists the used time step sizes in the first column. The following columns contain the error obtaind with the respective time step size as well as the estimated order of convergence in parenthesis.
 
 ```@example eoc
 using Printf # load @sprintf
@@ -65,9 +67,11 @@ formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@spri
 pretty_table(data, formatters = formatter, header = ["Δt"; names2])                  
 ```
 
+The table shows that indeed all schemes show the expected order of convergence.
+
 ### Third order MPRK schemes
 
-In this section, we proceed as above, but consider third order schemes instead.
+In this section, we proceed as above, but consider third order MPRK schemes instead.
 
 ```@example eoc
 # select 3rd order schemes
@@ -75,7 +79,7 @@ algs3 = [MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.
 names3 = ["MPRK43I(1.0,0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"; "SSPMPRK43()"]
 
 #compute errors and experimental order of convergence
-err_eoc = Vector{Any}[]
+err_eoc = []
 for i in eachindex(algs3)
      sim = analyticless_test_convergence(dts, prob, algs3[i], test_setup)
 
@@ -93,25 +97,28 @@ formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@spri
 pretty_table(data, formatters = formatter, header = ["Δt"; names3])  
 ```
 
+As above, the table shows that all schemes show the expected order of convergence.
+
 ## Non-conservative PDS
 
-Next, we consider a non-conservative non-autonomous PDS as a test problem. 
+In this section we consider another test problem which is non-autonomous and in particular non-conservative.
 
 ```@example eoc
-
 # choose problem
 P(u, p, t) = [0.0 cos.(π * t) .^ 2 * u[2]; sin.(2 * π * t) .^ 2 * u[1] 0.0]
 D(u, p, t) = [cos.(2 * π * t) .^ 2 * u[1]; sin.(π * t) .^ 2 * u[2]]
-prob = PDSProblem(P, D, [0.9; 0.1], (0.0, 10.0))
+prob = PDSProblem(P, D, [0.9; 0.1], (0.0, 1.0))
 
 nothing # hide output
 ```
+
+The following sections show that also for this non-conservative PDS the schemes show the expected convergence order.
 
 ### Second order MPRK schemes
 
 ```@example eoc
 #compute errors and experimental order of convergence
-err_eoc = Vector{Any}[]
+err_eoc = []
 for i in eachindex(algs2)
      sim = analyticless_test_convergence(dts, prob, algs2[i], test_setup)
 
@@ -133,7 +140,7 @@ pretty_table(data, formatters = formatter, header = ["Δt"; names2])
 
 ```@example eoc
 #compute errors and experimental order of convergence
-err_eoc = Vector{Any}[]
+err_eoc = []
 for i in eachindex(algs3)
      sim = analyticless_test_convergence(dts, prob, algs3[i], test_setup)
 
