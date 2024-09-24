@@ -5,7 +5,6 @@ We use the NPZD model [`prob_pds_npzd`](@ref) to assess the efficiency of differ
 We define the auxiliary function `npzd_plot` to improve the readability of the following code.
 
 ```@example NPZD
-using OrdinaryDiffEq, PositiveIntegrators
 using Plots
 
 npzd_plot = function(sol, sol_ref = nothing, title = "")
@@ -21,12 +20,15 @@ npzd_plot = function(sol, sol_ref = nothing, title = "")
           color = colors, title, label = ["N" "P" "Z" "D"], legend = :right, 
           linewidths = 2);
      end
+     return p
 end
 nothing # hide output
 ```
 Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes, since negative values in the ``N``-component typically result in an ongoing decrease in ``N``. 
 
 ```@example NPZD
+using OrdinaryDiffEq, PositiveIntegrators
+
 # select NPZD problem
 prob = prob_pds_npzd
 
@@ -93,8 +95,8 @@ We start with a comparison of different adaptive MPRK schemes described in the l
 # choose methods to compare
 algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); 
         MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
-names = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0,0.5)"; 
-         "MPRK43I(0.5,0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
+names = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0, 0.5)"; 
+         "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
 wp = workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
@@ -118,7 +120,7 @@ p2 = npzd_plot(sol_MPRK43, ref_sol, "MPRK43I(1.0, 0.5)");
 plot(p1, p2)
 ```
 
-Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some explicit and implicit methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which are also of second or third order. To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
+Next we compare `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` with some explicit and implicit methods from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which are also of second or third order. To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
 # select MPRK methods for reference
@@ -146,7 +148,7 @@ plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
 
 We see that for the NPZD problem the use of adaptive MPRK schemes is only beneficial when using the loosest tolerances.
 
-Next we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
+Next we compare `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` with some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
 ```@example NPZD
 algs3 = [Tsit5(); BS3(); Vern6(); Vern7(); Vern8(); TRBDF2(); Rosenbrock32(); 
@@ -296,7 +298,7 @@ sol_MPRK = solve(prob, MPRK43I(1.0, 0.5); dt = dts[4], adaptive = false);
 npzd_plot(sol_MPRK, ref_sol)
 ```
 
-Finally, we show a comparison between `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` and [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+Finally, we show a comparison between `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` and [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 ```@example NPZD
 # compute work-precision data
