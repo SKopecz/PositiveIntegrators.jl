@@ -2,7 +2,7 @@
 
 We use the NPZD model [`prob_pds_npzd`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
-We define the auxiliary function `npzd_plot` to improve the readability of the following code.
+First, we define the auxiliary function `npzd_plot` to improve the readability of the following code.
 
 ```@example NPZD
 using Plots
@@ -79,7 +79,7 @@ reltols = abstols .* 10.0
 nothing # hide output
 ```
 
-#### Relative maximum error at the end of the problem's time span
+#### Relative maximum error at the final time
 
 In this section the chosen error is the relative maximum error at ``t = 10.0``.
 
@@ -95,15 +95,15 @@ We start with a comparison of different adaptive MPRK schemes described in the l
 # choose methods to compare
 algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); 
         MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
-names = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0, 0.5)"; 
+labels = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0, 0.5)"; 
          "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
-plot(wp, names; title = "NPZD benchmark", legend = :topright,     
+plot(wp, labels; title = "NPZD benchmark", legend = :topright,     
      color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-7, 2*10^-1), xticks = 10.0 .^ (-8:1:0),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -125,22 +125,22 @@ Next we compare `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` with some explicit and imp
 ```@example NPZD
 # select MPRK methods for reference
 algs1 = [MPRK22(1.0); MPRK43I(1.0, 0.5)]
-names1 = ["MPRK22(1.0)"; "MPRK43I(1.0,0.5)"]
+labels1 = ["MPRK22(1.0)"; "MPRK43I(1.0,0.5)"]
 
 # select methods from OrdinaryDiffEq
 algs2 = [Midpoint(); Heun(); Ralston(); TRBDF2(); SDIRK2(); Kvaerno3(); KenCarp3(); Rodas3();
          ROS2(); ROS3(); Rosenbrock23()]
-names2 = ["Midpoint"; "Heun"; "Ralston"; "TRBDF2"; "SDIRK2"; "Kvearno3"; "KenCarp3"; "Rodas3";
+labels2 = ["Midpoint"; "Heun"; "Ralston"; "TRBDF2"; "SDIRK2"; "Kvearno3"; "KenCarp3"; "Rodas3";
           "ROS2"; "ROS3"; "Rosenbrock23"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, names1, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain=isnegative
-workprecision_adaptive!(wp, prob, algs2, names2, abstols, reltols, alg_ref;
+workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
-plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
      xlims = (5*10^-8, 2*10^-1), xticks = 10.0 .^ (-8:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -153,18 +153,18 @@ Next we compare `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` with some [recommended sol
 ```@example NPZD
 algs3 = [Tsit5(); BS3(); Vern6(); Vern7(); Vern8(); TRBDF2(); Rosenbrock32(); 
          Rodas5P(); Rodas4P()]
-names3 = ["Tsit5"; "BS3"; "Vern6"; "Vern7"; "Vern8"; "TRBDF2"; "Rosenbrock23";
+labels3 = ["Tsit5"; "BS3"; "Vern6"; "Vern7"; "Vern8"; "TRBDF2"; "Rosenbrock23";
           "Rodas5P"; "Rodas4P"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, names1, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error) 
 # add work-precision data with isoutofdomain = isnegative
-workprecision_adaptive!(wp, prob, algs3, names3, abstols, reltols, alg_ref;
+workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain = isnegative)
 
 # plot work-precision diagram
-plot(wp, [names1; names3]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 5)...,5, repeat([6], 1)...,repeat([7],2)...]),
      xlims = (10^-11, 10^1), xticks = 10.0 .^ (-11:1:1),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -186,11 +186,11 @@ The results are very similar to those from above. We therefore only show the wor
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
-plot(wp, names; title = "NPZD benchmark", legend = :topright,     
+plot(wp, labels; title = "NPZD benchmark", legend = :topright,     
           color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
           xlims = (10^-5, 10^4), xticks = 10.0 .^ (-5:1:4),
           ylims = (10^-6, 10^-1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -198,14 +198,14 @@ plot(wp, names; title = "NPZD benchmark", legend = :topright,
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, names1, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain = isnegative
-workprecision_adaptive!(wp, prob, algs2, names2, abstols, reltols, alg_ref;
+workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
-plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
      xlims = (10^-5, 10^4), xticks = 10.0 .^ (-5:1:4),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
@@ -213,14 +213,14 @@ plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, names1, abstols, reltols, alg_ref;
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain = isnegative                             
-workprecision_adaptive!(wp, prob, algs3, names3, abstols, reltols, alg_ref;
+workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
-plot(wp, [names1; names3]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 5)...,5, repeat([6], 1)...,repeat([7],2)...]),
      xlims = (10^-7, 10^5), xticks = 10.0 .^ (-7:1:5),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
@@ -262,14 +262,14 @@ First, we compare MPRK methods among themselves. For fixed time step sizes we ca
 ```@example NPZD
 # choose MPRK methods to compare
 algs = [MPE(); algs; SSPMPRK43()]
-names = ["MPE()"; names; "SSPMPRK43"]
+labels = ["MPE()"; labels; "SSPMPRK43"]
 
 # compute work-precision data
-wp = workprecision_fixed(prob, algs, names, dts, alg_ref;
+wp = workprecision_fixed(prob, algs, labels, dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
-plot(wp, names; title = "NPZD benchmark", legend = :bottomleft,     
+plot(wp, labels; title = "NPZD benchmark", legend = :bottomleft,     
      color = permutedims([5,repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...,6]),
      xlims = (10^-10, 1*10^0), xticks = 10.0 .^ (-10:1:0),
      ylims = (1*10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
@@ -279,11 +279,11 @@ Apart from `MPE()` the schemes behave very similar and a difference in order can
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_fixed(prob, [algs1; algs2], [names1; names2], dts, alg_ref;
+wp = workprecision_fixed(prob, [algs1; algs2], [labels1; labels2], dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
-plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
      xlims = (10^-13, 10^6), xticks = 10.0 .^ (-12:2:6),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
@@ -302,11 +302,11 @@ Finally, we show a comparison between `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` and 
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_fixed(prob, [algs1; algs3], [names1; names3], dts, alg_ref;
+wp = workprecision_fixed(prob, [algs1; algs3], [labels1; labels3], dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
-plot(wp, [names1; names3]; title = "NPZD benchmark", legend = :topright,
+plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
      xlims = (10^-14, 10^10), xticks = 10.0 .^ (-14:2:10),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
@@ -324,35 +324,35 @@ nothing # hide output
 ```@example NPZD
 
 # compute work-precision
-wp = workprecision_fixed(prob, algs, names, dts, alg_ref;
+wp = workprecision_fixed(prob, algs, labels, dts, alg_ref;
                                compute_error)
 
 #plot work-precision diagram
-plot(wp, names; title = "NPZD benchmark", legend = :bottomleft,     
+plot(wp, labels; title = "NPZD benchmark", legend = :bottomleft,     
      color = permutedims([5,repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...,6]),
      xlims = (10^-4, 10^5), xticks = 10.0 .^ (-4:1:5),
      ylims = (10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
 ```
 
 ```@example NPZD
-wp = workprecision_fixed(prob, algs1, names1, dts, alg_ref;
+wp = workprecision_fixed(prob, algs1, labels1, dts, alg_ref;
                                compute_error)
-workprecision_fixed!(wp, prob, algs2, names2, dts, alg_ref;
+workprecision_fixed!(wp, prob, algs2, labels2, dts, alg_ref;
                      compute_error)                               
 
-plot(wp, [names1; names2]; title = "NPZD benchmark", legend = :bottomleft,
+plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :bottomleft,
      color = permutedims([1, 3, repeat([4], 3)...]),
      xlims = (10^-4, 10^6), xticks = 10.0 .^ (-12:1:6),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
 ```@example NPZD
-wp = workprecision_fixed(prob, algs1, names1, dts, alg_ref;
+wp = workprecision_fixed(prob, algs1, labels1, dts, alg_ref;
                                compute_error)
-workprecision_fixed!(wp, prob, algs3, names3, dts, alg_ref;
+workprecision_fixed!(wp, prob, algs3, labels3, dts, alg_ref;
                      compute_error)                               
 
-plot(wp, [names1; names3]; title = "NPZD benchmark", legend = :bottomleft,
+plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :bottomleft,
      color = permutedims([1, 3, repeat([4], 5)..., 5, repeat([7], 3)...]),
      xlims = (10^-12, 10^6), xticks = 10.0 .^ (-12:2:6),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
