@@ -16,8 +16,8 @@ prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 1.0))
 nothing # hide output
 ```
 
-To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need pick a solver to compute the reference solution and specify tolerances.
-Moreover, we need to choose the different time step sizes.
+To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances.
+Moreover, we need to choose the different time step sizes which are used to investigate the convergence.
 
 ```@example eoc
 using OrdinaryDiffEq
@@ -53,7 +53,7 @@ for i in eachindex(algs2)
 end
 ```
 
-Next, we print a table with the computed data. The table lists the used time step sizes in the first column. The following columns contain the error obtaind with the respective time step size as well as the estimated order of convergence in parenthesis.
+Next, we print a table with the computed data. The table lists the errors obtained with the respective time step size ``Δ t`` as well as the estimated order of convergence in parenthesis.
 
 ```@example eoc
 using Printf # load @sprintf
