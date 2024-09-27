@@ -63,8 +63,8 @@ end
 
 function rel_l∞_error_all(sol, sol_ref)
     err = zero(eltype(eltype(sol)))
-    for i in eachindex(sol)
-        max_err_i = maximum(abs.((sol[i] .- sol_ref[i]) ./ sol_ref[i]))
+    for i in eachindex(sol)        
+        max_err_i = maximum(abs.((abs.(sol[i]) .- abs.(sol_ref[i])) ./ sol_ref[i]))
         if max_err_i > err
             err = max_err_i
         end
@@ -131,14 +131,18 @@ function workprecision_fixed!(dict, prob, algs, names, dts, alg_ref;
             error_time = Vector{Tuple{Float64, Float64}}(undef, length(dts))
 
             for (i, dt) in enumerate(dts)
-                sol = solve(prob, alg; dt, adaptive = false, save_everystep = true)
-                if Int(sol.retcode) == 1
-                    error = compute_error(sol.u, sol_ref(sol.t))
-                    time = compute_time_fixed(dt, prob, alg, seconds, numruns)
+                error_time[i] = (Inf, Inf)
+                try
+                    sol = solve(prob, alg; dt, adaptive = false, save_everystep = true)
+                    if Int(sol.retcode) == 1 && isnonnegative(sol)
+                        error = compute_error(sol.u, sol_ref(sol.t))
+                        time = compute_time_fixed(dt, prob, alg, seconds, numruns)
 
-                    error_time[i] = (error, time)
-                else
-                    error_time[i] = (Inf, Inf)
+                        error_time[i] = (error, time)
+                    else
+                        error_time[i] = (Inf, Inf)
+                    end
+                catch e
                 end
             end
             dict[name] = error_time
@@ -179,7 +183,7 @@ function workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_
             sol = solve(prob, alg; abstol, reltol, save_everystep = true,
                         kwargs...)
 
-            if Int(sol.retcode) == 1
+            if Int(sol.retcode) == 1 && isnonnegative(sol)
                 error = compute_error(sol.u, sol_ref(sol.t))
                 time = compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns,
                                              kwargs...)

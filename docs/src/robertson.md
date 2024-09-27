@@ -44,7 +44,7 @@ tspan = (0.0, 1.0e11)
 prob = ConservativePDSProblem(prod, u0, tspan)
 
 sol = solve(prob, MPRK43I(1.0, 0.5))
-nothing #hide
+nothing  # hide
 ```
 ```@example robertson
 using Plots
@@ -72,7 +72,7 @@ stepsize_callback = DiscreteCallback(
     save_positions = (false, false),
     initialize = (c, u, t, integrator) -> set_proposed_dt!(integrator, 1.0e-5))
 sol_cb = solve(prob, SSPMPRK43(); dt = Inf, callback =  stepsize_callback);
-nothing #hide
+nothing  # hide
 ```
 ```@example robertson
 plot(sol_cb, tspan = (1e-6, 1e11),  xaxis = :log,

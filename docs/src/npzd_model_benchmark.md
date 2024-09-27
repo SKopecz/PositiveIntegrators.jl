@@ -22,7 +22,7 @@ npzd_plot = function(sol, sol_ref = nothing, title = "")
      end
      return p
 end
-nothing # hide output
+nothing  # hide
 ```
 Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes, since negative values in the ``N``-component typically result in an ongoing decrease in ``N``. 
 
@@ -65,7 +65,7 @@ Since the NPZD problem is not stiff, we can use an explicit high-order scheme to
 ```@example NPZD
 # select solver to compute reference solution
 alg_ref = Vern7()
-nothing # hide output
+nothing  # hide
 ```
 
 ### Adaptive schemes
@@ -76,12 +76,12 @@ We choose the following absolute and relative tolerances for the comparison.
 # set absolute and relative tolerances
 abstols = 1.0 ./ 10.0 .^ (2:1:8)
 reltols = abstols .* 10.0
-nothing # hide output
+nothing  # hide
 ```
 
 #### Relative maximum error at the final time
 
-In this section the chosen error is the relative maximum error at ``t = 10.0``.
+In this section the chosen error is the relative maximum error at the final time ``t = 10.0``.
 
 ```@example NPZD
 # select relative maximum error at the end of the problem's time span.
@@ -179,7 +179,7 @@ In this section we do not compare the relative maximum errors at time ``t = 10.0
 ```@example NPZD
 # select relative maximum error over all time steps
 compute_error = PositiveIntegrators.rel_l∞_error_all
-nothing # hide output
+nothing  # hide
 ```
 
 The results are very similar to those from above. We therefore only show the work-precision diagrams without further comments. The main difference are significantly increased errors which mainly occur around time ``t = 2.0`` where there is a sharp kink in the reference solution.
@@ -228,7 +228,7 @@ plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
 
 ### Fixed time steps sizes
 
-Here we use fixed time step sizes instead of adaptive time stepping. Similar to above, standard schemes using a large step size are likely to compute negative and as a consequence completely inaccurate solutions for the NPZD problem. 
+Here we use fixed time step sizes instead of adaptive time stepping. Similar to above, standard schemes are likely to compute negative solutions for the NPZD problem. In the following, solutions that contain negative elements are suppressed in the work-precision diagrams.
 
 ```@example NPZD
 sol_Ros23 = solve(prob, Rosenbrock23(), dt = 1.0, adaptive = false);
@@ -254,7 +254,7 @@ Again, we start with the relative maximum error at ``t = 10.0``.
 ```@example NPZD
 # select relative maximum error at the end of the problem's time span.
 compute_error = PositiveIntegrators.rel_l∞_error_at_end
-nothing # hide output
+nothing  # hide
 ```
 
 First, we compare MPRK methods among themselves. For fixed time step sizes we can also consider `MPE()` and `SSPMPRK43()`.
@@ -285,11 +285,11 @@ wp = workprecision_fixed(prob, [algs1; algs2], [labels1; labels2], dts, alg_ref;
 # plot work-precision diagram
 plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
-     xlims = (10^-13, 10^6), xticks = 10.0 .^ (-12:2:6),
+     xlims = (10^-13, 10^2), xticks = 10.0 .^ (-12:2:6),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
-We see that both MPRK schemes are to be preferred here for the rather large step sizes ``Δt ∈ { 1.0, 0.5, 0.25, 0.125\rbrace``, since the other schemes generate negative approximations which lead to huge errors.
+We see that both MPRK schemes are to be preferred here for the rather large step sizes ``Δt ∈ { 1.0, 0.5, 0.25, 0.125\rbrace``, for which the other schemes cannot ensure nonnegative solutions.
 
 ```@example NPZD
 # solution computed with MPRK43I(1.0, 0.5) and dt = 0.125
@@ -308,7 +308,7 @@ wp = workprecision_fixed(prob, [algs1; algs3], [labels1; labels3], dts, alg_ref;
 # plot work-precision diagram
 plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
-     xlims = (10^-14, 10^10), xticks = 10.0 .^ (-14:2:10),
+     xlims = (10^-14, 10^0), xticks = 10.0 .^ (-14:2:10),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```
 
@@ -318,7 +318,7 @@ As for the adaptive schemes, we also show work-precisions diagrams where the err
 
 ```@example NPZD
 compute_error = PositiveIntegrators.rel_l∞_error_all
-nothing # hide output
+nothing  # hide
 ```
 
 ```@example NPZD
@@ -340,8 +340,8 @@ wp = workprecision_fixed(prob, algs1, labels1, dts, alg_ref;
 workprecision_fixed!(wp, prob, algs2, labels2, dts, alg_ref;
                      compute_error)                               
 
-plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :bottomleft,
-     color = permutedims([1, 3, repeat([4], 3)...]),
+plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
      xlims = (10^-4, 10^6), xticks = 10.0 .^ (-12:1:6),
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
 ```

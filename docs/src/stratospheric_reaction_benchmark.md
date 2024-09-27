@@ -1,296 +1,276 @@
 # [Benchmark: Solution of a stratospheric reaction problem](@id benchmark-stratos)
 
-We use the stiff stratospheric reacation problem [`prob_pds_stratreac`](@ref) to assess the efficiency of different solvers.
+We use the stiff stratospheric reaction problem [`prob_pds_stratreac`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
+First, we define the auxiliary function `stratreac_plot` to improve the readability of the following code.
 
 ```@example stratreac
-using OrdinaryDiffEq, PositiveIntegrators
 using Plots
 
+function stratreac_plot(sols, labels = fill("", length(sols)), sol_ref = nothing)
+    if !(sols isa Vector)
+        sols = [sols]
+    end
+    if !(labels isa Vector)
+        labels = [labels]
+    end
+
+    tspan = prob.tspan
+    layout = (3, 2)
+    linewidth = 2
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4))
+    tickfontsize = 7
+    xguide = "t [h]" #fill("t [h]", 1, 6)
+    xguidefontsize = 8
+    yguide = ["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"]
+    ylims = [(-20, 120) (-1e8, 7e8) (2e11, 6e11) (1.69699e16, 1.69705e16) (-2e6, 1.2e7) (1.084e9,
+                                                                                         1.098e9)]
+    legend = :outertop
+    legend_column = -1
+    widen = true
+
+    if !isnothing(sol_ref)
+        p = plot(ref_sol; layout, linestyle = :dash, label = "Ref.", linewidth)
+        for (sol, label) in zip(sols, labels)
+            plot!(p, sol; xguide, xguidefontsize, xticks, tickfontsize, yguide, legend,
+                  legend_column, widen, ylims, linewidth, label, denseplot = false)
+        end
+    else
+        p = plot(sols[1]; layout, xguide, xguidefontsize, xticks, tickfontsize, yguide,
+                 legend, legend_column, widen, ylims, linewidth,
+                 label = labels[1])
+        if length(sols) > 1
+            for (sol, label) in zip(sols[2:end], labels[2:end])
+                plot!(p, sol; layout, xguide, xguidefontsize, xticks, tickfontsize, yguide,
+                      legend, legend_column, widen, label, denseplot = false, linewidth,
+                      ylims)
+            end
+        end
+    end
+    return p
+end
+```
+First, we show approximations of `Rosenbrock23()` using loose tolerances. Although not visible in the plots, the `Rosenbrock23` solution contains negative values.
+
+```@example stratreac
+using PositiveIntegrators, OrdinaryDiffEq
 # select problem
 prob = prob_pds_stratreac
 
-# compute reference solution 
+# compute reference solution for plotting
 ref_sol = solve(prob, Rodas4P(); abstol = 1e-12, reltol = 1e-11);
 
-# compute solutions with low tolerances
+# compute solution with low tolerances
 abstol = 1e-2
 reltol = 1e-1
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol);
-sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
 
-# plot solutions
-tspan = prob.tspan
-plot(ref_sol, layout=(3,2),
-    xguide = "t [h]", xguidefontsize = 8,
-    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)), tickfontsize = 7,
-    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],    
-    linestyle = :dash, label = "",    
-    legend = :outertop, legend_column = -1,
-    widen = true)
-plot!(sol_Ros23, label = "Ros23", denseplot = false, markers = :circle);    
-plot!(sol_MPRK, label = "MPRK22(1.0)", denseplot = false, markers = :circle)
-```
-
-Although not visible in the plots, the `Rosenbrock23` solution contains negative values.
-
-```@example stratreac
 isnonnegative(sol_Ros23)
 ```
 
 [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used to guarantee nonnegative solutions.
 
-To improve the MPRK22 result we inrecase the method's `small_constant`.
-
 ```@example stratreac
+# compute solution with isoutofdomain = isnegative
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol, 
                   isoutofdomain = isnegative); #reject negative solutions
+
+# plot solution
+stratreac_plot(sol_Ros23,  "Ros23", ref_sol)
+```
+
+For this problem the use of adaptive MPRK schemes with loose tolerances will generally result in poor approximations. In particular with respect to the O₂ component.
+
+```@example stratreac
+sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
+
+# plot solutions
+stratreac_plot(sol_MPRK, "MPRK22(1.0)", ref_sol)
+```
+
+To improve the solution of the MPRK scheme we can inrecase the method's `small_constant`. Trial and error has shown that `small_constant = 1e-6` is a good value for the given parameters.
+
+```@example stratreac
+# compute MPRK solution with modified small_constant
 sol_MPRK = solve(prob, MPRK22(1.0, small_constant = 1e-6); abstol, reltol);
 
-plot(ref_sol, layout=(3,2),
-    xguide = "t [h]", xguidefontsize = 8,
-    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)), tickfontsize = 7,
-    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],    
-    linestyle = :dash, label = "",    
-    legend = :outertop, legend_column = -1,
-    widen = true);
-plot!(sol_Ros23, label = "Ros23", denseplot = false, markers = :circle);    
-plot!(sol_MPRK, label = "MPRK22(1.0)", denseplot = false, markers = :circle)
+# plot solution
+stratreac_plot(sol_MPRK, "MPRK22(1.0)", ref_sol)
 ```
+
+The remaining poor approximation of the O₂ component could be due to the fact that the MPRK methods do not preserve all linear invariants, as is the case with standard methods like Runge-Kutta or Rosenbrock schemes.
 
 ## Work-Precision diagrams
 
+In the following we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. First we focus on adaptive methods, afterwards we also show [results obtained with fixed time step sizes](#fixed-time-steps-sizes).
+
+Since the stratospheric reaction problem is stiff, we need to use a suited implicit scheme to compute its reference solution.
+
 ```@example stratreac
-# compute reference solution
-tspan = prob.tspan
-dt_ref = (last(tspan) - first(tspan)) ./ 1e5
-sol_ref = solve(prob, Rodas4P(); dt = dt_ref, adaptive = false, save_everystep = false);
-sol_ref = sol_ref.u[end]
-
+# select solver to compute reference solution
 alg_ref = Rodas4P()
-
-# define error functions
-l2_error(sol, sol_ref) = sqrt(sum(((sol .- sol_ref) ./ sol_ref) .^ 2) / length(sol_ref))
-l∞_error(sol, sol_ref) = maximum(abs.((sol .- sol_ref) ./ sol_ref))
-nothing #hide output
+nothing  # hide
 ```
-### Adaptive time stepping
+
+### Relative maximum error at the final time
+
+The chosen error to compare the performance of different solvers is the relative maximum error at the final time ``t = 84`` hours (``t = 302400`` seconds).
+
+```@example stratreac
+# select relative maximum error at the end of the problem's time span.
+compute_error = PositiveIntegrators.rel_l∞_error_at_end
+nothing # hide
+```
+
+#### Adaptive time stepping
+
+We choose the following absolute and relative tolerances for the comparison.
 
 ```@example stratreac
 abstols = 1.0 ./ 10.0 .^ (2:1:5)
 reltols = 10.0 .* abstols
-nothing # hide output
+nothing # hide
 ```
 
-Remark: Stricter tolerances will require more than a million steps!
+We also note that when using MPRK schemes with stricter tolerances, more than a million time steps are very quickly required, which makes these schemes inefficient.
 
-#### L∞ errors
 
-First we compare different (adaptive) MPRK schemes described in the literature. 
+First we compare different MPRK schemes. In addition to the default version we also use the schemes with `small_constant = 1e-6`. 
 
 ```@example stratreac
-
 # choose methods to compare
-algs = [#MPRK22(0.5) # fail
-        #MPRK22(0.5, small_constant = 1e-6) #fail
-        #MPRK22(2.0 / 3.0) #fail
-        #MPRK22(2.0 / 3.0, small_constant = 1e-6) #fail
-         MPRK22(1.0)
-         MPRK22(1.0, small_constant = 1e-6)
-        #SSPMPRK22(0.5, 1.0) # takes too long
-         MPRK43I(1.0, 0.5)
-         MPRK43I(1.0, 0.5, small_constant = 1e-6)
-         MPRK43I(0.5, 0.75)
-         MPRK43I(0.5, 0.75, small_constant = 1e-6)
-         MPRK43II(0.5)
-         MPRK43II(0.5, small_constant = 1e-6)
-         MPRK43II(2.0 / 3.0)
-         MPRK43II(2.0 / 3.0, small_constant = 1e-6)]
+algs = [MPRK22(1.0); MPRK22(1.0, small_constant = 1e-6); SSPMPRK22(0.5, 1.0); SSPMPRK22(0.5, 1.0, small_constant = 1e-6);
+        MPRK43I(1.0, 0.5); MPRK43I(1.0, 0.5, small_constant = 1e-6); MPRK43I(0.5, 0.75); MPRK43I(0.5, 0.75, small_constant = 1e-6)
+        MPRK43II(0.5); MPRK43II(0.5, small_constant = 1e-6); MPRK43II(2.0 / 3.0); MPRK43II(2.0 / 3.0, small_constant = 1e-6)]
+labels = ["MPRK22(1.0)"; "MPRK22(1.0, sc=1e-6)"; "SSPMPRK22(0.5,1.0)"; "SSPMPRK22(0.5,1.0, sc=1e-6)"; "MPRK43I(1.0,0.5)"
+          "MPRK43I(1.0,0.5, sc=1e-6)"; "MPRK43I(0.5,0.75)"; "MPRK43I(0.5,0.75, sc=1e-6)"; "MPRK43II(0.5)"; "MPRK43II(0.5, sc=1e-6)"
+          "MPRK43II(2.0/3.0)"; "MPRK43II(2.0/3.0, sc=1e-6)"]
 
-names = [#"MPRK22(0.5)"
-          #"MPRK22(0.5, sc=1e-6)"
-          #"MPPRK22(2/3)"
-          #"MPPRK22(2/3, sc=1e-6)"
-          "MPRK22(1.0)"
-          "MPRK22(1.0, sc=1e-6)"
-          #"SSPMPRK22(0.5,1.0)"
-          "MPRK43I(1.0,0.5)"
-          "MPRK43I(1.0,0.5, sc=1e-6)"
-          "MPRK43I(0.5,0.75)"
-          "MPRK43I(0.5,0.75, sc=1e-6)"
-          "MPRK43II(0.5)"
-          "MPRK43II(0.5, sc=1e-6)"
-          "MPRK43II(2.0/3.0)"
-          "MPRK43II(2.0/3.0, sc=1e-6)"
-          ]
+# compute work-precision data
+wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref; compute_error)
 
-# compute work-precision
-wp_l∞ = workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
-                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
-
-plot(wp_l∞, names; title = "Stratospheric reaction benchmark (l∞)", legend = :bottomleft,     
-     color = permutedims([repeat([1],2)...,repeat([3],4)...,repeat([4],4)...]),
-     xlims = (10^-5, 10^0), xticks = 10.0 .^ (-8:1:0),
-     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+# plot work-precision diagram
+plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
+     color = permutedims([repeat([1],2)..., repeat([2],2)..., repeat([3],4)..., repeat([4],4)...]),
+     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^1), yticks = 10.0 .^ (-5:1:1), minorticks = 10)
 ```
 
-
-All methods using `small_constant = 1e-6` behave similar, irrespective of the method's order.
-For comparisons with other second and third order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the third order scheme `MPRK43I(1.0, 0.5)`. To guarantee positive solutions of the [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) methods, we must select the solver option `isoutofdomain = isnegative`.
+We see that using `small_constant = 1e-6` clearly improves the performance of most methods. 
+For comparisons with other second and third order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0, small_constant = 1e-6)` and the third order scheme `MPRK43I(0.5, 0.75)`. To guarantee positive solutions of the [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example stratreac
-# select methods
-algs2 = [MPRK43I(1.0, 0.5)
-    TRBDF2()
-    Kvaerno3()
-    KenCarp3()
-    Rodas3()
-    ROS2()
-    ROS3()
-    Rosenbrock23()]
+# select reference MPRK methods
+algs1 = [MPRK22(1.0, small_constant = 1e-6); MPRK43I(0.5, 0.75)]
+labels1 = ["MPRK22(1.0, sc=1e-6)"; "MPRK43I(1.0,0.5)"]
 
-names2 = ["MPRK43I(1.0,0.5)"
-          "TRBDF2"
-          "Kvearno3"
-          "KenCarp3"
-          "Rodas3"
-          "ROS2"
-          "ROS3"
-          "Rosenbrock23"]
+# select OrdinaryDiffEq methods
+algs2 = [TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock23()]
+labels2 = ["TRBDF2"; "Kvearno3"; "KenCarp3"; "Rodas3"; "ROS2"; "ROS3"; "Rosenbrock23"]
 
-# compute work-precision
-wp_l∞ = workprecision_adaptive(prob, algs2, names2, abstols, reltols, alg_ref;
-                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
+# compute work-precision data
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref; compute_error, 
+                        isoutofdomain = isnegative)
 
-#
-plot(wp_l∞, names2; title = "Stratospheric reaction benchmark (l∞)", legend = :topright,     
-     color = permutedims([3, repeat([4], 3)..., repeat([5], 4)...]),
-     xlims = (10^-7, 10^-1), xticks = 10.0 .^ (-8:1:0),
+# plot work-precision diagram
+plot(wp, [labels1; labels2]; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)...]),
+     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
      ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-### Fixed time steps sizes
+Wee see that MPRK methods are advantageous if low accuracy is acceptable.
+
+```@example stratreac
+# select OrdinaryDiffEq methods
+algs3 = [Rodas5P(); Rodas4P(); RadauIIA5()]
+labels3 = ["Rodas5P"; "Rodas4P"; "RadauIIA5"]
+
+# compute work-precision data
+wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref; compute_error, 
+                        isoutofdomain = isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels3]; title = "Stratospheric reaction benchmark", legend = :topright,     
+     color = permutedims([1, 3, repeat([4], 3)...]),
+     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+```
+
+Again, it can be seen that MPRK methods are only advantageous if low accuracy is acceptable.
+
+#### Fixed time steps sizes
+
+Here we use fixed time step sizes instead of adaptive time stepping. To create the work-precision diagrams we use the following time step sizes.
 
 ```@example stratreac
 # set time step sizes
-dt0 = 48 * 60 #48 minutes
-dts = dt0 ./ 2.0 .^ (0:1:6)
-nothing #hide output
+dt0 = 48 * 60 # 48 minutes
+dts = dt0 ./ 2.0 .^ (0:1:10)
+nothing # hide
 ```
 
-#### L∞
+Other than for adaptive schemes increasing `small_constant` has no positive effect on the schemes, as the following examples show.
+
+```@example
+# solve prob with large step size
+sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
+
+# plot solution
+stratreac_plot(sol1, "MPRK22(1.0)", ref_sol)
+```
+
+Choosing `small_constant = 1e-100` gives poorer results.
+
+```@example
+# solve prob with large step size and increased small_constant
+sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
+
+# plot solution
+stratreac_plot(sol2, "MPRK22(1.0)", ref_sol)
+```
+
+For this reason we will only consider schemes with default values of `small_constant`.
+
+```@example
+# select schemes
+algs = [MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0);
+        SSPMPRK43()]
+labels = ["MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)";  "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"; 
+          "SSPMPRK43()"]
+
+# compute work-precision data
+wp = workprecision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
+     color = permutedims([1, 2, repeat([3],2)..., repeat([4],2)..., 5]),
+     xlims = (10^-6, 10^2), xticks = 10.0 .^ (-8:1:2),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:1), minorticks = 10)
+```
+
+Apart from `SSPMPRK22(0.5, 1.0)` all schemes perform quite similar. We choose `MPRK22(1.0)` and `MPRK43II(0.5)` for comparisons with other schemes.
+
+For the chosen time step sizes none of the above used standard schemes generates nonnegative solutions.
 
 ```@example stratreac
-# choose methods to compare
-algs = [MPE()
-        MPE(small_constant=1e-6)
-        #MPRK22(0.5) # fail
-        #MPRK22(0.5, small_constant = 1e-6) #fail
-        #MPRK22(2.0 / 3.0) #fail
-        #MPRK22(2.0 / 3.0, small_constant = 1e-6) #fail
-        MPRK22(1.0)
-        MPRK22(1.0, small_constant = 1e-6)
-        #SSPMPRK22(0.5, 1.0) # takes too long
-        MPRK43I(1.0, 0.5)
-        MPRK43I(1.0, 0.5, small_constant = 1e-6)
-        MPRK43I(0.5, 0.75)
-        MPRK43I(0.5, 0.75, small_constant = 1e-6)
-        MPRK43II(0.5)
-        MPRK43II(0.5, small_constant = 1e-6)
-        MPRK43II(2.0 / 3.0)
-        MPRK43II(2.0 / 3.0, small_constant = 1e-6)
-        SSPMPRK43()
-        SSPMPRK43(small_constant = 1e-6)]
+# select reference MPRK methods
+algs = [MPRK22(1.0); MPRK43II(0.5); TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock23(); 
+         Rodas5P(); Rodas4P()]
+labels = ["MPRK22(1.0)"; "MPRK43II(0.5)"; "TRBDF2"; "Kvearno3"; "KenCarp3"; "Rodas3"; "ROS2"; "ROS3"; "Rosenbrock23"; 
+          "Rodas5P"; "Rodas4P"]
 
-names = ["MPE()"
-         "MPE(sc=1e-6)"
-         #"MPRK22(0.5)"
-         #"MPRK22(0.5, sc=1e-6)"
-         #"MPPRK22(2/3)"
-         #"MPPRK22(2/3, sc=1e-6)"
-         "MPRK22(1.0)"
-         "MPRK22(1.0, sc=1e-6)"
-         #"SSPMPRK22(0.5,1.0)"
-         "MPRK43I(1.0,0.5, sc=1e-6)"
-         "MPRK43I(0.5,0.75)"
-         "MPRK43I(0.5,0.75, sc=1e-6)"
-         "MPRK43II(0.5)"
-         "MPRK43II(0.5, sc=1e-6)"
-         "MPRK43II(2.0/3.0)"
-         "MPRK43II(2.0/3.0, sc=1e-6)"
-         "SSPMPRK43()"
-         "SSPMPRK43(sc=1e-6)"]
+# compute work-precision data
+wp = workprecision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
 
-
-
-# compute work-precision
-wp_l∞ = workprecision_fixed(prob, algs, names, dts, alg_ref;
-                               compute_error = PositiveIntegrators.rel_l∞_error_at_end)
-
-plot(wp_l∞, names; title = "Stratospheric reaction benchmark (l∞)", legend = :topright,     
-     color = permutedims([repeat([5],2)...,repeat([1], 2)..., repeat([3], 4)..., repeat([4], 4)...,repeat([6],2)...]),
-     xlims = (10^-5, 5*10^1), xticks = 10.0 .^ (-10:1:1),
-     ylims = (1*10^-5, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10
-     )
+# plot work-precision diagram
+plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 3)...]),
+     xlims = (10^-6, 10^1), xticks = 10.0 .^ (-12:2:4),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
-
-```@example stratreac
-algs2 = [MPE(small_constant = 1e-6)
-         MPRK22(1.0, small_constant = 1e-6)
-         ROS2()]
-
-names2 = ["MPE(sc=1e-6)"
-          "MPRK22(1.0, sc=1e-6)"
-          "ROS2"]
-
-algs3 = [Rodas3()         
-         ROS3()
-         Rosenbrock23()]         
-
-names3 = ["Rodas3"
-          "ROS3"
-          "Rosenbrock23" ]
-
-algs4 = [TRBDF2()
-    Kvaerno3()
-    KenCarp3()]
-
-names4 = ["TRBDF2"
-          "Kvearno3"
-          "KenCarp3"]
-
-compute_error = PositiveIntegrators.rel_l∞_error_at_end
-wp_l∞ = workprecision_fixed(prob, algs2, names2, dts, alg_ref;
-                               compute_error)
-workprecision_fixed!(wp_l∞, prob, algs3, names3, dts[3:end], alg_ref;
-                               compute_error)
-workprecision_fixed!(wp_l∞, prob, algs4, names4, dts[5:end], alg_ref;
-                               compute_error)
-
-plot(wp_l∞, [names2; names3; names4]; title = "Stratospheric reaction benchmark (l∞)", legend = :bottomleft,
-     color = permutedims([1, 3, repeat([4], 3)...]),
-     xlims = (10^-11, 10^2), xticks = 10.0 .^ (-12:1:2),
-     ylims = (2*10^-5, 10^-1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)         
-```
-
-```@example stratreac
-sol_MPRK = solve(prob, MPRK22(1.0, small_constant = 1e-6); dt = dts[3], adaptive = false);
-
-plot(ref_sol, layout = (3,2),
-    xguide = "t [h]", xguidefontsize = 8,
-    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)), tickfontsize = 7,
-    yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],    
-    linestyle = :dash, label = "",    
-    legend = :outertop, legend_column = -1,
-    widen = true)
-plot!(sol_MPRK, label = "MPRK22(1.0)", denseplot = false, markers = :circle)
-```
-
-## Literature
-- Kopecz, Meister 2nd order
-- Kopecz, Meister 3rd order
-- Huang, Shu 2nd order
-
 
 ## Package versions
 
