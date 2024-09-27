@@ -214,7 +214,7 @@ nothing # hide
 
 Other than for adaptive schemes increasing `small_constant` has no positive effect on the schemes, as the following examples show.
 
-```@example
+```@example stratreac
 # solve prob with large step size
 sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
 
@@ -224,7 +224,7 @@ stratreac_plot(sol1, "MPRK22(1.0)", ref_sol)
 
 Choosing `small_constant = 1e-100` gives poorer results.
 
-```@example
+```@example stratreac
 # solve prob with large step size and increased small_constant
 sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
 
@@ -234,7 +234,7 @@ stratreac_plot(sol2, "MPRK22(1.0)", ref_sol)
 
 For this reason we will only consider schemes with default values of `small_constant`.
 
-```@example
+```@example stratreac
 # select schemes
 algs = [MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0);
         SSPMPRK43()]
