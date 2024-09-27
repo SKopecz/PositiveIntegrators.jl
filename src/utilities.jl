@@ -63,7 +63,7 @@ end
 
 function rel_l∞_error_all(sol, sol_ref)
     err = zero(eltype(eltype(sol)))
-    for i in eachindex(sol)        
+    for i in eachindex(sol)
         max_err_i = maximum(abs.((abs.(sol[i]) .- abs.(sol_ref[i])) ./ sol_ref[i]))
         if max_err_i > err
             err = max_err_i
