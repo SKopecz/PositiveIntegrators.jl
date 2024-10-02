@@ -24,7 +24,8 @@ npzd_plot = function(sol, sol_ref = nothing, title = "")
 end
 nothing  # hide
 ```
-Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes, since negative values in the ``N``-component typically result in an ongoing decrease in ``N``. 
+
+Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes. Because once negative values in the ``N``-component occur, then this will lead to a further decrease in ``N`` and thus completely inaccurate solutions.  
 
 ```@example NPZD
 using OrdinaryDiffEq, PositiveIntegrators
@@ -58,7 +59,7 @@ npzd_plot(sol_Ros23, ref_sol) #auxiliary function defined above
 
 ## Work-Precision diagrams
 
-In the following we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. First we focus on adaptive methods, afterwards we also show [results obtained with fixed time step sizes](#fixed-time-steps-sizes).
+In the following sections we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. First we focus on adaptive methods, afterwards we also show [results obtained with fixed time step sizes](#fixed-time-steps-sizes).
 
 Since the NPZD problem is not stiff, we can use an explicit high-order scheme to compute its reference solution.
 
@@ -85,21 +86,21 @@ In this section the chosen error is the relative maximum error at the final time
 
 ```@example NPZD
 # select relative maximum error at the end of the problem's time span.
-compute_error = PositiveIntegrators.rel_l∞_error_at_end
-nothing 
+compute_error = rel_max_error_tend
+nothing # hide
 ```
 
 We start with a comparison of different adaptive MPRK schemes described in the literature.
 
 ```@example NPZD
 # choose methods to compare
-algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); 
-        MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
-labels = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0, 0.5)"; 
-         "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
+algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0); 
+        MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
+labels = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; 
+          "MPRK43I(1.0, 0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
@@ -134,10 +135,10 @@ labels2 = ["Midpoint"; "Heun"; "Ralston"; "TRBDF2"; "SDIRK2"; "Kvearno3"; "KenCa
           "ROS2"; "ROS3"; "Rosenbrock23"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain=isnegative
-workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
 plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
@@ -157,10 +158,10 @@ labels3 = ["Tsit5"; "BS3"; "Vern6"; "Vern7"; "Vern8"; "TRBDF2"; "Rosenbrock23";
           "Rodas5P"; "Rodas4P"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error) 
 # add work-precision data with isoutofdomain = isnegative
-workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain = isnegative)
 
 # plot work-precision diagram
@@ -178,7 +179,7 @@ In this section we do not compare the relative maximum errors at time ``t = 10.0
 
 ```@example NPZD
 # select relative maximum error over all time steps
-compute_error = PositiveIntegrators.rel_l∞_error_all
+compute_error = rel_max_error_overall
 nothing  # hide
 ```
 
@@ -186,7 +187,7 @@ The results are very similar to those from above. We therefore only show the wor
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
@@ -198,10 +199,10 @@ plot(wp, labels; title = "NPZD benchmark", legend = :topright,
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain = isnegative
-workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
@@ -213,10 +214,10 @@ plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                compute_error)
 # add work-precision data with isoutofdomain = isnegative                             
-workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
@@ -253,7 +254,7 @@ Again, we start with the relative maximum error at ``t = 10.0``.
 
 ```@example NPZD
 # select relative maximum error at the end of the problem's time span.
-compute_error = PositiveIntegrators.rel_l∞_error_at_end
+compute_error = rel_max_error_tend
 nothing  # hide
 ```
 
@@ -265,7 +266,7 @@ algs = [MPE(); algs; SSPMPRK43()]
 labels = ["MPE()"; labels; "SSPMPRK43"]
 
 # compute work-precision data
-wp = workprecision_fixed(prob, algs, labels, dts, alg_ref;
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
@@ -279,7 +280,7 @@ Apart from `MPE()` the schemes behave very similar and a difference in order can
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_fixed(prob, [algs1; algs2], [labels1; labels2], dts, alg_ref;
+wp = work_precision_fixed(prob, [algs1; algs2], [labels1; labels2], dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
@@ -302,7 +303,7 @@ Finally, we show a comparison between `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` and 
 
 ```@example NPZD
 # compute work-precision data
-wp = workprecision_fixed(prob, [algs1; algs3], [labels1; labels3], dts, alg_ref;
+wp = work_precision_fixed(prob, [algs1; algs3], [labels1; labels3], dts, alg_ref;
                                compute_error)
 
 # plot work-precision diagram
@@ -317,14 +318,14 @@ plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
 As for the adaptive schemes, we also show work-precisions diagrams where the error is the relative maximum error over all time steps.
 
 ```@example NPZD
-compute_error = PositiveIntegrators.rel_l∞_error_all
+compute_error = rel_max_error_overall
 nothing  # hide
 ```
 
 ```@example NPZD
 
 # compute work-precision
-wp = workprecision_fixed(prob, algs, labels, dts, alg_ref;
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref;
                                compute_error)
 
 #plot work-precision diagram
@@ -335,9 +336,9 @@ plot(wp, labels; title = "NPZD benchmark", legend = :bottomleft,
 ```
 
 ```@example NPZD
-wp = workprecision_fixed(prob, algs1, labels1, dts, alg_ref;
+wp = work_precision_fixed(prob, algs1, labels1, dts, alg_ref;
                                compute_error)
-workprecision_fixed!(wp, prob, algs2, labels2, dts, alg_ref;
+work_precision_fixed!(wp, prob, algs2, labels2, dts, alg_ref;
                      compute_error)                               
 
 plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
@@ -347,9 +348,9 @@ plot(wp, [labels1; labels2]; title = "NPZD benchmark", legend = :topright,
 ```
 
 ```@example NPZD
-wp = workprecision_fixed(prob, algs1, labels1, dts, alg_ref;
+wp = work_precision_fixed(prob, algs1, labels1, dts, alg_ref;
                                compute_error)
-workprecision_fixed!(wp, prob, algs3, labels3, dts, alg_ref;
+work_precision_fixed!(wp, prob, algs3, labels3, dts, alg_ref;
                      compute_error)                               
 
 plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :bottomleft,

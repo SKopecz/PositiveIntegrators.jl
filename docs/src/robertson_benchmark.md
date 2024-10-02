@@ -92,7 +92,7 @@ In this section the chosen error is the relative maximum error at the final time
 
 ```@example ROBER
 # select relative maximum error at the end of the problem's time span.
-compute_error = PositiveIntegrators.rel_l∞_error_at_end
+compute_error = rel_max_error_tend
 nothing 
 ```
 
@@ -106,7 +106,7 @@ labels = ["MPPRK22(2/3)"; "MPRK22(1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)"
          "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = true, compute_error)
 
 # plot work-precision diagram
@@ -157,10 +157,10 @@ algs2 = [TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock2
 labels2 = ["TRBDF2"; "Kvearno3"; "KenCarp3"; "Rodas3"; "ROS2"; "ROS3"; "Rosenbrock23"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
 # add work-precision data with isoutofdomain = isnegative                               
-workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
@@ -179,10 +179,10 @@ algs3 = [Rodas5P(); Rodas4P(); RadauIIA5()]
 labels3 = ["Rodas5P"; "Rodas4P"; "RadauIIA5"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
 # add work-precision data with isoutofdomain = isnegative                                 
-workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
@@ -200,7 +200,7 @@ In this section we do not compare the relative maximum errors at the final time 
 
 ```@example ROBER
 # select relative maximum error at the end of the problem's time span.
-compute_error = PositiveIntegrators.rel_l∞_error_all
+compute_error = rel_max_error_overall
 nothing 
 ```
 
@@ -208,7 +208,7 @@ First, we compare different MPRK schemes. As above, we omit `MPRK22(0.5)` and `S
 
 ```@example ROBER
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = true, compute_error)
 
 # plot work-precision diagram
@@ -222,10 +222,10 @@ Notably, the error of the second-order methods does not decrease when stricter t
 
 ```@example ROBER
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
 # add work-precision data with isoutofdomain = isnegative                               
-workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram
@@ -242,10 +242,10 @@ Finally, we compare `MPRK43I(0.5, 0.75)` with [recommended solvers](https://docs
 
 ```@example ROBER
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
 # add work-precision data with isoutofdomain = isnegative                                 
-workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
 # plot work-precision diagram

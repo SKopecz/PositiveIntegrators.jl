@@ -118,7 +118,7 @@ The chosen error to compare the performance of different solvers is the relative
 
 ```@example stratreac
 # select relative maximum error at the end of the problem's time span.
-compute_error = PositiveIntegrators.rel_l∞_error_at_end
+compute_error = rel_max_error_tend
 nothing # hide
 ```
 
@@ -147,7 +147,7 @@ labels = ["MPRK22(1.0)"; "MPRK22(1.0, sc=1e-6)"; "SSPMPRK22(0.5,1.0)"; "SSPMPRK2
           "MPRK43II(2.0/3.0)"; "MPRK43II(2.0/3.0, sc=1e-6)"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs, labels, abstols, reltols, alg_ref; compute_error)
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref; compute_error)
 
 # plot work-precision diagram
 plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
@@ -169,8 +169,8 @@ algs2 = [TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock2
 labels2 = ["TRBDF2"; "Kvearno3"; "KenCarp3"; "Rodas3"; "ROS2"; "ROS3"; "Rosenbrock23"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
-workprecision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref; compute_error, 
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref; compute_error, 
                         isoutofdomain = isnegative)
 
 # plot work-precision diagram
@@ -188,8 +188,8 @@ algs3 = [Rodas5P(); Rodas4P(); RadauIIA5()]
 labels3 = ["Rodas5P"; "Rodas4P"; "RadauIIA5"]
 
 # compute work-precision data
-wp = workprecision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
-workprecision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref; compute_error, 
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref; compute_error, 
                         isoutofdomain = isnegative)
 
 # plot work-precision diagram
@@ -242,7 +242,7 @@ labels = ["MPRK22(1.0)"; "SSPMPRK22(0.5,1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,
           "SSPMPRK43()"]
 
 # compute work-precision data
-wp = workprecision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
 
 # plot work-precision diagram
 plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
@@ -263,7 +263,7 @@ labels = ["MPRK22(1.0)"; "MPRK43II(0.5)"; "TRBDF2"; "Kvearno3"; "KenCarp3"; "Rod
           "Rodas5P"; "Rodas4P"]
 
 # compute work-precision data
-wp = workprecision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
 
 # plot work-precision diagram
 plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomleft,     

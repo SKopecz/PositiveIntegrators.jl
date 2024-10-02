@@ -30,7 +30,9 @@ end
 """
     isnegative(sol::ODESolution)
 
-Returns `true` if `sol` contains negative elements.
+Returns `true` if `sol.u` contains negative elements.
+    
+Please note that negative values may occur when plotting the solution, depending on the interpolation used.
 
 See also [`isnonnegative`](@ref).
 """
@@ -45,26 +47,25 @@ Negation of [`isnegative`](@ref).
 """
 isnonnegative(args...) = !isnegative(args...)
 
-### Work-precision #########################################################################
+### Errors #########################################################################
+"""
+    rel_max_error_tend(sol, ref_sol)
 
-# The following function take sol.u and sol_ref.u as inputs
-# relative errors
-function rel_l2_error_at_end(sol, sol_ref)
-    sqrt(sum(((sol[end] .- sol_ref[end]) ./ sol_ref[end]) .^ 2) / length(sol_ref[end]))
+Returns the relative maximum error between sol and ref_sol at time `sol.t[end]`.   
+"""
+function rel_max_error_tend(sol, ref_sol)
+    return maximum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end]))
 end
 
-function rel_l1_error_at_end(sol, sol_ref)
-    sum(abs.((sol[end] .- sol_ref[end]) ./ sol_ref[end])) / length(sol_ref[end])
-end
+"""
+    rel_max_error_overall(sol, ref_sol)
 
-function rel_l∞_error_at_end(sol, sol_ref)
-    maximum(abs.((sol[end] .- sol_ref[end]) ./ sol_ref[end]))
-end
-
-function rel_l∞_error_all(sol, sol_ref)
+Returns the maximum of the relative maximum errors between sol and ref_sol over all time steps.    
+"""
+function rel_max_error_overall(sol, ref_sol)
     err = zero(eltype(eltype(sol)))
     for i in eachindex(sol)
-        max_err_i = maximum(abs.((abs.(sol[i]) .- abs.(sol_ref[i])) ./ sol_ref[i]))
+        max_err_i = maximum(abs.((abs.(sol[i]) .- abs.(ref_sol[i])) ./ ref_sol[i]))
         if max_err_i > err
             err = max_err_i
         end
@@ -72,32 +73,48 @@ function rel_l∞_error_all(sol, sol_ref)
     return err
 end
 
-function compute_time_fixed(dt, prob, alg, seconds, numruns)
-    # using bechmarktools is too slow 
-    # time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
+"""
+    rel_l1_error_tend(sol, ref_sol)
 
-    ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
+Returns the relative l1 error between sol and ref_sol at time `sol.t[end]`.   
+"""
+function rel_l1_error_tend(sol, ref_sol)
+    return sum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end])) / length(ref_sol[end])
+end
+
+"""
+    rel_l2_error_tend(sol, ref_sol)
+
+Returns the relative l2 error between sol and ref_sol at time `sol.t[end]`.   
+"""
+function rel_l2_error_tend(sol, ref_sol)
+    return sqrt(sum(((sol[end] .- ref_sol[end]) ./ ref_sol[end]) .^ 2) /
+                length(ref_sol[end]))
+end
+
+### Functions to compute work-precision diagrams ########################################## 
+function _compute_time(benchmark_f, seconds, numruns)
+    benchmark_f() # pre-compile
+
+    time = benchmark_f()
+
+    if time ≤ seconds
+        time = median([time; [benchmark_f() for i in 2:numruns]])
+    end
+
+    return time
+end
+
+function compute_time_fixed(dt, prob, alg, seconds, numruns)
     benchmark_f = let dt = dt, prob = prob, alg = alg
         () -> @elapsed solve(prob, alg; dt, adaptive = false,
                              save_everystep = false)
     end
 
-    benchmark_f() # pre-compile
-
-    b_t = benchmark_f()
-    if b_t > seconds
-        time = b_t
-    else
-        time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
-    end
-    ##########################################################################
-    return time
+    return _compute_time(benchmark_f, seconds, numruns)
 end
 
 function compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns, kwargs...)
-    # using bechmarktools is too slow 
-    # time = @belapsed solve($prob, $alg, dt = $dt, adaptive = false, save_everystep = false)
-    ### adapted from DiffEqDevTools.jl/src/benchmark.jl#L84 ##################
     benchmark_f = let abstol = abstol, reltol = reltol, prob = prob, alg = alg,
         kwargs = kwargs
 
@@ -105,29 +122,30 @@ function compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns, kwar
                              save_everystep = false, kwargs...)
     end
 
-    benchmark_f() # pre-compile
-
-    b_t = benchmark_f()
-    if b_t > seconds
-        time = b_t
-    else
-        time = mapreduce(i -> benchmark_f(), min, 2:numruns; init = b_t)
-    end
-    ##########################################################################
-    return time
+    return _compute_time(benchmark_f, seconds, numruns)
 end
 
-# functions to compute data for workprecision diagrams
-function workprecision_fixed!(dict, prob, algs, names, dts, alg_ref;
-                              compute_error = rel_l∞_error_at_end, seconds = 2,
-                              numruns = 20)
+"""
+    work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref;
+                          compute_error = rel_max_error_tend, 
+                          seconds = 2,
+                          numruns = 20)
+    )
+
+Adds work-precision data to the dictionary `dict`, which was created with `work_precion_fixed`.
+See [`work_precision_fixed`](@ref) for the meaning of the inputs.
+"""
+# functions to compute data for work_precision diagrams
+function work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref;
+                               compute_error = rel_max_error_tend, seconds = 2,
+                               numruns = 20)
     tspan = prob.tspan
     dt_ref = (last(tspan) - first(tspan)) ./ 1e5
-    sol_ref = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
+    ref_sol = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
 
-    let sol_ref = sol_ref
-        for (alg, name) in zip(algs, names)
-            println(name)
+    let ref_sol = ref_sol
+        for (alg, label) in zip(algs, labels)
+            println(label)
             error_time = Vector{Tuple{Float64, Float64}}(undef, length(dts))
 
             for (i, dt) in enumerate(dts)
@@ -135,7 +153,7 @@ function workprecision_fixed!(dict, prob, algs, names, dts, alg_ref;
                 try
                     sol = solve(prob, alg; dt, adaptive = false, save_everystep = true)
                     if Int(sol.retcode) == 1 && isnonnegative(sol)
-                        error = compute_error(sol.u, sol_ref(sol.t))
+                        error = compute_error(sol, ref_sol(sol.t))
                         time = compute_time_fixed(dt, prob, alg, seconds, numruns)
 
                         error_time[i] = (error, time)
@@ -145,36 +163,68 @@ function workprecision_fixed!(dict, prob, algs, names, dts, alg_ref;
                 catch e
                 end
             end
-            dict[name] = error_time
+            dict[label] = error_time
         end
     end
 end
 
-function workprecision_fixed(prob, algs, names, dts, alg_ref;
-                             compute_error = rel_l∞_error_at_end,
-                             seconds = 2, numruns = 20)
-    dict = Dict(name => [] for name in names)
-    workprecision_fixed!(dict, prob, algs, names, dts, alg_ref; compute_error, seconds,
-                         numruns)
+"""
+    work_precision_fixed(prob, algs, labels, dts, alg_ref;
+                         compute_error = rel_max_error_tend,
+                         seconds = 2, 
+                         numruns = 20)
+
+Returns a dictionary to create work-precision diagrams. 
+The problem `prob` is solved by each algorithm in `algs` for all the step sizes defined in `dts`. 
+For each step size the error and computing time are stored in the dictionary. 
+If the solve is not successful for a given step size, then `(Inf, Inf)` is stored in the dictionary.
+The strings in the array `labels` are used as keys of the dictionary. 
+The reference solution used for error computations is computed with the algorithm `alg_ref`.
+
+### Keyword arguments: ###
+
+- compute_error(sol::ODESolution, ref_sol::ODESolution): Function to compute the error between `sol` and `ref_sol`.
+- seconds: If the measured computing time of a single solve is larger than `seconds`, then this computing time is stored in the dictionary.
+- numruns: If the measured computing time of a single solve is less or equal to `seconds`, then `numruns` solves are performed and the median of the respective computing times is stored in the dictionary.
+"""
+function work_precision_fixed(prob, algs, labels, dts, alg_ref;
+                              compute_error = rel_max_error_tend,
+                              seconds = 2, numruns = 20)
+    dict = Dict(label => [] for label in labels)
+    work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref; compute_error, seconds,
+                          numruns)
     return dict
 end
 
-function workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_ref;
-                                 adaptive_ref = false,
-                                 abstol_ref = 1e-14, reltol_ref = 1e-13,
-                                 compute_error = rel_l∞_error_at_end,
-                                 seconds = 2, numruns = 20, kwargs...)
+"""
+    work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+                            adaptive_ref = false,
+                            abstol_ref = 1e-14, 
+                            reltol_ref = 1e-13,
+                            compute_error = rel_max_error_tend,
+                            seconds = 2, 
+                            numruns = 20,
+                            kwargs...)
+
+Adds work-precision data to the dictionary `dict`, which was created with `work_precion_fixed_adaptive`.
+See [`work_precision_adaptive`](@ref) for the meaning of the inputs.
+"""
+function work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, alg_ref;
+                                  adaptive_ref = false,
+                                  abstol_ref = 1e-14, reltol_ref = 1e-13,
+                                  compute_error = rel_max_error_tend,
+                                  seconds = 2, numruns = 20, kwargs...)
     if adaptive_ref
-        sol_ref = solve(prob, alg_ref; adaptive = true, save_everystep = true,
+        ref_sol = solve(prob, alg_ref; adaptive = true, save_everystep = true,
                         abstol = abstol_ref, reltol = reltol_ref)
     else
         tspan = prob.tspan
         dt_ref = (last(tspan) - first(tspan)) ./ 1e5
-        sol_ref = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
+        ref_sol = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
     end
 
-    for (alg, name) in zip(algs, names)
-        println(name)
+    for (alg, label) in zip(algs, labels)
+        println(label)
         error_time = Vector{Tuple{Float64, Float64}}(undef, length(abstols))
 
         for (i, dt) in enumerate(abstols)
@@ -184,7 +234,7 @@ function workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_
                         kwargs...)
 
             if Int(sol.retcode) == 1 && isnonnegative(sol)
-                error = compute_error(sol.u, sol_ref(sol.t))
+                error = compute_error(sol, ref_sol(sol.t))
                 time = compute_time_adaptive(abstol, reltol, prob, alg, seconds, numruns,
                                              kwargs...)
 
@@ -193,35 +243,63 @@ function workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_
                 error_time[i] = (Inf, Inf)
             end
         end
-        dict[name] = error_time
+        dict[label] = error_time
     end
 
     return nothing
 end
 
-function workprecision_adaptive(prob, algs, names, abstols, reltols, alg_ref;
-                                adaptive_ref = false,
-                                abstol_ref = 1e-14, reltol_ref = 1e-13,
-                                compute_error = rel_l∞_error_at_end, seconds = 2,
-                                numruns = 20, kwargs...)
-    dict = Dict(name => [] for name in names)
-    workprecision_adaptive!(dict, prob, algs, names, abstols, reltols, alg_ref;
-                            adaptive_ref, abstol_ref, reltol_ref,
-                            compute_error, seconds,
-                            numruns, kwargs...)
+"""
+    work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+                            adaptive_ref = false,
+                            abstol_ref = 1e-14, 
+                            reltol_ref = 1e-13,
+                            compute_error = rel_max_error_tend,
+                            seconds = 2, 
+                            numruns = 20, 
+                            kwargs...)
+
+Returns a dictionary to create work-precision diagrams. 
+The problem `prob` is solved by each algorithm in `algs` for all tolerances defined in `abstols` and `reltols`. 
+For the respective tolerances the error and computing time are stored in the dictionary. 
+If the solve is not successful for the given tolerances, then `(Inf, Inf)` is stored in the dictionary.
+The strings in the array `labels` are used as keys of the dictionary. 
+The reference solution used for error computations is computed with the algorithm `alg_ref`.
+Additional keyword arguments are passed on to `solve`.
+
+### Keyword arguments: ###
+
+- `adaptive_ref`: If `true` the refenerce solution is computed adaptively with tolerances `abstol_ref` and `reltol_ref`. Otherwise ``10^5`` steps are used.
+- `abstol_ref`: See `adaptive_ref`.
+- `reltol_ref`: See `adaptive_ref`.
+- `compute_error(sol::ODESolution, ref_sol::ODESolution)`: A function to compute the error between `sol` and `ref_sol`.
+- `seconds`: If the measured computing time of a single solve is larger than `seconds`, then this computing time is stored in the dictionary.
+- `numruns`: If the measured computing time of a single solve is less or equal to `seconds`, then `numruns` solves are performed and the median of the respective computing times is stored in the dictionary.
+"""
+function work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+                                 adaptive_ref = false,
+                                 abstol_ref = 1e-14, reltol_ref = 1e-13,
+                                 compute_error = rel_max_error_tend, seconds = 2,
+                                 numruns = 20, kwargs...)
+    dict = Dict(label => [] for label in labels)
+    work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, alg_ref;
+                             adaptive_ref, abstol_ref, reltol_ref,
+                             compute_error, seconds,
+                             numruns, kwargs...)
     return dict
 end
 
-@recipe function f(wp::Dict, names; color = nothing)
+# plot recipe to plot work-precision dictionaries
+@recipe function f(wp::Dict, labels; color = nothing)
     seriestype --> :path
     linewidth --> 3
     xscale --> :log10
     yscale --> :log10
     markershape --> :auto
-    xs = [first.(wp[name]) for name in names]
-    ys = [last.(wp[name]) for name in names]
+    xs = [first.(wp[label]) for label in labels]
+    ys = [last.(wp[label]) for label in labels]
     xguide --> "error"
     yguide --> "times (s)"
-    label --> reshape(names, 1, length(wp))
+    label --> reshape(labels, 1, length(wp))
     return xs, ys
 end

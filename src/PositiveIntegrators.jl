@@ -2,6 +2,8 @@ module PositiveIntegrators
 
 # 1. Load dependencies
 using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, mul!
+using Statistics: median
+
 using SparseArrays: SparseArrays, AbstractSparseMatrix,
                     issparse, nonzeros, nzrange, rowvals, spdiagm
 using StaticArrays: SVector, SMatrix, StaticArray, @SVector, @SMatrix
@@ -52,8 +54,9 @@ export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac, prob_pds_minmapk
 
 export isnegative, isnonnegative
-export workprecision_adaptive, workprecision_adaptive!, workprecision_fixed,
-       workprecision_fixed!
+export work_precision_adaptive, work_precision_adaptive!, work_precision_fixed,
+       work_precision_fixed!
+export rel_max_error_overall, rel_max_error_tend, rel_l1_error_tend, rel_l2_error_tend
 
 # 3. Load source code
 

@@ -2,9 +2,20 @@
 
 In this tutorial we check that the implemented MPRK schemes have the expected order of convergence. 
 
-## Conservative PDS
+## Conservative production-destruction systems
 
-First, we consider conservative PDS. We define an academic non-autonomous test problem to compute errors and investigate the convergence order.
+First, we consider conservative production-destruction systems (PDS). To investigate the convergence order we define the non-autonomous test problem 
+
+```math
+\begin{aligned}
+u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1,\\
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2.
+\end{aligned}
+```
+
+The PDS is conservative, since the sum of the right hand side terms equals zero. 
+An implementation of the problem is given next.
+
 
 ```@example eoc
 using PositiveIntegrators
@@ -16,8 +27,7 @@ prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 1.0))
 nothing # hide output
 ```
 
-To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances.
-Moreover, we need to choose the different time step sizes which are used to investigate the convergence.
+To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances. Since the problem is not stiff we use the high order explicit solver `Vern9()` from [`OrdinaryDiffEq`](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Moreover, we need to choose the different time step sizes which are used to investigate the convergence behavior. 
 
 ```@example eoc
 using OrdinaryDiffEq
@@ -29,7 +39,7 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 # choose step sizes
 dts = 0.5 .^ (5:10)
 
-nothing # hide output
+nothing # hide
 ```
 
 ### Second order MPRK schemes
@@ -39,7 +49,7 @@ First, we test several second order MPRK schemes.
 ```@example eoc
 # select schemes
 algs2 = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0)]
-names2 = ["MPRK22(0.5)"; "MPRK22(2.0/3.0)"; "MPRK22(1.0)"; "SSPMPRK22(0.5, 1.0)"]
+labels2 = ["MPRK22(0.5)"; "MPRK22(2.0/3.0)"; "MPRK22(1.0)"; "SSPMPRK22(0.5, 1.0)"]
 
 #compute errors and experimental order of convergence
 err_eoc = []
@@ -64,10 +74,10 @@ data = hcat(dts, reduce(hcat,err_eoc))
 
 # print table
 formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
-pretty_table(data, formatters = formatter, header = ["Δt"; names2])                  
+pretty_table(data, formatters = formatter, header = ["Δt"; labels2])                  
 ```
 
-The table shows that indeed all schemes show the expected order of convergence.
+The table shows that all schemes converge as expected.
 
 ### Third order MPRK schemes
 
@@ -75,8 +85,10 @@ In this section, we proceed as above, but consider third order MPRK schemes inst
 
 ```@example eoc
 # select 3rd order schemes
-algs3 = [MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0); SSPMPRK43()]
-names3 = ["MPRK43I(1.0,0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"; "SSPMPRK43()"]
+algs3 = [MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0); 
+         SSPMPRK43()]
+labels3 = ["MPRK43I(1.0,0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)";
+          "SSPMPRK43()"]
 
 #compute errors and experimental order of convergence
 err_eoc = []
@@ -94,14 +106,23 @@ data = hcat(dts, reduce(hcat,err_eoc))
 
 # print table
 formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
-pretty_table(data, formatters = formatter, header = ["Δt"; names3])  
+pretty_table(data, formatters = formatter, header = ["Δt"; labels3])  
 ```
 
-As above, the table shows that all schemes show the expected order of convergence.
+As above, the table shows that all schemes converge as expected.
 
 ## Non-conservative PDS
 
-In this section we consider another test problem which is non-autonomous and in particular non-conservative.
+In this section we consider the non-autonomous but non-conservative test problem 
+
+```math
+\begin{aligned}
+u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1 - \cos(2\pi t)^2 u_1,\\
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2 - \sin(\pi t)^2 u_2.
+\end{aligned}
+```
+
+Since the sum of the right hand side terms don't cancel, the PDS is indeed non-conservative. Hence, we need to use `PDSProblem` for its implementation.
 
 ```@example eoc
 # choose problem
@@ -109,10 +130,10 @@ P(u, p, t) = [0.0 cos.(π * t) .^ 2 * u[2]; sin.(2 * π * t) .^ 2 * u[1] 0.0]
 D(u, p, t) = [cos.(2 * π * t) .^ 2 * u[1]; sin.(π * t) .^ 2 * u[2]]
 prob = PDSProblem(P, D, [0.9; 0.1], (0.0, 1.0))
 
-nothing # hide output
+nothing # hide
 ```
 
-The following sections show that also for this non-conservative PDS the schemes show the expected convergence order.
+The following sections will show that the selected MPRK schemes show the expected convergence order also for this non-conservative PDS.
 
 ### Second order MPRK schemes
 
@@ -133,7 +154,7 @@ data = hcat(dts, reduce(hcat,err_eoc))
 
 # print table
 formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
-pretty_table(data, formatters = formatter, header = ["Δt"; names2])                  
+pretty_table(data, formatters = formatter, header = ["Δt"; labels2])                  
 ```
 
 ### Third order MPRK schemes
@@ -155,5 +176,5 @@ data = hcat(dts, reduce(hcat,err_eoc))
 
 # print table
 formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@sprintf "%5.2e " v)
-pretty_table(data, formatters = formatter, header = ["Δt"; names3])  
+pretty_table(data, formatters = formatter, header = ["Δt"; labels3])  
 ```
