@@ -7,6 +7,7 @@ using OrdinaryDiffEq, PositiveIntegrators
 
 # select Robertson problem
 prob = prob_pds_robertson
+nothing # hide
 ```
 
 To keep the following code as clear as possible, we define a helper function `robertson_plot` that we use for plotting.

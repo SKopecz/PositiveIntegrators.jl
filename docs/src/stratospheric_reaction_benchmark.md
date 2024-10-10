@@ -6,6 +6,7 @@ We use the stiff stratospheric reaction problem [`prob_pds_stratreac`](@ref) to 
 using PositiveIntegrators, OrdinaryDiffEq
 # select problem
 prob = prob_pds_stratreac
+nothing # hide
 ```
 
 To keep the following code as clear as possible, we define a helper function `stratreac_plot` that we use for plotting.
