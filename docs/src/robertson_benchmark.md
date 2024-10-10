@@ -1,8 +1,15 @@
 # [Benchmark: Solution of the Robertson problem](@id benchmark-robertson)
 
-Here we use the stiff Robertson model [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
+Here we use the stiff Robertson problem [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
-First, we define the auxiliary function `robertson_plot` to improve the readability of the following code.
+```@example ROBER
+using OrdinaryDiffEq, PositiveIntegrators
+
+# select Robertson problem
+prob = prob_pds_robertson
+```
+
+To keep the following code as clear as possible, we define a helper function `robertson_plot` that we use for plotting.
 
 ```@example ROBER
 using Plots
@@ -27,18 +34,13 @@ robertson_plot = function (sol, sol_ref = nothing, title = "")
     end
     return p
 end
-nothing # hide output
+nothing # hide
 ```
 
 For this stiff problem the computation of negative approximations may lead to inaccurate solutions. 
-This typically occurs when loose tolerances are used in adaptive time stepping.
+This typically occurs when adaptive time stepping uses loose tolerances.
 
 ```@example ROBER
-using OrdinaryDiffEq, PositiveIntegrators
-
-# select Robertson problem
-prob = prob_pds_robertson
-
 # compute reference solution for plotting
 ref_sol = solve(prob, Rodas4P(); abstol = 1e-14, reltol = 1e-13);
 
@@ -54,7 +56,7 @@ p2 = robertson_plot(sol_MPRK, ref_sol, "MPRK22(1.0)");
 plot(p1, p2)
 ```
 
-Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used to guarantee nonnegative solutions.
+Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used in combination with [`isnegative`](@ref) to guarantee nonnegative solutions. 
 
 ```@example ROBER
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol, 
@@ -65,39 +67,38 @@ robertson_plot(sol_Ros23, ref_sol, "Rosenbrock23")
 
 ## Work-Precision diagrams
 
-In the following we show several work-precision diagrams, which compare the different methods with respect to computing time and the respective error. We focus solely on adaptive methods, since the time interval ``(0, 10^{11})`` is very large.
+In the following we show several work-precision diagrams, which compare different methods with respect to computing time and the respective error. 
+We focus solely on adaptive methods, since the time interval ``(0, 10^{11})`` is too large to generate accurate solutions with fixed step sizes.
 
-Since the Robertson problem is stiff, we need to use a suited implicit scheme to compute its reference solution, see the [solver guide](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/#Stiff-Problems). Note that we cannot use the recommended method `radau()`, since `prob_pds_robertson` uses [StaticArrays](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of arrays of `Float64`.
+Since the Robertson problem is stiff, we need to use a suited implicit scheme to compute a reference solution, see the [solver guide](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/#Stiff-Problems). Note that we cannot use the recommended method `radau()`, since [`prob_pds_robertson`](@ref) uses [StaticArrays](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of arrays of type `Float64`.
 
 ```@example ROBER
 # select solver to compute reference solution
 alg_ref = Rodas4P()
-nothing # hide output
+nothing # hide
 ```
 
-### Adaptive time stepping
-
-We choose the following absolute and relative tolerances for the comparison.
+We use the functions [`work_precision_adaptive`](@ref) and [`work_precision_adaptive!`](@ref) to compute the data for the diagrams.
+Furthermore, the following absolute and relative tolerances are used.
 
 ```@example ROBER
 # set absolute and relative tolerances
 abstols = 1.0 ./ 10.0 .^ (2:1:10)
 reltols = abstols .* 10.0
-nothing # hide output
+nothing # hide
 ```
 
-#### Relative maximum error at the final time
+### Relative maximum error at the final time
 
 In this section the chosen error is the relative maximum error at the final time ``t = 10^{11}``.
 
 ```@example ROBER
 # select relative maximum error at the end of the problem's time span.
 compute_error = rel_max_error_tend
-nothing 
+nothing # hide
 ```
 
-We start with a comparison of different adaptive MPRK schemes described in the literature.
-
+We start with a comparison of different adaptive MPRK schemes.
 ```@example ROBER
 # choose methods to compare
 algs = [MPRK22(2.0 / 3.0); MPRK22(1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75);
@@ -145,7 +146,7 @@ p2 = robertson_plot(sol_MPRK43, ref_sol, "MPRK43I(0.5, 0.75)");
 plot(p1, p2)
 ```
 
-Now we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with a selection of second and third order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative, we use the solver option `isoutofdomain = isnegative`.
+Now we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with a selection of second and third order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions, we use the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # select reference MPRK methods
@@ -170,9 +171,9 @@ plot(wp, [labels1; labels2]; title = "Robertson benchmark", legend = :topright,
      ylims = (10^-5, 10^1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-We see that the MPRK schemes perform similar to `Ros3()` or `Rosenbrock23()` and are a good choice as long as low accuracy is acceptable. For high accuracy we should employ a scheme like `KenCarp3()`. The clearly superior performance of `Rodas3()` seems to be an exception.
+We see that the MPRK schemes perform similar to `Ros3()` or `Rosenbrock23()` and are a good choice as long as low accuracy is acceptable. For high accuracy we should employ a scheme like `KenCarp3()`. The clearly superior performance of `Rodas3()` seems to be an exception here.
 
-In addition,  we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
+In addition,  we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` to some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 algs3 = [Rodas5P(); Rodas4P(); RadauIIA5()]
@@ -194,14 +195,14 @@ plot(wp, [labels1; labels3]; title = "Robertson benchmark", legend = :topright,
 
 Again, we see that the MPRK schemes are only beneficial if low accuracy is acceptable.
 
-#### Relative maximum error over all time steps
+### Relative maximum error over all time steps
 
 In this section we do not compare the relative maximum errors at the final time ``t = 10^{11}``, but the relative maximum errors over all time steps. 
 
 ```@example ROBER
 # select relative maximum error at the end of the problem's time span.
 compute_error = rel_max_error_overall
-nothing 
+nothing # hide
 ```
 
 First, we compare different MPRK schemes. As above, we omit `MPRK22(0.5)` and `SSPMPRK22(0.5, 1.0)`.
@@ -238,7 +239,7 @@ plot(wp, [labels1; labels2]; title = "Robertson benchmark", legend = :bottomleft
 Here too, some methods show that the error does not decrease even though stricter tolerances are used.
 Interestingly, the `MPRK43I(0.5, 0.75)` is superior to almost all other methods in this comparison. Only `Rodas3()` is preferable when higher accuracy is demanded.
 
-Finally, we compare `MPRK43I(0.5, 0.75)` with [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
+Finally, we compare `MPRK43I(0.5, 0.75)` and `MPRK22(1.0)` to [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # compute work-precision data
