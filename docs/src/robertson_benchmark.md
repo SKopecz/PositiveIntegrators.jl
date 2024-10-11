@@ -102,9 +102,9 @@ nothing # hide
 We start with a comparison of different adaptive MPRK schemes.
 ```@example ROBER
 # choose methods to compare
-algs = [MPRK22(2.0 / 3.0); MPRK22(1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75);
+algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75);
         MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
-labels = ["MPPRK22(2/3)"; "MPRK22(1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)";
+labels = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)";
          "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
