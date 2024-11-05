@@ -212,7 +212,7 @@ end
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,
-                      piracies = (; treat_as_own = [RecipesBase.piracies],),)
+                      piracies = (; treat_as_own = [RecipesBase.apply_recipe],),)
     end
 
     @testset "ExplicitImports.jl" begin
