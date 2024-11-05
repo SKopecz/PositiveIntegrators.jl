@@ -40,7 +40,7 @@ import OrdinaryDiffEq: alg_order, isfsal,
                        _ode_interpolant, _ode_interpolant!,
                        get_fsalfirstlast
 
-using RecipesBase
+using RecipesBase: @recipe
 
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
