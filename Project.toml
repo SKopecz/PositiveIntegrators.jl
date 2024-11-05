@@ -1,7 +1,7 @@
 name = "PositiveIntegrators"
 uuid = "d1b20bf0-b083-4985-a874-dc5121669aa5"
 authors = ["Stefan Kopecz, Hendrik Ranocha, and contributors"]
-version = "0.2.6"
+version = "0.3.0-DEV"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -23,7 +23,7 @@ LinearSolve = "2.21"
 MuladdMacro = "0.2.1"
 OrdinaryDiffEq = "6.59"
 Reexport = "1"
-SciMLBase = "2"
+SciMLBase = "2.52"
 SimpleUnPack = "1"
 SparseArrays = "1.7"
 StaticArrays = "1.5"

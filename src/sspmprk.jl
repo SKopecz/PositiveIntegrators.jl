@@ -126,22 +126,25 @@ end
 
     f = integrator.f
 
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
-    Ptmp = b10 * P
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P, d = f.pd(uprev, p, t)
+    else # f isa ConservativePDSFunction
+        P = f.p(uprev, p, t)
+    end
     integrator.stats.nf += 1
+    Ptmp = b10 * P
 
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d = f.d(uprev, p, t)  # evaluate nonconservative destruction terms
         dtmp = b10 * d
         rhs = a10 * uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
-    else
-        # f isa ConservativePDSFunction
+    else # f isa ConservativePDSFunction
         M = build_mprk_matrix(Ptmp, σ, dt)
         rhs = a10 * uprev
     end
@@ -161,18 +164,22 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P2 = f.p(u, p, t + b10 * dt)
-    Ptmp = b20 * P + b21 * P2
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P2, d2 = f.pd(u, p, t + b10 * dt)
+    else # f isa ConservativePDSFunction
+        P2 = f.p(u, p, t + b10 * dt)
+    end
     integrator.stats.nf += 1
+    Ptmp = b20 * P + b21 * P2
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d2 = f.d(u, p, t + b10 * dt)  # evaluate nonconservative destruction terms
         dtmp = b20 * d + b21 * d2
         rhs = a20 * uprev + a21 * u + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
-    else
-        # f isa ConservativePDSFunction
+    else # f isa ConservativePDSFunction
         M = build_mprk_matrix(Ptmp, σ, dt)
         rhs = a20 * uprev + a21 * u
     end
@@ -273,8 +280,7 @@ end
     # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    f.pd(P, D, uprev, p, t) # evaluate production and destruction terms
     integrator.stats.nf += 1
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
@@ -313,8 +319,7 @@ end
     end
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P2, u, p, t + b10 * dt) # evaluate production terms
-    f.d(D2, u, p, t + b10 * dt) # evaluate nonconservative destruction terms
+    f.pd(P2, D2, u, p, t + b10 * dt) # evaluate production and destruction terms
     integrator.stats.nf += 1
 
     if issparse(P)
@@ -466,7 +471,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. To display the default value for data type `type` evaluate 
+to avoid divisions by zero. To display the default value for data type `type` evaluate
 `SSPMPRK43. small_constant_function(type)`, where `type` can be, e.g.,
 `Float64`.
 
@@ -607,21 +612,25 @@ end
 
     f = integrator.f
 
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
-    Ptmp = β10 * P
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P, d = f.pd(uprev, p, t)
+    else # f isa ConservativePDSFunction
+        P = f.p(uprev, p, t)
+    end
     integrator.stats.nf += 1
+    Ptmp = β10 * P
 
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d = f.d(uprev, p, t)
         dtmp = β10 * d
         rhs = α10 * uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
-    else
+    else # f isa ConservativePDSFunction
         rhs = α10 * uprev
         M = build_mprk_matrix(Ptmp, σ, dt)
     end
@@ -638,18 +647,22 @@ end
     # avoid division by zero due to zero Patankar weights
     ρ = add_small_constant(ρ, small_constant)
 
-    P2 = f.p(u, p, t + β10 * dt)
-    Ptmp = β20 * P + β21 * P2
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P2, d2 = f.pd(u, p, t + β10 * dt)
+    else # f isa ConservativePDSFunction
+        P2 = f.p(u, p, t + β10 * dt)
+    end
     integrator.stats.nf += 1
+    Ptmp = β20 * P + β21 * P2
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d2 = f.d(u, p, t + β10 * dt)  # evaluate nonconservative destruction terms
         dtmp = β20 * d + β21 * d2
         rhs = α20 * uprev + α21 * u2 + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, ρ, dt, dtmp)
-
-    else
+    else # f isa ConservativePDSFunction
         rhs = α20 * uprev + α21 * u2
         M = build_mprk_matrix(Ptmp, ρ, dt)
     end
@@ -691,17 +704,22 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P3 = f.p(u, p, t + c3 * dt)
-    Ptmp = β30 * P + β31 * P2 + β32 * P3
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P3, d3 = f.pd(u, p, t + c3 * dt)
+    else # f isa ConservativePDSFunction
+        P3 = f.p(u, p, t + c3 * dt)
+    end
     integrator.stats.nf += 1
+    Ptmp = β30 * P + β31 * P2 + β32 * P3
 
     # build linear system matrix
     if f isa PDSFunction
-        d3 = f.d(u, p, t + c3 * dt)  # evaluate nonconservative destruction terms
         dtmp = β30 * d + β31 * d2 + β32 * d3
         rhs = α30 * uprev + α31 * u2 + α32 * u + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
-    else
+    else # f isa ConservativePDSFunction
         rhs = α30 * uprev + α31 * u2 + α32 * u
         M = build_mprk_matrix(Ptmp, σ, dt)
     end
@@ -804,8 +822,7 @@ end
     # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    f.pd(P, D, uprev, p, t) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see
@@ -841,8 +858,7 @@ end
     @.. broadcast=false ρ=n1 * u + n2 * u^2 / σ
     @.. broadcast=false ρ=ρ + small_constant
 
-    f.p(P2, u, p, t + β10 * dt) # evaluate production terms
-    f.d(D2, u, p, t + β10 * dt) # evaluate nonconservative destruction terms
+    f.pd(P2, D2, u, p, t + β10 * dt) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see
@@ -908,8 +924,7 @@ end
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P3, u, p, t + c3 * dt) # evaluate production terms
-    f.d(D3, u, p, t + c3 * dt) # evaluate nonconservative destruction terms
+    f.pd(P3, D3, u, p, t + c3 * dt) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see

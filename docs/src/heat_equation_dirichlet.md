@@ -89,12 +89,13 @@ the resulting linear systems:
 ```@example HeatEquationDirichlet
 using PositiveIntegrators # load ConservativePDSProblem
 
-function heat_eq_P!(P, u, μ, t)
-    fill!(P, 0)
+function heat_eq_PD!(P, D, u, μ, t)
     N = length(u)
     Δx = 1 / N
     μ_Δx2 = μ / Δx^2
 
+    # production terms
+    fill!(P, 0)
     let i = 1
         # Dirichlet boundary condition
         P[i, i + 1] = u[i + 1] * μ_Δx2
@@ -111,15 +112,8 @@ function heat_eq_P!(P, u, μ, t)
         P[i, i - 1] = u[i - 1] * μ_Δx2
     end
 
-    return nothing
-end
-
-function heat_eq_D!(D, u, μ, t)
+    # nonconservative destruction terms
     fill!(D, 0)
-    N = length(u)
-    Δx = 1 / N
-    μ_Δx2 = μ / Δx^2
-
     # Dirichlet boundary condition
     D[begin] = u[begin] * μ_Δx2
     D[end] = u[end] * μ_Δx2
@@ -128,7 +122,7 @@ function heat_eq_D!(D, u, μ, t)
 end
 
 μ = 1.0e-2
-prob = PDSProblem(heat_eq_P!, heat_eq_D!, u0, tspan, μ) # create the PDS
+prob = PDSProblem(heat_eq_PD!, u0, tspan, μ) # create the PDS
 
 sol = solve(prob, MPRK22(1.0); save_everystep = false)
 
@@ -153,7 +147,7 @@ you can use the keyword argument `p_prototype` of
 using SparseArrays
 p_prototype = spdiagm(-1 => ones(eltype(u0), length(u0) - 1),
                       +1 => ones(eltype(u0), length(u0) - 1))
-prob_sparse = PDSProblem(heat_eq_P!, heat_eq_D!, u0, tspan, μ;
+prob_sparse = PDSProblem(heat_eq_PD!, u0, tspan, μ;
                          p_prototype = p_prototype)
 
 sol_sparse = solve(prob_sparse, MPRK22(1.0); save_everystep = false)
@@ -179,7 +173,7 @@ using LinearAlgebra
 p_prototype = Tridiagonal(ones(eltype(u0), length(u0) - 1),
                           ones(eltype(u0), length(u0)),
                           ones(eltype(u0), length(u0) - 1))
-prob_tridiagonal = PDSProblem(heat_eq_P!, heat_eq_D!, u0, tspan, μ;
+prob_tridiagonal = PDSProblem(heat_eq_PD!, u0, tspan, μ;
                               p_prototype = p_prototype)
 
 sol_tridiagonal = solve(prob_tridiagonal, MPRK22(1.0); save_everystep = false)
