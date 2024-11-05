@@ -13,6 +13,7 @@ using PositiveIntegrators
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
+using RecipesBase: RecipesBase # only for Aqua tests
 using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_imports
 
 """
@@ -210,7 +211,8 @@ end
         # We do not test ambiguities since we get a lot of
         # false positives from dependencies
         Aqua.test_all(PositiveIntegrators;
-                      ambiguities = false,)
+                      ambiguities = false,
+                      piracies = (; treat_as_own = [RecipesBase.piracies],),)
     end
 
     @testset "ExplicitImports.jl" begin
