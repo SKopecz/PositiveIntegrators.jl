@@ -114,7 +114,7 @@ wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
 # plot work-precision diagram
 plot(wp, labels; title = "Robertson benchmark", legend = :topright,     
      color = permutedims([repeat([1], 2)..., repeat([3], 2)..., repeat([4], 2)...]),
-     xlims = (10^-14, 10^0), xticks = 10.0 .^ (-5:1:0),
+     xlims = (10^-10, 10^0), xticks = 10.0 .^ (-10:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
