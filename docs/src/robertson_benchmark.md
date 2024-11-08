@@ -113,13 +113,13 @@ wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
 
 # plot work-precision diagram
 plot(wp, labels; title = "Robertson benchmark", legend = :topright,     
-     color = permutedims([repeat([1], 2)..., repeat([3], 2)..., repeat([4], 2)...]),
+     color = permutedims([repeat([1], 3)..., repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-10, 10^0), xticks = 10.0 .^ (-10:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
 We see that the second and third order schemes perform very similar, with the exception of `MPRK22(0.5)`.
-The superior performance of `MPRK22(0.5)` cannot be seen in other benchmarks is therefore an exception here.
+This superior performance of `MPRK22(0.5)` cannot be seen in other benchmarks is therefore an exception here.
 
 The scheme `SSPMPRK22(0.5, 1.0)` has not been considered above, since it generates oscillatory solutions.
 
@@ -163,12 +163,12 @@ work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
 
 # plot work-precision diagram
 plot(wp, [labels1; labels2]; title = "Robertson benchmark", legend = :topright,
-     color = permutedims([1, 3, repeat([5], 3)..., repeat([6], 4)...]),
+     color = permutedims([repeat([1], 2)..., 3, repeat([5], 3)..., repeat([6], 4)...]),
      xlims = (10^-10, 10^3), xticks = 10.0 .^ (-14:1:3),
      ylims = (10^-6, 10^1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
 ```
 
-We see that the MPRK schemes perform similar to `Ros3()` or `Rosenbrock23()` and are a good choice as long as low accuracy is acceptable. For high accuracy we should employ a scheme like `KenCarp3()`. The clearly superior performance of `Rodas3()` seems to be an exception here.
+We see that `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` perform similar to `Ros3()` or `Rosenbrock23()` and are a good choice as long as low accuracy is acceptable. For high accuracy we should employ a scheme like `KenCarp3()`. As for `MPRK22(0.5)` the  superior performance of `Rodas3()` seems to be an exception here.
 
 In addition,  we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` to some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
@@ -185,12 +185,12 @@ work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
 
 # plot work-precision diagram
 plot(wp, [labels1; labels3]; title = "Robertson benchmark", legend = :topright,
-     color = permutedims([1, 3, repeat([4], 2)..., 5]),
-     xlims = (10^-6, 2*10^0), xticks = 10.0 .^ (-11:1:0),
+     color = permutedims([repeat([1],2)..., 3, repeat([4], 2)..., 5]),
+     xlims = (10^-10, 2*10^0), xticks = 10.0 .^ (-10:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-Again, we see that the MPRK schemes are only beneficial if low accuracy is acceptable.
+Again, we see that the MPRK schemes are in general only beneficial if low accuracy is acceptable.
 
 ### Relative maximum error over all time steps
 
