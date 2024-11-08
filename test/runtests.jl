@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using SparseArrays
-using Statistics: mean
+using Statistics: mean, median
 
 using StaticArrays: MVector, @SVector, SA
 
