@@ -118,7 +118,10 @@ plot(wp, labels; title = "Robertson benchmark", legend = :topright,
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-We see that the second and third order schemes perform very similar. The schemes `SSPMPRK22(0.5, 1.0)` and `MPRK22(0.5)` have not been considered above. `SSPMPRK22` generates oscillatory solutions.
+We see that the second and third order schemes perform very similar, with the exception of `MPRK22(0.5)`.
+The superior performance of `MPRK22(0.5)` cannot be seen in other benchmarks is therefore an exception here.
+
+The scheme `SSPMPRK22(0.5, 1.0)` has not been considered above, since it generates oscillatory solutions.
 
 ```@example ROBER
 sol1 = solve(prob, SSPMPRK22(0.5, 1.0), abstol=1e-5, reltol = 1e-4);
@@ -127,32 +130,25 @@ sol1 = solve(prob, SSPMPRK22(0.5, 1.0), abstol=1e-5, reltol = 1e-4);
 robertson_plot(sol1, ref_sol, "SSPMPRK22(0.5, 1.0)")
 ```
 
-With `abstol=1e-6` and `reltol = 1e-5` the `MPRK22(0.5)` scheme needs over 800.000 steps to integrate the Robertson problem. In comparison, `MPRK22(1.0)` needs less than 1.000.
+For comparisons with schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order schemes `MPRK22(0.5)` and `MPRK22(1.0)` as well as the third order scheme `MPRK43I(0.5, 0.75)`.
 
 ```@example ROBER
-sol1 = solve(prob, MPRK22(1.0), abstol=1e-6, reltol = 1e-5);
-sol2 = solve(prob, MPRK22(0.5), abstol=1e-6, reltol = 1e-5);
-
-length(sol1), length(sol2)
-```
-
-For comparisons with schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(0.5, 0.75)`.
-
-```@example ROBER
-sol_MPRK22 = solve(prob, MPRK22(1.0); abstol, reltol)
+sol_MPRK22_½ = solve(prob, MPRK22(0.5); abstol, reltol)
+sol_MPRK22_1 = solve(prob, MPRK22(1.0); abstol, reltol)
 sol_MPRK43 = solve(prob, MPRK43I(0.5, 0.75); abstol, reltol)
 
-p1 = robertson_plot(sol_MPRK22, ref_sol, "MPRK22(1.0)");
-p2 = robertson_plot(sol_MPRK43, ref_sol, "MPRK43I(0.5, 0.75)");
-plot(p1, p2)
+p1 = robertson_plot(sol_MPRK22_½, ref_sol, "MPRK22(0.5)");
+p2 = robertson_plot(sol_MPRK22_1, ref_sol, "MPRK22(1.0)");
+p3 = robertson_plot(sol_MPRK43, ref_sol, "MPRK43I(0.5, 0.75)");
+plot(p1, p2, p3)
 ```
 
-Now we compare `MPRK22(1.0)` and `MPRK43I(0.5, 0.75)` with a selection of second and third order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions, we use the solver option `isoutofdomain = isnegative`.
+Now we compare these three schemes with a selection of second and third order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions, we use the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # select reference MPRK methods
-algs1 = [MPRK22(1.0); MPRK43I(0.5, 0.75)]
-labels1 = ["MPRK22(1.0)"; "MPRK43I(0.5,0.75)"]
+algs1 = [MPRK22(0.5); MPRK22(1.0); MPRK43I(0.5, 0.75)]
+labels1 = ["MPRK22(0.5)"; "MPRK22(1.0)"; "MPRK43I(0.5,0.75)"]
 
 # select methods from OrdinaryDiffEq
 algs2 = [TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock23()]
@@ -169,7 +165,7 @@ work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
 plot(wp, [labels1; labels2]; title = "Robertson benchmark", legend = :topright,
      color = permutedims([1, 3, repeat([5], 3)..., repeat([6], 4)...]),
      xlims = (10^-10, 10^3), xticks = 10.0 .^ (-14:1:3),
-     ylims = (10^-5, 10^1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
+     ylims = (10^-6, 10^1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
 ```
 
 We see that the MPRK schemes perform similar to `Ros3()` or `Rosenbrock23()` and are a good choice as long as low accuracy is acceptable. For high accuracy we should employ a scheme like `KenCarp3()`. The clearly superior performance of `Rodas3()` seems to be an exception here.
