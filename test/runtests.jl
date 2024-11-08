@@ -2274,8 +2274,6 @@ end
             work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
                                   alg_ref; numruns = 100)
 
-            plot(wp, [labelsA; labelsB]; minorticks = 10)
-
             # check that errors agree
             for (i, _) in enumerate(dts)
                 v = [value[i][1] for (key, value) in wp]
@@ -2284,6 +2282,7 @@ end
 
             # check that computing times are close enough 
             for (i, _) in enumerate(dts)
+                @show i
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
                 m2 = median(v)
@@ -2309,8 +2308,6 @@ end
             work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB, abstols,
                                      reltols, alg_ref; numruns = 100)
 
-            plot(wp, [labelsA; labelsB]; minorticks = 10)
-
             # check that errors agree
             for (i, _) in enumerate(abstols)
                 v = [value[i][1] for (key, value) in wp]
@@ -2319,6 +2316,7 @@ end
 
             # check that computing times are close enough 
             for (i, _) in enumerate(abstols)
+                @show i
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
                 m2 = median(v)
