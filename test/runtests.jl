@@ -2217,8 +2217,19 @@ end
 
     @testset "plot" begin
         using Plots
+
+        # plot ode solution
         sol = solve(prob_pds_linmod, MPRK22(1.0))
         @test_nowarn plot(sol)
+
+        # plot work-precision diagram
+        prob = prob_pds_nonlinmod
+        algs = [MPE(); MPRK22(1.0)]
+        labels = ["MPE"; "MPRK"]
+        dts = [0.1; 0.01; 0.001]
+        alg_ref = Vern7()
+        wp = work_precision_fixed(prob, algs, labels, dts, alg_ref)
+        @test_nowarn plot(wp, labels; minorticks = 10)
     end
 
     @testset "utilities" begin
@@ -2236,6 +2247,85 @@ end
             @test isnegative(sol_bruss)
             @test isnegative(sol_bruss.u)
             @test isnegative(last(sol_bruss.u))
+        end
+
+        @testset "errors" begin
+            v = [[1.0; 2.0; 3.0], [4.0; 5.0; 6.0]]
+            w = [[8.0; 10.0; 12.0], [2.0; 4.0; 6.0]]
+
+            @test rel_max_error_tend(v, w) == 1.0
+            @test rel_l1_error_tend(v, w) == 1.25 / 3
+            @test rel_l2_error_tend(v, w) == sqrt(1.0625 / 3)
+            @test rel_max_error_overall(w, v) == 7.0
+        end
+
+        # Here we run a single scheme multiple times and check
+        # that error agree and computing times are close enough
+        @testset "work-precision fixed" begin
+            prob = prob_pds_nonlinmod
+            alg = MPRK22(1.0)
+            algs = [alg; alg; alg; alg; alg]
+            labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+            labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+            dts = (last(prob.tspan) - first(prob.tspan)) / 10.0 * 0.5 .^ (4:13)
+            alg_ref = Vern7()
+            wp = work_precision_fixed(prob, [alg; alg; alg; alg; alg], labelsA, dts,
+                                      alg_ref; numruns = 100)
+            work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
+                                  alg_ref; numruns = 100)
+
+            plot(wp, [labelsA; labelsB]; minorticks = 10)
+
+            # check that errors agree
+            for (i, _) in enumerate(dts)
+                v = [value[i][1] for (key, value) in wp]
+                @test all(y -> y == v[1], v)
+            end
+
+            # check that computing times are close enough 
+            for (i, _) in enumerate(dts)
+                v = [value[i][2] for (key, value) in wp]
+                m1 = mean(v)
+                m2 = median(v)
+
+                @test maximum((v .- m1) ./ m1) < 0.3
+                @test maximum((v .- m2) ./ m2) < 0.3
+            end
+        end
+
+        # Here we run a single scheme multiple times and check
+        # that error agree and computing times are close enough
+        @testset "work-precision adaptive" begin
+            prob = prob_pds_nonlinmod
+            alg = MPRK22(1.0)
+            algs = [alg; alg; alg; alg; alg]
+            labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+            labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+            abstols = 1 ./ 10 .^ (4:8)
+            reltols = 1 ./ 10 .^ (3:7)
+            alg_ref = Vern7()
+            wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA, abstols,
+                                         reltols, alg_ref; numruns = 100)
+            work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB, abstols,
+                                     reltols, alg_ref; numruns = 100)
+
+            plot(wp, [labelsA; labelsB]; minorticks = 10)
+
+            # check that errors agree
+            for (i, _) in enumerate(abstols)
+                v = [value[i][1] for (key, value) in wp]
+                @test all(y -> y == v[1], v)
+            end
+
+            # check that computing times are close enough 
+            for (i, _) in enumerate(abstols)
+                v = [value[i][2] for (key, value) in wp]
+                m1 = mean(v)
+                m2 = median(v)
+
+                @test maximum((v .- m1) ./ m1) < 0.3
+                @test maximum((v .- m2) ./ m2) < 0.3
+            end
         end
     end
 end;
