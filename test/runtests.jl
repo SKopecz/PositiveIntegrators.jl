@@ -2270,9 +2270,9 @@ end
             dts = (last(prob.tspan) - first(prob.tspan)) / 10.0 * 0.5 .^ (4:13)
             alg_ref = Vern7()
             wp = work_precision_fixed(prob, [alg; alg; alg; alg; alg], labelsA, dts,
-                                      alg_ref; numruns = 100)
+                                      alg_ref)
             work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
-                                  alg_ref; numruns = 100)
+                                  alg_ref)
 
             # check that errors agree
             for (i, _) in enumerate(dts)
@@ -2304,9 +2304,9 @@ end
             reltols = 1 ./ 10 .^ (3:7)
             alg_ref = Vern7()
             wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA, abstols,
-                                         reltols, alg_ref; numruns = 100)
+                                         reltols, alg_ref)
             work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB, abstols,
-                                     reltols, alg_ref; numruns = 100)
+                                     reltols, alg_ref)
 
             # check that errors agree
             for (i, _) in enumerate(abstols)
