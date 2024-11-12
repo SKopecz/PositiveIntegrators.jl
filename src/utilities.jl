@@ -129,7 +129,7 @@ end
     work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref;
                           compute_error = rel_max_error_tend, 
                           seconds = 2,
-                          numruns = 1000)
+                          numruns = 10000)
     )
 
 Adds work-precision data to the dictionary `dict`, which was created with `work_precion_fixed`.
@@ -137,7 +137,7 @@ See [`work_precision_fixed`](@ref) for the meaning of the inputs.
 """
 function work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref;
                                compute_error = rel_max_error_tend, seconds = 2,
-                               numruns = 1000)
+                               numruns = 10000)
     tspan = prob.tspan
     dt_ref = (last(tspan) - first(tspan)) ./ 1e5
     ref_sol = solve(prob, alg_ref; dt = dt_ref, adaptive = false, save_everystep = true)
@@ -171,7 +171,7 @@ end
     work_precision_fixed(prob, algs, labels, dts, alg_ref;
                          compute_error = rel_max_error_tend,
                          seconds = 2, 
-                         numruns = 1000)
+                         numruns = 10000)
 
 Returns a dictionary to create work-precision diagrams. 
 The problem `prob` is solved by each algorithm in `algs` for all the step sizes defined in `dts`. 
@@ -188,7 +188,7 @@ The reference solution used for error computations is computed with the algorith
 """
 function work_precision_fixed(prob, algs, labels, dts, alg_ref;
                               compute_error = rel_max_error_tend,
-                              seconds = 2, numruns = 1000)
+                              seconds = 2, numruns = 10000)
     dict = Dict(label => [] for label in labels)
     work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref; compute_error, seconds,
                           numruns)
@@ -202,7 +202,7 @@ end
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
                             seconds = 2, 
-                            numruns = 1000,
+                            numruns = 10000,
                             kwargs...)
 
 Adds work-precision data to the dictionary `dict`, which was created with `work_precion_fixed_adaptive`.
@@ -212,7 +212,7 @@ function work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, al
                                   adaptive_ref = false,
                                   abstol_ref = 1e-14, reltol_ref = 1e-13,
                                   compute_error = rel_max_error_tend,
-                                  seconds = 2, numruns = 1000, kwargs...)
+                                  seconds = 2, numruns = 10000, kwargs...)
     if adaptive_ref
         ref_sol = solve(prob, alg_ref; adaptive = true, save_everystep = true,
                         abstol = abstol_ref, reltol = reltol_ref)
@@ -255,7 +255,7 @@ end
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
                             seconds = 2, 
-                            numruns = 1000, 
+                            numruns = 10000, 
                             kwargs...)
 
 Returns a dictionary to create work-precision diagrams. 
@@ -279,7 +279,7 @@ function work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                  adaptive_ref = false,
                                  abstol_ref = 1e-14, reltol_ref = 1e-13,
                                  compute_error = rel_max_error_tend, seconds = 2,
-                                 numruns = 1000, kwargs...)
+                                 numruns = 10000, kwargs...)
     dict = Dict(label => [] for label in labels)
     work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, alg_ref;
                              adaptive_ref, abstol_ref, reltol_ref,
