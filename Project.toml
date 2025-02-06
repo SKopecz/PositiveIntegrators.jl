@@ -19,7 +19,7 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 [compat]
 FastBroadcast = "0.2.5, 0.3"
 LinearAlgebra = "1.7"
-LinearSolve = "2.21"
+LinearSolve = "2.21, 3"
 MuladdMacro = "0.2.1"
 OrdinaryDiffEq = "6.59"
 Reexport = "1"
