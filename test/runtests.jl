@@ -10,6 +10,8 @@ using Unitful: @u_str, ustrip
 using OrdinaryDiffEq
 using PositiveIntegrators
 
+# load RecursiveFactorization to get RFLUFactorization
+using RecursiveFactorization: RecursiveFactorization
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
@@ -974,7 +976,7 @@ end
             # Bertolazzi problem
             # Did not find any solver configuration to compute a reasonable solution and pass tests.
             # - constant time stepping requires very small dt
-            # - adaptive time stepping generates solutions with different number of time steps 
+            # - adaptive time stepping generates solutions with different number of time steps
             #
             # Nevertheless, the following code shows that the same problem is solved in each case
             # prob = prob_pds_bertolazzi
@@ -1078,7 +1080,7 @@ end
                                                                                                  dt = 0.1)
         end
 
-        # Here we check that algorithms which accept input parameters return constants 
+        # Here we check that algorithms which accept input parameters return constants
         # of the same type as the inputs
         @testset "Constant types" begin
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
