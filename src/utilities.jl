@@ -255,7 +255,7 @@ end
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
                             seconds = 2, 
-                            numruns = 10000, 
+                            numruns = 20, 
                             kwargs...)
 
 Returns a dictionary to create work-precision diagrams. 
