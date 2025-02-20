@@ -6,7 +6,10 @@ on:
       - main
     paths-ignore:
       - 'paper/**'
+<<<<<<< HEAD
       - '.gitignore'
+=======
+>>>>>>> 08677f5 (no CI when changing the paper)
   workflow_dispatch:
 
 # Cancel redundant CI tests automatically
