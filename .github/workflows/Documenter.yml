@@ -24,10 +24,6 @@ on:
       - '.github/workflows/TagBot.yml'
       - 'benchmark/**'
       - 'utils/**'
-<<<<<<< HEAD
-      - '.gitignore'
-=======
->>>>>>> 08677f5 (no CI when changing the paper)
       - 'paper/**'
   workflow_dispatch:
 
