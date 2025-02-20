@@ -7,14 +7,19 @@ authors:
   - name: Stefan Kopecz
     orcid: 0000-0003-0593-450X
     affiliation: 1
+  - name: Joshua Lampert
+    orcid: 0009-0007-0971-6709
+    affiliation: 2
   - name: Hendrik Ranocha
     orcid: 0000-0002-3456-2277
-    affiliation: 2
+    affiliation: 3
 affiliations:
  - name: Institute of Mathematics, University of Kassel, Germany
    index: 1
- - name: Institute of Mathematics, Johannes Gutenberg University Mainz, Germany
+ - name: Institute of Mathematics, University of Hamburg, Germany
    index: 2
+ - name: Institute of Mathematics, Johannes Gutenberg University Mainz, Germany
+   index: 3
 date: 20 February 2025
 bibliography: paper.bib
 ---
