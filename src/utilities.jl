@@ -202,7 +202,7 @@ end
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
                             seconds = 2, 
-                            numruns = 10000,
+                            numruns = 20,
                             kwargs...)
 
 Adds work-precision data to the dictionary `dict`, which was created with `work_precion_fixed_adaptive`.
@@ -212,7 +212,7 @@ function work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, al
                                   adaptive_ref = false,
                                   abstol_ref = 1e-14, reltol_ref = 1e-13,
                                   compute_error = rel_max_error_tend,
-                                  seconds = 2, numruns = 10000, kwargs...)
+                                  seconds = 2, numruns = 20, kwargs...)
     if adaptive_ref
         ref_sol = solve(prob, alg_ref; adaptive = true, save_everystep = true,
                         abstol = abstol_ref, reltol = reltol_ref)
