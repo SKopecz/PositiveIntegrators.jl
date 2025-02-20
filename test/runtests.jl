@@ -2319,10 +2319,14 @@ end
                 @show i
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
-                m2 = median(v)
+                m2 = median(v)                
 
                 @test maximum((v .- m1) ./ m1) < 0.3
                 @test maximum((v .- m2) ./ m2) < 0.3
+
+                @show v m1 m2
+                @show maximum((v .- m1) ./ m1)
+                @show maximum((v .- m2) ./ m2)
             end
         end
     end
