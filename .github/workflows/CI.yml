@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'paper/**'
+      - '.gitignore'
   push:
     branches:
       - main
