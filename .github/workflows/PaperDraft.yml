@@ -5,6 +5,10 @@ on:
     paths:
     - paper/**
     - .github/workflows/draft-pdf.yml
+  pull_request:
+    paths:
+    - paper/**
+    - .github/workflows/draft-pdf.yml
 
 jobs:
   paper:
