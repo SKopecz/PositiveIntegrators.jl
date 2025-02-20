@@ -171,7 +171,7 @@ end
     work_precision_fixed(prob, algs, labels, dts, alg_ref;
                          compute_error = rel_max_error_tend,
                          seconds = 2, 
-                         numruns = 10000)
+                         numruns = 20)
 
 Returns a dictionary to create work-precision diagrams. 
 The problem `prob` is solved by each algorithm in `algs` for all the step sizes defined in `dts`. 
@@ -188,7 +188,7 @@ The reference solution used for error computations is computed with the algorith
 """
 function work_precision_fixed(prob, algs, labels, dts, alg_ref;
                               compute_error = rel_max_error_tend,
-                              seconds = 2, numruns = 10000)
+                              seconds = 2, numruns = 20)
     dict = Dict(label => [] for label in labels)
     work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref; compute_error, seconds,
                           numruns)
