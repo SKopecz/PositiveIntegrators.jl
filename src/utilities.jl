@@ -279,7 +279,7 @@ function work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                  adaptive_ref = false,
                                  abstol_ref = 1e-14, reltol_ref = 1e-13,
                                  compute_error = rel_max_error_tend, seconds = 2,
-                                 numruns = 10000, kwargs...)
+                                 numruns = 20, kwargs...)
     dict = Dict(label => [] for label in labels)
     work_precision_adaptive!(dict, prob, algs, labels, abstols, reltols, alg_ref;
                              adaptive_ref, abstol_ref, reltol_ref,
