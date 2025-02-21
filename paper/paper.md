@@ -16,7 +16,7 @@ authors:
 affiliations:
  - name: Institute of Mathematics, University of Kassel, Germany
    index: 1
- - name: Institute of Mathematics, University of Hamburg, Germany
+ - name: Department of Mathematics, University of Hamburg, Germany
    index: 2
  - name: Institute of Mathematics, Johannes Gutenberg University Mainz, Germany
    index: 3
