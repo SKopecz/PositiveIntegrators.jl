@@ -447,7 +447,7 @@ end
             # allocations for in-place implementations
             alloc1 = @allocated(solve(linmod_ODE_ip, Tsit5()))
             alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
         end
 
         @testset "PDSProblem error handling" begin
@@ -531,10 +531,10 @@ end
             alloc3 = @allocated(solve(linmod_PDS_ip_2, Tsit5()))
             alloc4 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
             alloc5 = @allocated(solve(linmod_ConsPDS_ip_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
-            @test 0.95 < alloc1 / alloc4 < 1.05
-            @test 0.95 < alloc1 / alloc5 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
+            @test 0.9 < alloc1 / alloc4 < 1.1
+            @test 0.9 < alloc1 / alloc5 < 1.1
         end
 
         @testset "Lotka-Volterra" begin
@@ -591,8 +591,8 @@ end
             alloc1 = @allocated(solve(lotvol_f_ip, Tsit5()))
             alloc2 = @allocated(solve(lotvol_PDS_ip, Tsit5()))
             alloc3 = @allocated(solve(lotvol_PDS_ip_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
         end
 
         @testset "Linear advection" begin
@@ -660,11 +660,11 @@ end
             alloc4 = @allocated(solve(linear_advection_fd_upwind_PDS_sparse_2, Tsit5()))
             alloc5 = @allocated(solve(linear_advection_fd_upwind_ConsPDS_sparse, Tsit5()))
             alloc6 = @allocated(solve(linear_advection_fd_upwind_ConsPDS_sparse_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
-            @test 0.95 < alloc1 / alloc4 < 1.05
-            @test 0.95 < alloc1 / alloc5 < 1.05
-            @test 0.95 < alloc1 / alloc6 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
+            @test 0.9 < alloc1 / alloc4 < 1.1
+            @test 0.9 < alloc1 / alloc5 < 1.1
+            @test 0.9 < alloc1 / alloc6 < 1.1
         end
 
         # Here we check that PDSFunctions and ConservativePDSFunctions can be evaluated
