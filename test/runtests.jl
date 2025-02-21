@@ -933,9 +933,9 @@ end
             # non-stiff conservative problems (in-place)
             # requires autodiff=false
             probs = (prob_pds_linmod_inplace,)
-            algs = (Euler(), ImplicitEuler(), Tsit5(),
-                    Rosenbrock23(), SDIRK2(),
-                    TRBDF2())
+            algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
+                    Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
+                    TRBDF2(autodiff = false))
             @testset "$alg" for prob in probs, alg in algs
                 dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
                 sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
