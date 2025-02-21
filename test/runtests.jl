@@ -20,7 +20,7 @@ using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_import
     experimental_orders_of_convergence(prob, alg, dts;
                                       test_time = nothing,
                                       only_first_index = false,
-                                      ref_alg = TRBDF2(autodiff = false))
+                                      ref_alg = TRBDF2())
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the errors at `test_time`. If`test_time` is not specified the error is computed
@@ -33,7 +33,7 @@ solution is computed using `ref_alg`.
 """
 function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             only_first_index = false,
-                                            ref_alg = TRBDF2(autodiff = false))
+                                            ref_alg = TRBDF2())
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
 
@@ -931,11 +931,10 @@ end
             end
 
             # non-stiff conservative problems (in-place)
-            # Requires autodiff=false
             probs = (prob_pds_linmod_inplace,)
-            algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
-                    Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
-                    TRBDF2(autodiff = false))
+            algs = (Euler(), ImplicitEuler(), Tsit5(),
+                    Rosenbrock23(), SDIRK2(),
+                    TRBDF2())
             @testset "$alg" for prob in probs, alg in algs
                 dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
                 sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
@@ -1140,7 +1139,7 @@ end
             dt = 0.25
             sol_MPE_op = solve(prob_op, MPE(); dt)
             sol_MPE_op_2 = solve(prob_op_2, MPE(); dt)
-            sol_IE_op = solve(prob_op, ImplicitEuler(autodiff = false);
+            sol_IE_op = solve(prob_op, ImplicitEuler();
                               dt, adaptive = false)
             @test sol_MPE_op.t ≈ sol_MPE_op_2.t ≈ sol_IE_op.t
             @test sol_MPE_op.u ≈ sol_MPE_op_2.u ≈ sol_IE_op.u
@@ -1163,7 +1162,7 @@ end
             dt = 0.25
             sol_MPE_ip = solve(prob_ip, MPE(); dt)
             sol_MPE_ip_2 = solve(prob_ip_2, MPE(); dt)
-            sol_IE_ip = solve(prob_ip, ImplicitEuler(autodiff = false);
+            sol_IE_ip = solve(prob_ip, ImplicitEuler();
                               dt, adaptive = false)
             @test sol_MPE_ip.t ≈ sol_MPE_ip_2.t ≈ sol_IE_ip.t
             @test sol_MPE_ip.u ≈ sol_MPE_ip_2.u ≈ sol_IE_ip.u
