@@ -7,7 +7,7 @@ using StaticArrays: MVector, @SVector, SA
 
 using Unitful: @u_str, ustrip
 
-using OrdinaryDiffEq
+using OrdinaryDiffEq, ADTypes
 using PositiveIntegrators
 
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
@@ -19,7 +19,7 @@ using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_import
     experimental_orders_of_convergence(prob, alg, dts;
                                       test_time = nothing,
                                       only_first_index = false,
-                                      ref_alg = TRBDF2(autodiff = false))
+                                      ref_alg = TRBDF2(autodiff = AutoFiniteDiff()))
 
 Solve `prob` with `alg` and fixed time steps taken from `dts`, and compute
 the errors at `test_time`. If`test_time` is not specified the error is computed
@@ -32,7 +32,7 @@ solution is computed using `ref_alg`.
 """
 function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             only_first_index = false,
-                                            ref_alg = TRBDF2(autodiff = false))
+                                            ref_alg = TRBDF2(autodiff = AutoFiniteDiff()))
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
 
@@ -929,11 +929,11 @@ end
             end
 
             # non-stiff conservative problems (in-place)
-            # Requires autodiff=false
+            # Requires autodiff = AutoFiniteDiff()
             probs = (prob_pds_linmod_inplace,)
-            algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
-                    Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
-                    TRBDF2(autodiff = false))
+            algs = (Euler(), ImplicitEuler(autodiff = AutoFiniteDiff()), Tsit5(),
+                    Rosenbrock23(autodiff = AutoFiniteDiff()), SDIRK2(autodiff = AutoFiniteDiff()),
+                    TRBDF2(autodiff = AutoFiniteDiff()))
             @testset "$alg" for prob in probs, alg in algs
                 dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
                 sol = solve(prob, alg; dt, isoutofdomain = isnegative) # use explicit f
@@ -974,7 +974,7 @@ end
             # Bertolazzi problem
             # Did not find any solver configuration to compute a reasonable solution and pass tests.
             # - constant time stepping requires very small dt
-            # - adaptive time stepping generates solutions with different number of time steps 
+            # - adaptive time stepping generates solutions with different number of time steps
             #
             # Nevertheless, the following code shows that the same problem is solved in each case
             # prob = prob_pds_bertolazzi
@@ -1078,7 +1078,7 @@ end
                                                                                                  dt = 0.1)
         end
 
-        # Here we check that algorithms which accept input parameters return constants 
+        # Here we check that algorithms which accept input parameters return constants
         # of the same type as the inputs
         @testset "Constant types" begin
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
@@ -1138,7 +1138,7 @@ end
             dt = 0.25
             sol_MPE_op = solve(prob_op, MPE(); dt)
             sol_MPE_op_2 = solve(prob_op_2, MPE(); dt)
-            sol_IE_op = solve(prob_op, ImplicitEuler(autodiff = false);
+            sol_IE_op = solve(prob_op, ImplicitEuler(autodiff = AutoFiniteDiff());
                               dt, adaptive = false)
             @test sol_MPE_op.t ≈ sol_MPE_op_2.t ≈ sol_IE_op.t
             @test sol_MPE_op.u ≈ sol_MPE_op_2.u ≈ sol_IE_op.u
@@ -1161,7 +1161,7 @@ end
             dt = 0.25
             sol_MPE_ip = solve(prob_ip, MPE(); dt)
             sol_MPE_ip_2 = solve(prob_ip_2, MPE(); dt)
-            sol_IE_ip = solve(prob_ip, ImplicitEuler(autodiff = false);
+            sol_IE_ip = solve(prob_ip, ImplicitEuler(autodiff = AutoFiniteDiff());
                               dt, adaptive = false)
             @test sol_MPE_ip.t ≈ sol_MPE_ip_2.t ≈ sol_IE_ip.t
             @test sol_MPE_ip.u ≈ sol_MPE_ip_2.u ≈ sol_IE_ip.u
