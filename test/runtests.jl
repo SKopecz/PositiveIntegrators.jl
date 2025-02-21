@@ -7,7 +7,7 @@ using StaticArrays: MVector, @SVector, SA
 
 using Unitful: @u_str, ustrip
 
-using OrdinaryDiffEq, ADTypes
+using OrdinaryDiffEq
 using PositiveIntegrators
 
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
