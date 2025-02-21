@@ -2318,7 +2318,7 @@ end
             # check that computing times are close enough 
             for (i, _) in enumerate(abstols)
                 v = [value[i][2] for (key, value) in wp]
-                m1 = mean(v)   
+                m1 = mean(v)
                 # This test allows computing times that are
                 # twice the mean value. In a loglog plot these
                 # differences won't be significant.        
