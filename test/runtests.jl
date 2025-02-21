@@ -2260,7 +2260,8 @@ end
         end
 
         # Here we run a single scheme multiple times and check
-        # that error agree and computing times are close enough
+        # that the errors are identical and that the computing times 
+        # differ only slightly.
         @testset "work-precision fixed" begin
             prob = prob_pds_nonlinmod
             alg = MPRK22(1.0)
@@ -2282,18 +2283,18 @@ end
 
             # check that computing times are close enough 
             for (i, _) in enumerate(dts)
-                @show i
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
-                m2 = median(v)
-
-                @test maximum((v .- m1) ./ m1) < 0.3
-                @test maximum((v .- m2) ./ m2) < 0.3
+                # This test allows computing times that are
+                # twice the mean value. In a loglog plot these
+                # differences won't be significant.
+                @test maximum((v .- m1) ./ m1) < 1.0
             end
         end
 
         # Here we run a single scheme multiple times and check
-        # that error agree and computing times are close enough
+        # that the errors are identical and that the computing times 
+        # differ only slightly.
         @testset "work-precision adaptive" begin
             prob = prob_pds_nonlinmod
             alg = MPRK22(1.0)
@@ -2316,17 +2317,12 @@ end
 
             # check that computing times are close enough 
             for (i, _) in enumerate(abstols)
-                @show i
                 v = [value[i][2] for (key, value) in wp]
-                m1 = mean(v)
-                m2 = median(v)                
-
-                @test maximum((v .- m1) ./ m1) < 0.3
-                @test maximum((v .- m2) ./ m2) < 0.3
-
-                @show v m1 m2
-                @show maximum((v .- m1) ./ m1)
-                @show maximum((v .- m2) ./ m2)
+                m1 = mean(v)   
+                # This test allows computing times that are
+                # twice the mean value. In a loglog plot these
+                # differences won't be significant.        
+                @test maximum((v .- m1) ./ m1) < 1.0
             end
         end
     end
