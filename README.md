@@ -19,7 +19,7 @@ by
 * adding the algorithms of positivity-preserving time integration methods such as
   modified Patankar-Runge-Kutta (MPRK) schemes
 
-Please find more information online in the 
+Please find more information online in the
 [documentation](https://skopecz.github.io/PositiveIntegrators.jl/stable).
 
 
@@ -46,7 +46,7 @@ for your research, please cite it using the bibtex entry
 @misc{PositiveIntegrators.jl,
   title={{PositiveIntegrators.jl}: {A} {J}ulia library of positivity-preserving
          time integration methods},
-  author={Kopecz, Stefan and Ranocha, Hendrik and contributors},
+  author={Kopecz, Stefan and Lampert, Joshua and Ranocha, Hendrik},
   year={2023},
   doi={10.5281/zenodo.10868393},
   url={https://github.com/SKopecz/PositiveIntegrators.jl}
@@ -56,7 +56,9 @@ for your research, please cite it using the bibtex entry
 
 ## License and contributing
 
-This project is licensed under the MIT license (see [License](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE)).
+This project is licensed under the MIT license
+(see [License](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE)).
 Since it is an open-source project, we are very happy to accept contributions
-from the community. Please refer to the section [Contributing](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md) for more
-details.
+from the community. Please refer to the section
+[Contributing](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md)
+for more details.
