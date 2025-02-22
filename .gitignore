@@ -30,3 +30,4 @@ Manifest.toml
 
 run
 run/*
+**/*.code-workspace
