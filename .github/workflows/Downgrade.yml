@@ -2,6 +2,11 @@ name: Downgrade
 
 on:
   pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'paper/**'
+      - '.gitignore'
   workflow_dispatch:
 
 # Cancel redundant CI tests automatically
