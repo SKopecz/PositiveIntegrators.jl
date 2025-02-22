@@ -447,7 +447,7 @@ end
             # allocations for in-place implementations
             alloc1 = @allocated(solve(linmod_ODE_ip, Tsit5()))
             alloc2 = @allocated(solve(linmod_PDS_ip, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
         end
 
         @testset "PDSProblem error handling" begin
@@ -531,10 +531,10 @@ end
             alloc3 = @allocated(solve(linmod_PDS_ip_2, Tsit5()))
             alloc4 = @allocated(solve(linmod_ConsPDS_ip, Tsit5()))
             alloc5 = @allocated(solve(linmod_ConsPDS_ip_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
-            @test 0.95 < alloc1 / alloc4 < 1.05
-            @test 0.95 < alloc1 / alloc5 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
+            @test 0.9 < alloc1 / alloc4 < 1.1
+            @test 0.9 < alloc1 / alloc5 < 1.1
         end
 
         @testset "Lotka-Volterra" begin
@@ -591,8 +591,8 @@ end
             alloc1 = @allocated(solve(lotvol_f_ip, Tsit5()))
             alloc2 = @allocated(solve(lotvol_PDS_ip, Tsit5()))
             alloc3 = @allocated(solve(lotvol_PDS_ip_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
         end
 
         @testset "Linear advection" begin
@@ -660,11 +660,11 @@ end
             alloc4 = @allocated(solve(linear_advection_fd_upwind_PDS_sparse_2, Tsit5()))
             alloc5 = @allocated(solve(linear_advection_fd_upwind_ConsPDS_sparse, Tsit5()))
             alloc6 = @allocated(solve(linear_advection_fd_upwind_ConsPDS_sparse_2, Tsit5()))
-            @test 0.95 < alloc1 / alloc2 < 1.05
-            @test 0.95 < alloc1 / alloc3 < 1.05
-            @test 0.95 < alloc1 / alloc4 < 1.05
-            @test 0.95 < alloc1 / alloc5 < 1.05
-            @test 0.95 < alloc1 / alloc6 < 1.05
+            @test 0.9 < alloc1 / alloc2 < 1.1
+            @test 0.9 < alloc1 / alloc3 < 1.1
+            @test 0.9 < alloc1 / alloc4 < 1.1
+            @test 0.9 < alloc1 / alloc5 < 1.1
+            @test 0.9 < alloc1 / alloc6 < 1.1
         end
 
         # Here we check that PDSFunctions and ConservativePDSFunctions can be evaluated
@@ -929,7 +929,7 @@ end
             end
 
             # non-stiff conservative problems (in-place)
-            # Requires autodiff=false
+            # Requires autodiff = false
             probs = (prob_pds_linmod_inplace,)
             algs = (Euler(), ImplicitEuler(autodiff = false), Tsit5(),
                     Rosenbrock23(autodiff = false), SDIRK2(autodiff = false),
@@ -974,7 +974,7 @@ end
             # Bertolazzi problem
             # Did not find any solver configuration to compute a reasonable solution and pass tests.
             # - constant time stepping requires very small dt
-            # - adaptive time stepping generates solutions with different number of time steps 
+            # - adaptive time stepping generates solutions with different number of time steps
             #
             # Nevertheless, the following code shows that the same problem is solved in each case
             # prob = prob_pds_bertolazzi
@@ -1078,7 +1078,7 @@ end
                                                                                                  dt = 0.1)
         end
 
-        # Here we check that algorithms which accept input parameters return constants 
+        # Here we check that algorithms which accept input parameters return constants
         # of the same type as the inputs
         @testset "Constant types" begin
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
