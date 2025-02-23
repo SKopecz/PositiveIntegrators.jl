@@ -298,8 +298,13 @@ end
 
     f = integrator.f
 
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P, d = f.pd(uprev, p, t)
+    else # f isa ConservativePDSFunction
+        P = f.p(uprev, p, t)
+    end
     integrator.stats.nf += 1
 
     # avoid division by zero due to zero Patankar weights
@@ -307,12 +312,10 @@ end
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d = f.d(uprev, p, t)  # evaluate nonconservative destruction terms
         rhs = uprev + dt * diag(P)
         M = build_mprk_matrix(P, σ, dt, d)
         linprob = LinearProblem(M, rhs)
-    else
-        # f isa ConservativePDSFunction
+    else # f isa ConservativePDSFunction
         M = build_mprk_matrix(P, σ, dt)
         linprob = LinearProblem(M, uprev)
     end
@@ -388,8 +391,7 @@ end
 
     # We require the users to set unused entries to zero!
 
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    f.pd(P, D, uprev, p, t) # evaluate production and destruction terms
     integrator.stats.nf += 1
 
     # avoid division by zero due to zero Patankar weights
@@ -405,9 +407,9 @@ end
     # Same as linres = P \ linsolve_rhs
     linsolve.A = P
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 end
 
 @muladd function perform_step!(integrator, cache::MPEConservativeCache, repeat_step = false)
@@ -431,9 +433,9 @@ end
     # Same as linres = P \ uprev
     linsolve.A = P
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 end
 
 ### MPRK22 #####################################################################################
@@ -554,23 +556,26 @@ end
 
     f = integrator.f
 
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
-    Ptmp = a21 * P
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P, d = f.pd(uprev, p, t)
+    else # f isa ConservativePDSFunction
+        P = f.p(uprev, p, t)
+    end
     integrator.stats.nf += 1
+    Ptmp = a21 * P
 
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d = f.d(uprev, p, t)  # evaluate nonconservative destruction terms
         dtmp = a21 * d
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
         linprob = LinearProblem(M, rhs)
-    else
-        # f isa ConservativePDSFunction
+    else # f isa ConservativePDSFunction
         M = build_mprk_matrix(Ptmp, σ, dt)
         linprob = LinearProblem(M, uprev)
     end
@@ -590,19 +595,23 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P2 = f.p(u, p, t + a21 * dt)
-    Ptmp = b1 * P + b2 * P2
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P2, d2 = f.pd(u, p, t + a21 * dt)
+    else # f isa ConservativePDSFunction
+        P2 = f.p(u, p, t + a21 * dt)
+    end
     integrator.stats.nf += 1
+    Ptmp = b1 * P + b2 * P2
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d2 = f.d(u, p, t + a21 * dt)  # evaluate nonconservative destruction terms
         dtmp = b1 * d + b2 * d2
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
         linprob = LinearProblem(M, rhs)
-    else
-        # f isa ConservativePDSFunction
+    else # f isa ConservativePDSFunction
         M = build_mprk_matrix(Ptmp, σ, dt)
         linprob = LinearProblem(M, uprev)
     end
@@ -697,8 +706,7 @@ end
     # We use P2 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    f.pd(P, D, uprev, p, t) # evaluate production and destruction terms
     integrator.stats.nf += 1
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
@@ -726,9 +734,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if isone(a21)
         σ .= u
@@ -737,8 +745,7 @@ end
     end
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
-    f.d(D2, u, p, t + a21 * dt) # evaluate nonconservative destruction terms
+    f.pd(P2, D2, u, p, t + a21 * dt) # evaluate production and destruction terms
     integrator.stats.nf += 1
 
     if issparse(P)
@@ -764,9 +771,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
     # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
@@ -812,9 +819,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if isone(a21)
         σ .= u
@@ -842,9 +849,9 @@ end
     # Same as linres = P2 \ tmp
     linsolve.A = P2
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now σ stores the error estimate
     # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
@@ -987,7 +994,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. To display the default value for data type `type` evaluate 
+to avoid divisions by zero. To display the default value for data type `type` evaluate
 `MPRK43II(gamma).small_constant_function(type)`, where `type` can be, e.g.,
 `Float64`.
 
@@ -1094,10 +1101,15 @@ end
 
     f = integrator.f
 
-    # evaluate production matrix
-    P = f.p(uprev, p, t)
-    Ptmp = a21 * P
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P, d = f.pd(uprev, p, t)
+    else # f isa ConservativePDSFunction
+        P = f.p(uprev, p, t)
+    end
     integrator.stats.nf += 1
+    Ptmp = a21 * P
 
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(uprev, small_constant)
@@ -1107,7 +1119,6 @@ end
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d = f.d(uprev, p, t)
         dtmp = a21 * d
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
@@ -1129,13 +1140,19 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P2 = f.p(u, p, t + c2 * dt)
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P2, d2 = f.pd(u, p, t + c2 * dt)
+    else # f isa ConservativePDSFunction
+        P2 = f.p(u, p, t + c2 * dt)
+    end
+    integrator.stats.nf += 1
     Ptmp = a31 * P + a32 * P2
     integrator.stats.nf += 1
 
     # build linear system matrix and rhs
     if f isa PDSFunction
-        d2 = f.d(u, p, t + c2 * dt)  # evaluate nonconservative destruction terms
         dtmp = a31 * d + a32 * d2
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
@@ -1179,13 +1196,18 @@ end
     # avoid division by zero due to zero Patankar weights
     σ = add_small_constant(σ, small_constant)
 
-    P3 = f.p(u, p, t + c3 * dt)
-    Ptmp = b1 * P + b2 * P2 + b3 * P3
+    # evaluate production matrix and nonconservative destruction terms
+    # (if present)
+    if f isa PDSFunction
+        P3, d3 = f.pd(u, p, t + c3 * dt)
+    else # f isa ConservativePDSFunction
+        P3 = f.p(u, p, t + c3 * dt)
+    end
     integrator.stats.nf += 1
+    Ptmp = b1 * P + b2 * P2 + b3 * P3
 
     # build linear system matrix
     if f isa PDSFunction
-        d3 = f.d(u, p, t + c3 * dt)  # evaluate nonconservative destruction terms
         dtmp = b1 * d + b2 * d2 + b3 * d3
         rhs = uprev + dt * diag(Ptmp)
         M = build_mprk_matrix(Ptmp, σ, dt, dtmp)
@@ -1291,8 +1313,7 @@ end
     # We use P3 to store the last evaluation of the PDS
     # as well as to store the system matrix of the linear system
 
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
+    f.pd(P, D, uprev, p, t) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see
@@ -1320,18 +1341,17 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
     if !(q1 ≈ q2)
         tmp2 .= u #u2 in out-of-place version
     end
-    integrator.stats.nsolve += 1
 
     @.. broadcast=false σ=σ^(1 - q1) * u^q1
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P2, u, p, t + c2 * dt) # evaluate production terms
-    f.d(D2, u, p, t + c2 * dt) # evaluate nonconservative destruction terms
+    f.pd(P2, D2, u, p, t + c2 * dt) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see
@@ -1357,9 +1377,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if !(q1 ≈ q2)
         @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
@@ -1396,8 +1416,7 @@ end
     # avoid division by zero due to zero Patankar weights
     @.. broadcast=false σ=σ + small_constant
 
-    f.p(P3, u, p, t + c3 * dt) # evaluate production terms
-    f.d(D3, u, p, t + c3 * dt) # evaluate nonconservative destruction terms
+    f.pd(P3, D3, u, p, t + c3 * dt) # evaluate production and destruction terms
     if issparse(P)
         # We need to keep the structural nonzeros of the production terms.
         # However, this is not guaranteed by broadcasting, see
@@ -1423,9 +1442,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now tmp stores the error estimate
     @.. broadcast=false tmp=u - σ
@@ -1469,12 +1488,12 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
     if !(q1 ≈ q2)
         tmp2 .= u #u2 in out-of-place version
     end
-    integrator.stats.nsolve += 1
 
     @.. broadcast=false σ=σ^(1 - q1) * u^q1
     @.. broadcast=false σ=σ + small_constant
@@ -1498,9 +1517,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     if !(q1 ≈ q2)
         @.. broadcast=false σ=(uprev + small_constant)^(1 - q2) * tmp2^q2
@@ -1549,9 +1568,9 @@ end
     # Same as linres = P3 \ tmp
     linsolve.A = P3
     linres = solve!(linsolve)
+    integrator.stats.nsolve += 1
 
     u .= linres
-    integrator.stats.nsolve += 1
 
     # Now tmp stores the error estimate
     @.. broadcast=false tmp=u - σ

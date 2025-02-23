@@ -75,7 +75,7 @@ u_3' &= 0.3 u_2,
 \\end{aligned}
 ```
 with initial value ``\\mathbf{u}_0 = (9.98, 0.01, 0.01)^T`` and time domain ``(0.0, 30.0)``.
-There is one independent linear invariant, e.g. ``u_1+u_2+u_3 = 10.0``.
+There is one independent linear invariant, e.g. ``u_1 + u_2 + u_3 = 10.0``.
 
 ## References
 
@@ -291,7 +291,7 @@ There is one independent linear invariant, e.g. ``u_1+u_2+u_3+u_4 = 15.0``.
 prob_pds_npzd = ConservativePDSProblem(P_npzd, u0_npzd, (0.0, 10.0), std_rhs = f_npzd)
 
 # stratospheric reaction problem
-function P_stratreac(u, p, t)
+function PD_stratreac(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
 
     Tr = 4.5
@@ -330,23 +330,14 @@ function P_stratreac(u, p, t)
     r10 = k10 * NO2
     r11 = k11 * NO * O
 
-    return @SMatrix [0.0 0.0 r5 0.0 0.0 0.0;
-                     r6 r1+r10 r3 r1 0.0 0.0;
-                     0.0 r2 0.0 0.0 0.0 0.0;
-                     r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
-                     0.0 0.0 0.0 0.0 0.0 r9+r10;
-                     0.0 0.0 0.0 0.0 r8+r11 0.0]
-end
-function d_stratreac(u, p, t)
-    O1D, O, O3, O2, NO, NO2 = u
-
-    k2 = 8.018e-17
-    k11 = 1.0e-8
-
-    r2 = k2 * O * O2
-    r11 = k11 * NO * O
-
-    return @SVector [0.0, r11, 0.0, r2, 0.0, 0.0]
+    P = @SMatrix [0.0 0.0 r5 0.0 0.0 0.0;
+                  r6 r1+r10 r3 r1 0.0 0.0;
+                  0.0 r2 0.0 0.0 0.0 0.0;
+                  r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
+                  0.0 0.0 0.0 0.0 0.0 r9+r10;
+                  0.0 0.0 0.0 0.0 r8+r11 0.0]
+    d = @SVector [0.0, r11, 0.0, r2, 0.0, 0.0]
+    return P, d
 end
 function f_stratreac(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
@@ -436,7 +427,7 @@ There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(
   Communications in Applied Mathematics and Computer Science 16 (2021): 155-179.
   [DOI: 10.2140/camcos.2021.16.155](https://doi.org/10.2140/camcos.2021.16.155)
 """
-prob_pds_stratreac = PDSProblem(P_stratreac, d_stratreac, u0_stratreac, (4.32e4, 3.024e5),
+prob_pds_stratreac = PDSProblem(PD_stratreac, u0_stratreac, (4.32e4, 3.024e5),
                                 std_rhs = f_stratreac)
 
 # mapk problem
@@ -456,7 +447,7 @@ function f_minmapk(u, p, t)
                      k3 * u[1] * u[3] - k4 * u[5];
                      k7 * u[1] - k6 * u[6]]
 end
-function P_minmapk(u, p, t)
+function PD_minmapk(u, p, t)
     k1 = 100 / 3
     k2 = 1 / 3
     k3 = 50
@@ -465,21 +456,17 @@ function P_minmapk(u, p, t)
     k6 = 0.1
     k7 = 0.7
 
-    return @SMatrix [0 0 0 k2*u[4] 0 k6*u[6]
-                     0 0 k5*u[3] 0 0 0;
-                     0 0 k2*u[4] 0 k4*u[5] 0;
-                     k1*u[1]*u[2] 0 0 0 0 0;
-                     0 0 k3*u[1]*u[3] 0 0 0;
-                     k7*u[1] 0 0 0 0 0]
-end
-function D_minmapk(u, p, t)
-    k1 = 100 / 3
-
-    return @SVector [0; k1 * u[1] * u[2]; 0; 0; 0; 0]
+    P = @SMatrix [0 0 0 k2*u[4] 0 k6*u[6]
+                  0 0 k5*u[3] 0 0 0;
+                  0 0 k2*u[4] 0 k4*u[5] 0;
+                  k1*u[1]*u[2] 0 0 0 0 0;
+                  0 0 k3*u[1]*u[3] 0 0 0;
+                  k7*u[1] 0 0 0 0 0]
+    d = @SVector [0; k1 * u[1] * u[2]; 0; 0; 0; 0]
+    return P, d
 end
 
-u0 = @SVector [0.1; 0.175; 0.15; 1.15; 0.81; 0.5]
-tspan = (0.0, 200.0)
+u0_minmapk = @SVector [0.1; 0.175; 0.15; 1.15; 0.81; 0.5]
 
 """
     prob_pds_minmapk
@@ -518,4 +505,4 @@ There are two independent linear invariants, e.g. ``u_1+u_4+u_6=1.75`` and ``u_2
   PLoS ONE 12 (2017): e0178457.
   [DOI: 10.1371/journal.pone.0178457](https://doi.org/10.1371/journal.pone.0178457)
 """
-prob_pds_minmapk = PDSProblem(P_minmapk, D_minmapk, u0, tspan; std_rhs = f_minmapk)
+prob_pds_minmapk = PDSProblem(PD_minmapk, u0_minmapk, (0.0, 200.0); std_rhs = f_minmapk)

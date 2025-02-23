@@ -16,7 +16,8 @@ p = spdiagm(0 => ones(4), 1 => zeros(3))
 p .= 2 * p
 ```
 
-Instead, you should be able to use a pattern like the following, where the function `nonzeros` is used to modify the values of a sparse matrix.
+Instead, you should be able to use a pattern like the following, where the function
+`nonzeros` is used to modify the values of a sparse matrix.
 
 ```@repl
 using SparseArrays

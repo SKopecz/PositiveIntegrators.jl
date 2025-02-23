@@ -1,11 +1,18 @@
 # [Tutorial: Solution of a stratospheric reaction problem](@id tutorial-stratos)
 
-This tutorial is about the efficient solution of a stiff non-autonomous and non-conservative production-destruction systems (PDS) with a small number of differential equations. 
-We will compare the use of standard arrays and static arrays from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) and assess their efficiency.
+This tutorial is about the efficient solution of a stiff non-autonomous
+and non-conservative production-destruction systems (PDS) with a small
+number of differential equations.
+We will compare the use of standard arrays and static arrays from
+[StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/)
+and assess their efficiency.
 
 ## Definition of the production-destruction system
 
-This stratospheric reaction problem was described by Adrian Sandu in [Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750), see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155) by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The governing equations are
+This stratospheric reaction problem was described by Adrian Sandu in
+[Positive Numerical Integration Methods for Chemical Kinetic Systems](https://doi.org/10.1006/jcph.2001.6750),
+see also the paper [Positivity-preserving adaptive Runge–Kutta methods](https://doi.org/10.2140/camcos.2021.16.155)
+by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The governing equations are
 ```math
 \begin{aligned}
 \frac{dO^{1D}}{dt} &= r_5 - r_6 -  r_7,\\
@@ -32,10 +39,16 @@ T &= t/3600 \mod 24,\quad T_r=4.5,\quad T_s = 19.5,\\
 σ(T) &= \begin{cases}1, & T_r≤ T≤ T_s,\\0, & \text{otherwise}.\end{cases}
 \end{aligned}
 ```
-Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T``. The time domain in seconds is ``[4.32⋅10^{4}, 3.024⋅10^5]``, which corresponds to ``[12.0, 84.0]`` in hours.
-There are two independent linear invariants, e.g. ``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0`` and ``u_5+u_6 = 1.097⋅10^9``.
+Setting ``\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)`` the initial value
+is ``\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T``.
+The time domain in seconds is ``[4.32⋅10^{4}, 3.024⋅10^5]``, which
+corresponds to ``[12.0, 84.0]`` in hours.
+There are two independent linear invariants, e.g.
+``u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0``
+and ``u_5+u_6 = 1.097⋅10^9``.
 
-The stratospheric reaction problem can be represented as a (non-conservative) PDS with production terms
+The stratospheric reaction problem can be represented as a
+(non-conservative) PDS with production terms
 ```math
 \begin{aligned}
 p_{13} &= r_5, & p_{21} &= r_6, & p_{22} &= r_1+r_{10},\\
@@ -54,21 +67,26 @@ In addition, all production and destruction terms not listed have the value zero
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
+Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem
+with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
-As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
+As mentioned above, we will try different approaches to solve this PDS
+and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
 2. an in-place implementation with standard (dynamic) matrices and vectors,
 3. an out-of-place implementation with static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/).
 
 ### Standard out-of-place implementation
 
-Here we create an out-of-place function to compute the production matrix with return type `Matrix{Float64}` and a second out-of-place function for the destruction vector with return type `Vector{Float64}`.
+Here we create an out-of-place function to compute the production matrix
+with return type `Matrix{Float64}` and the destruction vector with return
+type `Vector{Float64}`.
 
 ```@example stratreac
 using PositiveIntegrators # load PDSProblem
 
-function prod(u, p, t)
+function prod_dest(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
 
     Tr = 4.5
@@ -107,38 +125,30 @@ function prod(u, p, t)
     r10 = k10 * NO2
     r11 = k11 * NO * O
 
-    return [0.0 0.0 r5 0.0 0.0 0.0;
-            r6 r1+r10 r3 r1 0.0 0.0;
-            0.0 r2 0.0 0.0 0.0 0.0;
-            r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
-            0.0 0.0 0.0 0.0 0.0 r9+r10;
-            0.0 0.0 0.0 0.0 r8+r11 0.0]
+    P =  [0.0 0.0 r5 0.0 0.0 0.0;
+          r6 r1+r10 r3 r1 0.0 0.0;
+          0.0 r2 0.0 0.0 0.0 0.0;
+          r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
+          0.0 0.0 0.0 0.0 0.0 r9+r10;
+          0.0 0.0 0.0 0.0 r8+r11 0.0]
+    D = [0.0, r11, 0.0, r2, 0.0, 0.0]
+    return P, D
 end
 
-function dest(u, p, t)
-    O1D, O, O3, O2, NO, NO2 = u
-
-    k2 = 8.018e-17
-    k11 = 1.0e-8
-
-    r2 = k2 * O * O2
-    r11 = k11 * NO * O
-
-    return [0.0, r11, 0.0, r2, 0.0, 0.0]
-end
 nothing #hide
 ```
 The solution of the stratospheric reaction problem can now be computed as follows.
 ```@example stratreac
 u0 = [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
 tspan = (4.32e4, 3.024e5) # time domain
-prob_oop = PDSProblem(prod, dest, u0, tspan) # create the PDS
+prob_oop = PDSProblem(prod_dest, u0, tspan) # create the PDS
 
 sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
-Plotting the solution shows that the components ``O¹ᴰ``, ``O`` and ``NO`` are in danger of becoming negative. 
+Plotting the solution shows that the components ``O¹ᴰ``, ``O`` and
+``NO`` are in danger of becoming negative.
 ```@example stratreac
 using Plots
 
@@ -149,11 +159,13 @@ plot(sol_oop,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref))
+to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example stratreac
 isnonnegative(sol_oop)
 ```
@@ -164,7 +176,7 @@ Next we create in-place functions for the production matrix and the destruction 
 
 ```@example stratreac
 
-function prod!(P, u, p, t)
+function prod_dest!(P, D, u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
 
     Tr = 4.5
@@ -216,31 +228,20 @@ function prod!(P, u, p, t)
     P[4, 4] = r3 + r5
     P[5, 6] = r9 + r10
     P[6, 5] = r8 + r11
-    return nothing
-end
-
-function dest!(D, u, p, t)
-    O1D, O, O3, O2, NO, NO2 = u
-
-    k2 = 8.018e-17
-    k11 = 1.0e-8
-
-    r2 = k2 * O * O2
-    r11 = k11 * NO * O
 
     fill!(D, zero(eltype(D)))
-
     D[2] = r11
     D[4] = r2
-
     return nothing
 end
+
 nothing #hide
 ```
-The solution of the in-place implementation of the stratospheric reaction problem can now be computed as follows.
+The solution of the in-place implementation of the stratospheric
+reaction problem can now be computed as follows.
 ```@example stratreac
 
-prob_ip = PDSProblem(prod!, dest!, u0, tspan) # create the PDS
+prob_ip = PDSProblem(prod_dest!, u0, tspan) # create the PDS
 sol_ip = solve(prob_ip, MPRK43I(1.0, 0.5))
 nothing #hide
 ```
@@ -253,7 +254,7 @@ plot(sol_ip,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
@@ -264,12 +265,16 @@ sol_oop.t ≈ sol_ip.t && sol_oop.u ≈ sol_ip.u
 ```
 
 ### Using static arrays
-For PDS with a small number of differential equations like the stratospheric reaction model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector. 
+For PDS with a small number of differential equations like the stratospheric
+reaction model the use of static arrays will be more efficient. To create a
+function which computes the production matrix and returns a static matrix,
+we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector`
+macro for the destruction vector.
 
 ```@example stratreac
 using StaticArrays
 
-function prod_static(u, p, t)
+function prod_dest_static(u, p, t)
     O1D, O, O3, O2, NO, NO2 = u
 
     Tr = 4.5
@@ -308,31 +313,22 @@ function prod_static(u, p, t)
     r10 = k10 * NO2
     r11 = k11 * NO * O
 
-    return @SMatrix [0.0 0.0 r5 0.0 0.0 0.0;
-            r6 r1+r10 r3 r1 0.0 0.0;
-            0.0 r2 0.0 0.0 0.0 0.0;
-            r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
-            0.0 0.0 0.0 0.0 0.0 r9+r10;
-            0.0 0.0 0.0 0.0 r8+r11 0.0]
+    P = @SMatrix [0.0 0.0 r5 0.0 0.0 0.0;
+                  r6 r1+r10 r3 r1 0.0 0.0;
+                  0.0 r2 0.0 0.0 0.0 0.0;
+                  r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
+                  0.0 0.0 0.0 0.0 0.0 r9+r10;
+                  0.0 0.0 0.0 0.0 r8+r11 0.0]
+    D = @SVector [0.0, r11, 0.0, r2, 0.0, 0.0]
+    return P, D
 end
 
-function dest_static(u, p, t)
-    O1D, O, O3, O2, NO, NO2 = u
-
-    k2 = 8.018e-17
-    k11 = 1.0e-8
-
-    r2 = k2 * O * O2
-    r11 = k11 * NO * O
-
-    return @SVector [0.0, r11, 0.0, r2, 0.0, 0.0]
-end
 nothing #hide
 ```
 In addition we also want to use a static vector to hold the initial conditions.
 ```@example stratreac
 u0_static = @SVector [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
-prob_static = PDSProblem(prod_static, dest_static, u0_static, tspan) # create the PDS
+prob_static = PDSProblem(prod_dest_static, u0_static, tspan) # create the PDS
 
 sol_static = solve(prob_static, MPRK43I(1.0, 0.5))
 
@@ -353,15 +349,20 @@ plot(sol_static,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
 
-The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
+The above implementation of the stratospheric reaction problem using
+`StaticArrays` can also be found in the
+[Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems)
+as [`prob_pds_stratreac`](@ref).
 
 ### Preservation of linear invariants
-As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.
+As MPRK schemes do not preserve general linear invariants, especially when
+applied to non-conservative PDS, we compute and plot the relative errors
+with respect to both linear invariants to see how well these are preserved.
 
 ```@example stratreac
 linear_invariant(a, u) = sum(a .* u)
@@ -376,13 +377,16 @@ a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
 
 p1 = plot(sol_oop.t, relerr_lininv(a1, u0, sol_oop))
 p2 = plot(sol_oop.t, relerr_lininv(a2, u0, sol_oop))
-plot(p1, p2, 
+plot(p1, p2,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     legend = :none)
 ```
 
-In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions.
-One way to enforce nonnegative solutions of such schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
+In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve
+all linear invariants, but are not guaranteed to generate nonnegative solutions.
+One way to enforce nonnegative solutions of such schemes is passing [`isnegative`](@ref)
+to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/).
+We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
 ```@example stratreac
 using OrdinaryDiffEq
 
