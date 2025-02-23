@@ -384,7 +384,7 @@ plot(p1, p2,
 In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions.
 One way to enforce nonnegative solutions of such schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
 ```@example stratreac
-using OrdnaryDiffEqRosenbrock
+using OrdinaryDiffEqRosenbrock
 
 sol_tmp = solve(prob_oop, Rosenbrock23());
 isnonnegative(sol_tmp)
