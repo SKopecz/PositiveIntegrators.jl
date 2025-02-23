@@ -7,7 +7,11 @@ using StaticArrays: MVector, @SVector, SA
 
 using Unitful: @u_str, ustrip
 
-using OrdinaryDiffEq
+using OrdinaryDiffEqLowOrderRK: Euler
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
+using OrdinaryDiffEqSDIRK: ImplicitEuler, TRBDF2
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqVerner: Vern9
 using PositiveIntegrators
 
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
