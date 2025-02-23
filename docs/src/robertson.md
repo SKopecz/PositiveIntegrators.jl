@@ -94,7 +94,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "DiffEqCallbacks", "DiffEqBase"]),
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "DiffEqCallbacks", "DiffEqBase"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```
