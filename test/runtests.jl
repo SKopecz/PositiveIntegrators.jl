@@ -1743,7 +1743,7 @@ end
                     # test get_tmp_cache and integrator interface - modifying
                     # values from the cache should not change the final results
                     integrator = init(prob, alg; dt, adaptive = false)
-                    PositiveIntegrators.step!(integrator)
+                    PositiveIntegrators.OrdinaryDiffEqCore.step!(integrator)
                     cache = @inferred get_tmp_cache(integrator)
                     @test !isempty(cache)
                     tmp = first(cache)

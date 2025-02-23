@@ -18,7 +18,7 @@ using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize,
                  isinplace
 
 # TODO: Check imports and using statements below, reduce if possible
-using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, ODESolution
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, OrdinaryDiffEqAlgorithm, ODESolution
 
 using SymbolicIndexingInterface: SymbolicIndexingInterface
 
