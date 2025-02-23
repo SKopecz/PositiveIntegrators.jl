@@ -26,11 +26,11 @@ using LinearSolve: LinearSolve, LinearProblem, LUFactorization, solve!
 
 import SciMLBase: interp_summary
 
-using OrdinaryDiffEq: @cache,
-                      OrdinaryDiffEqAdaptiveAlgorithm,
-                      OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
-                      False,
-                      _vec
+using OrdinaryDiffEqCore: @cache,
+                          OrdinaryDiffEqAdaptiveAlgorithm,
+                          OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
+                          False,
+                          _vec
 import OrdinaryDiffEqCore: alg_order, isfsal,
                            calculate_residuals, calculate_residuals!,
                            alg_cache, get_tmp_cache,
