@@ -937,7 +937,8 @@ end
             # Requires autodiff = AutoFiniteDiff()
             probs = (prob_pds_linmod_inplace,)
             algs = (Euler(), ImplicitEuler(autodiff = AutoFiniteDiff()), Tsit5(),
-                    Rosenbrock23(autodiff = AutoFiniteDiff()), SDIRK2(autodiff = AutoFiniteDiff()),
+                    Rosenbrock23(autodiff = AutoFiniteDiff()),
+                    SDIRK2(autodiff = AutoFiniteDiff()),
                     TRBDF2(autodiff = AutoFiniteDiff()))
             @testset "$alg" for prob in probs, alg in algs
                 dt = (last(prob.tspan) - first(prob.tspan)) / 1e4
@@ -1773,7 +1774,7 @@ end
 
                     test_times = [
                         0.123456789, 1 / pi, exp(-1),
-                        1.23456789, 1 + 1 / pi, 1 + exp(-1),
+                        1.23456789, 1 + 1 / pi, 1 + exp(-1)
                     ]
                     for test_time in test_times
                         orders = experimental_orders_of_convergence(prob, alg,
@@ -1807,7 +1808,7 @@ end
 
                     test_times = [
                         0.123456789, 1 / pi, exp(-1),
-                        1.23456789, 1 + 1 / pi, 1 + exp(-1),
+                        1.23456789, 1 + 1 / pi, 1 + exp(-1)
                     ]
                     for test_time in test_times
                         orders = experimental_orders_of_convergence(prob, alg,
