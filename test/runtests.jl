@@ -9,7 +9,7 @@ using Unitful: @u_str, ustrip
 
 using OrdinaryDiffEqLowOrderRK: Euler
 using OrdinaryDiffEqRosenbrock: Rosenbrock23
-using OrdinaryDiffEqSDIRK: ImplicitEuler, TRBDF2
+using OrdinaryDiffEqSDIRK: ImplicitEuler, SDIRK2, TRBDF2
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqVerner: Vern9
 using PositiveIntegrators
@@ -1743,7 +1743,7 @@ end
                     # test get_tmp_cache and integrator interface - modifying
                     # values from the cache should not change the final results
                     integrator = init(prob, alg; dt, adaptive = false)
-                    step!(integrator)
+                    PositiveIntegrators.step!(integrator)
                     cache = @inferred get_tmp_cache(integrator)
                     @test !isempty(cache)
                     tmp = first(cache)

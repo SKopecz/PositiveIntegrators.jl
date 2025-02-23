@@ -72,7 +72,7 @@ Consequently the production matrix ``\mathbf P`` and destruction vector ``\mathb
 ```
 
 ```@setup LotkaVolterra
-import Pkg; Pkg.add("OrdinaryDiffEq");  Pkg.add("Plots")
+import Pkg; Pkg.add("Plots")
 ```
 To solve this PDS together with initial values ``u_1(0)=u_2(0)=2`` on the time domain ``(0,10)``, we first need to create a `PDSProblem`.
 ```@example LotkaVolterra
@@ -133,10 +133,6 @@ The corresponding production matrix ``\mathbf P`` is
 ```
 
 The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)`` using `ConservativePDSProblem` from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
-
-```@setup SIR
-import Pkg; Pkg.add("OrdinaryDiffEq");
-```
 
 ```@example SIR
 using PositiveIntegrators
