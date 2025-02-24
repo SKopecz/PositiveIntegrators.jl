@@ -46,6 +46,17 @@ TODO
 
 TODO
 
+@burchard2003
+@kopeczmeister2018order2
+@kopeczmeister2018order3
+@huang2019order2
+@huang2019order3
+
+@kopeczmeister2019
+@izgin2022stability1
+@izgin2022stability2
+@huang2023
+
 
 # Acknowledgements
 
