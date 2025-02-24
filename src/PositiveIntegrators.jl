@@ -18,7 +18,7 @@ using SciMLBase: AbstractODEFunction, NullParameters, FullSpecialize,
                  isinplace
 
 # TODO: Check imports and using statements below, reduce if possible
-using OrdinaryDiffEq: OrdinaryDiffEq, OrdinaryDiffEqAlgorithm, ODESolution
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, OrdinaryDiffEqAlgorithm, ODESolution
 
 using SymbolicIndexingInterface: SymbolicIndexingInterface
 
@@ -26,17 +26,17 @@ using LinearSolve: LinearSolve, LinearProblem, LUFactorization, solve!
 
 import SciMLBase: interp_summary
 
-using OrdinaryDiffEq: @cache,
-                      OrdinaryDiffEqAdaptiveAlgorithm,
-                      OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
-                      False,
-                      _vec
-import OrdinaryDiffEq: alg_order, isfsal,
-                       calculate_residuals, calculate_residuals!,
-                       alg_cache, get_tmp_cache,
-                       initialize!, perform_step!,
-                       _ode_interpolant, _ode_interpolant!,
-                       get_fsalfirstlast
+using OrdinaryDiffEqCore: @cache,
+                          OrdinaryDiffEqAdaptiveAlgorithm,
+                          OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
+                          False,
+                          _vec
+import OrdinaryDiffEqCore: alg_order, isfsal,
+                           calculate_residuals, calculate_residuals!,
+                           alg_cache, get_tmp_cache,
+                           initialize!, perform_step!,
+                           _ode_interpolant, _ode_interpolant!,
+                           get_fsalfirstlast
 
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem

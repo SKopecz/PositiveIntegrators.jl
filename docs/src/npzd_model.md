@@ -14,7 +14,7 @@ Z' &= 0.5(1 - e^{-1.21P^2})Z - 0.01Z - 0.02Z,\\
 D' &= 0.05P + 0.02Z - 0.003D,
 \end{aligned}
 ```
-and we consider the initial conditions ``N=8``, ``P=2``, ``Z=1`` and ``D=4``. The time domain of interest is ``t\in[0,10]``. 
+and we consider the initial conditions ``N=8``, ``P=2``, ``Z=1`` and ``D=4``. The time domain of interest is ``t\in[0,10]``.
 
 The model can be represented as a conservative PDS with production terms
 ```math
@@ -28,7 +28,7 @@ whereby production terms not listed have the value zero. Since the PDS is conser
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
@@ -70,7 +70,7 @@ sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
-Plotting the solution shows that the components ``N`` and ``P`` are in danger of becoming negative. 
+Plotting the solution shows that the components ``N`` and ``P`` are in danger of becoming negative.
 ```@example NPZD
 using Plots
 
@@ -203,7 +203,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```
