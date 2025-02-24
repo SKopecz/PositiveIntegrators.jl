@@ -1750,7 +1750,7 @@ end
                     @test !isempty(cache)
                     tmp = first(cache)
                     fill!(tmp, NaN)
-                    sol2 = solve!(integrator)
+                    sol2 = PositiveIntegrators.solve!(integrator)
                     @test sol1.t ≈ sol2.t
                     @test sol1.u ≈ sol2.u
                 end
