@@ -1746,7 +1746,7 @@ end
                     # values from the cache should not change the final results
                     integrator = init(prob, alg; dt, adaptive = false)
                     PositiveIntegrators.OrdinaryDiffEqCore.step!(integrator)
-                    cache = @inferred get_tmp_cache(integrator)
+                    cache = @inferred PositiveIntegrators.get_tmp_cache(integrator)
                     @test !isempty(cache)
                     tmp = first(cache)
                     fill!(tmp, NaN)
