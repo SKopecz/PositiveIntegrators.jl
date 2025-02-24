@@ -2296,33 +2296,70 @@ end
         # that the errors are identical and that the computing times 
         # differ only slightly.
         @testset "work-precision adaptive" begin
-            prob = prob_pds_nonlinmod
-            alg = MPRK22(1.0)
-            algs = [alg; alg; alg; alg; alg]
-            labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
-            labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
-            abstols = 1 ./ 10 .^ (4:8)
-            reltols = 1 ./ 10 .^ (3:7)
-            alg_ref = Vern7()
-            wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA, abstols,
+            @testset "adatpive_ref = false" begin
+                prob = prob_pds_nonlinmod
+                alg = MPRK22(1.0)
+                algs = [alg; alg; alg; alg; alg]
+                labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+                labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+                abstols = 1 ./ 10 .^ (4:8)
+                reltols = 1 ./ 10 .^ (3:7)
+                alg_ref = Vern7()
+                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
+                                             abstols,
+                                             reltols, alg_ref)
+                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
+                                         abstols,
                                          reltols, alg_ref)
-            work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB, abstols,
-                                     reltols, alg_ref)
 
-            # check that errors agree
-            for (i, _) in enumerate(abstols)
-                v = [value[i][1] for (key, value) in wp]
-                @test all(y -> y == v[1], v)
+                # check that errors agree
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][1] for (key, value) in wp]
+                    @test all(y -> y == v[1], v)
+                end
+
+                # check that computing times are close enough 
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][2] for (key, value) in wp]
+                    m1 = mean(v)
+                    # This test allows computing times that are
+                    # twice the mean value. In a loglog plot these
+                    # differences won't be significant.        
+                    @test maximum((v .- m1) ./ m1) < 1.0
+                end
             end
 
-            # check that computing times are close enough 
-            for (i, _) in enumerate(abstols)
-                v = [value[i][2] for (key, value) in wp]
-                m1 = mean(v)
-                # This test allows computing times that are
-                # twice the mean value. In a loglog plot these
-                # differences won't be significant.        
-                @test maximum((v .- m1) ./ m1) < 1.0
+            @testset "adatpive_ref = true" begin
+                prob = prob_pds_robertson
+                alg = MPRK22(1.0)
+                algs = [alg; alg; alg; alg; alg]
+                labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+                labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+                abstols = 1 ./ 10 .^ (4:8)
+                reltols = 1 ./ 10 .^ (3:7)
+                alg_ref = Rodas4P()
+                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
+                                             abstols,
+                                             reltols, alg_ref; adaptive_ref = true)
+                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
+                                         abstols,
+                                         reltols, alg_ref; adaptive_ref = true)
+
+                # check that errors agree
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][1] for (key, value) in wp]
+                    @test all(y -> y == v[1], v)
+                end
+
+                # check that computing times are close enough 
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][2] for (key, value) in wp]
+                    m1 = mean(v)
+                    # This test allows computing times that are
+                    # twice the mean value. In a loglog plot these
+                    # differences won't be significant.        
+                    @test maximum((v .- m1) ./ m1) < 1.0
+                end
             end
         end
     end
