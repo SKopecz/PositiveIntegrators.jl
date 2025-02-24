@@ -26,8 +26,9 @@ bibliography: paper.bib
 
 # Summary
 
-TODO
+Many systems of ordinary differential equations that model real life applications possess positive solutions and it is quite natural to demand that numerical solutions of such systems should be positive as well. Unfortunately, positivty is a property that is not preserved by standard time integration schemes such as Runge--Kutta schemes, Rosenbrock methods or linear multistep methods, at least for orders greater than one. Therefore, various new, unconditionally positive schemes have been introduced in recent years. Unfortunately, these new methods are not freely available and therefore not applicable for most users and also not comparable within the scientific community.
 
+Here we describe PostiveIntegrators.jl a julia package that provides efficient implementations of various positive time integration schemes and thus makes these methods usable and comparable.
 
 # Statement of need
 
