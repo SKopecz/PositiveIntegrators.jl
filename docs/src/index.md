@@ -187,7 +187,7 @@ for your research, please cite it using the bibtex entry
 @misc{PositiveIntegrators.jl,
   title={{PositiveIntegrators.jl}: {A} {J}ulia library of positivity-preserving
          time integration methods},
-  author={Kopecz, Stefan and Ranocha, Hendrik and contributors},
+  author={Kopecz, Stefan and Lampert, Joshua and Ranocha, Hendrik},
   year={2023},
   doi={10.5281/zenodo.10868393},
   url={https://github.com/SKopecz/PositiveIntegrators.jl}
