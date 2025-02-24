@@ -1,6 +1,6 @@
 # [Tutorial: Solution of Robertson problem](@id tutorial-robertson)
 
-In this tutorial we show that MPRK schemes can be used to integrate stiff problems. 
+In this tutorial we show that MPRK schemes can be used to integrate stiff problems.
 We also show how callbacks can be used to change the time step in non-adaptive schemes.
 
 ## Definition of the production-destruction system
@@ -13,7 +13,7 @@ u_2' &=  0.04u_1-10^4 u_2u_3-3⋅10^7 u_2^2, & u_2(0)&=0 \\
 u_3' &= 3⋅10^7 u_2^2, & u_3(0)&=0.
 \end{aligned}
 ```
-The time domain of interest is ``t\in[0,10^{11}]``, because of which some kind of adaptive time stepping is required. 
+The time domain of interest is ``t\in[0,10^{11}]``, because of which some kind of adaptive time stepping is required.
 
 The model can be represented as a conservative PDS with production terms
 ```math
@@ -35,8 +35,8 @@ Since this PDS consists of only three differential equations we provide an out-o
 using PositiveIntegrators, StaticArrays
 
 function prod(u, p, t)
-    @SMatrix [0.0 1e4*u[2]*u[3] 0.0; 
-              4e-2*u[1] 0.0 0.0; 
+    @SMatrix [0.0 1e4*u[2]*u[3] 0.0;
+              4e-2*u[1] 0.0 0.0;
               0.0 3e7*u[2]^2 0.0]
 end
 u0 = @SVector [1.0, 0.0, 0.0]
@@ -60,11 +60,12 @@ isnonnegative(sol)
 
 ### Using callbacks to solve the Robertson problem with non-adatpive schemes
 
-The `SSPMPRK43()` scheme is only available with fixed time stepping. With a scheme like this, it would take a huge amount of time to solve the Robertson problem, since the time step must be chosen very small to accurately solve the problem in its initial phase. However, the use of a `callback` allows us to modify the time step size after each step, which makes a solution with a fixed step method possible. 
+The `SSPMPRK43()` scheme is only available with fixed time stepping. With a scheme like this, it would take a huge amount of time to solve the Robertson problem, since the time step must be chosen very small to accurately solve the problem in its initial phase. However, the use of a `callback` allows us to modify the time step size after each step, which makes a solution with a fixed step method possible.
 
 In the following example the `callback` increases the time step size by a factor of 1.5 after each time step.
 ```@example robertson
-using OrdinaryDiffEq
+using DiffEqCallbacks
+using DiffEqBase
 
 stepsize_callback = DiscreteCallback(
     Returns(true), # adapt the step size after every time step
@@ -93,7 +94,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "DiffEqCallbacks", "DiffEqBase"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```

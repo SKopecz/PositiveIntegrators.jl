@@ -1,6 +1,6 @@
 # [Tutorial: Solution of a stratospheric reaction problem](@id tutorial-stratos)
 
-This tutorial is about the efficient solution of a stiff non-autonomous and non-conservative production-destruction systems (PDS) with a small number of differential equations. 
+This tutorial is about the efficient solution of a stiff non-autonomous and non-conservative production-destruction systems (PDS) with a small number of differential equations.
 We will compare the use of standard arrays and static arrays from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) and assess their efficiency.
 
 ## Definition of the production-destruction system
@@ -54,7 +54,7 @@ In addition, all production and destruction terms not listed have the value zero
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). 
+Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
@@ -138,7 +138,7 @@ sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))
 
 nothing #hide
 ```
-Plotting the solution shows that the components ``O¹ᴰ``, ``O`` and ``NO`` are in danger of becoming negative. 
+Plotting the solution shows that the components ``O¹ᴰ``, ``O`` and ``NO`` are in danger of becoming negative.
 ```@example stratreac
 using Plots
 
@@ -149,7 +149,7 @@ plot(sol_oop,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
@@ -253,7 +253,7 @@ plot(sol_ip,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
@@ -264,7 +264,7 @@ sol_oop.t ≈ sol_ip.t && sol_oop.u ≈ sol_ip.u
 ```
 
 ### Using static arrays
-For PDS with a small number of differential equations like the stratospheric reaction model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector. 
+For PDS with a small number of differential equations like the stratospheric reaction model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the `@SMatrix` macro. Accordingly, we use the `@SVector` macro for the destruction vector.
 
 ```@example stratreac
 using StaticArrays
@@ -353,7 +353,7 @@ plot(sol_static,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     yguide=["O¹ᴰ" "O" "O₃" "O₂" "NO" "NO₂"],
     tickfontsize = 7,
-    legend = :none, 
+    legend = :none,
     widen = true
     )
 ```
@@ -376,7 +376,7 @@ a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
 
 p1 = plot(sol_oop.t, relerr_lininv(a1, u0, sol_oop))
 p2 = plot(sol_oop.t, relerr_lininv(a2, u0, sol_oop))
-plot(p1, p2, 
+plot(p1, p2,
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
     legend = :none)
 ```
@@ -384,7 +384,7 @@ plot(p1, p2,
 In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions.
 One way to enforce nonnegative solutions of such schemes is passing [`isnegative`](@ref) to the solver option [`isoutofdomain`](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/). We show this using the Rosenbrock scheme `Rosenbrock23` as an example.
 ```@example stratreac
-using OrdinaryDiffEq
+using OrdinaryDiffEqRosenbrock
 
 sol_tmp = solve(prob_oop, Rosenbrock23());
 isnonnegative(sol_tmp)
@@ -430,7 +430,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdnaryDiffEqRosenbrock"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```
