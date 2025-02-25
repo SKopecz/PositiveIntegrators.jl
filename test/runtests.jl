@@ -9,10 +9,10 @@ using Unitful: @u_str, ustrip
 
 using ADTypes
 using OrdinaryDiffEqLowOrderRK: Euler
-using OrdinaryDiffEqRosenbrock: Rosenbrock23
+using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas4P
 using OrdinaryDiffEqSDIRK: ImplicitEuler, SDIRK2, TRBDF2
 using OrdinaryDiffEqTsit5: Tsit5
-using OrdinaryDiffEqVerner: Vern9
+using OrdinaryDiffEqVerner: Vern7, Vern9
 using PositiveIntegrators
 
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
