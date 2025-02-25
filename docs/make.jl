@@ -79,19 +79,19 @@ makedocs(modules = [PositiveIntegrators],
                  "Stratospheric reaction problem" => "stratospheric_reaction.md",
                  "Linear Advection" => "linear_advection.md",
                  "Heat Equation, Neumann BCs" => "heat_equation_neumann.md",
-                 "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
+                 "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md"
              ],
              "Benchmarks" => [
                  "Experimental order of convergence" => "convergence.md",
                  "NPZD model" => "npzd_model_benchmark.md",
                  "Robertson problem" => "robertson_benchmark.md",
-                 "Stratospheric reaction problem" => "stratospheric_reaction_benchmark.md",
+                 "Stratospheric reaction problem" => "stratospheric_reaction_benchmark.md"
              ],
              "Troubleshooting, FAQ" => "faq.md",
              "API reference" => "api_reference.md",
              "Contributing" => "contributing.md",
              "Code of conduct" => "code_of_conduct.md",
-             "License" => "license.md",
+             "License" => "license.md"
          ])
 
 deploydocs(repo = "github.com/SKopecz/PositiveIntegrators.jl",
