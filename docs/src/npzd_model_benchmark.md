@@ -33,8 +33,9 @@ end
 nothing  # hide
 ```
 
-Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes. 
-This is because once negative values in the ``N``-component occur, this will lead to a further decrease in ``N`` and thus completely inaccurate solutions.  
+Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes.
+The reason for this is that there is only a tiny margin for negative values in ``N``. 
+In most cases negative values of ``N``, will directly lead to a further decrease in ``N`` and thus completely inaccurate solutions.  
 
 ```@example NPZD
 # compute reference solution for plotting

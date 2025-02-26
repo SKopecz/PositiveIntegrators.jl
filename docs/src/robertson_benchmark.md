@@ -104,7 +104,7 @@ We start with a comparison of different adaptive MPRK schemes.
 # choose methods to compare
 algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75);
         MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
-labels = ["MPRK22(0.5)"; "MPPRK22(2/3)"; "MPRK22(1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)";
+labels = ["MPRK22(0.5)"; "MPRK22(2/3)"; "MPRK22(1.0)"; "MPRK43I(1.0,0.5)"; "MPRK43I(0.5,0.75)";
          "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)"]
 
 # compute work-precision data
@@ -202,7 +202,7 @@ compute_error = rel_max_error_overall
 nothing # hide
 ```
 
-First, we compare different MPRK schemes. As above, we omit `MPRK22(0.5)` and `SSPMPRK22(0.5, 1.0)`.
+First, we compare different MPRK schemes. As above, we omit `SSPMPRK22(0.5, 1.0)`.
 
 ```@example ROBER
 # compute work-precision data
@@ -211,7 +211,7 @@ wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
 
 # plot work-precision diagram
 plot(wp, labels; title = "Robertson benchmark", legend = :top,     
-     color = permutedims([repeat([1], 2)..., repeat([3], 2)..., repeat([4], 2)...]),
+     color = permutedims([repeat([1], 3)..., repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-4, 5*10^1), xticks = 10.0 .^ (-5:1:2),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
@@ -219,6 +219,10 @@ plot(wp, labels; title = "Robertson benchmark", legend = :top,
 Notably, the error of the second-order methods does not decrease when stricter tolerances are used. We choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(0.5, 0.75)` for comparison with solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
+# select reference MPRK methods
+algs1 = [MPRK22(1.0); MPRK43I(0.5, 0.75)]
+labels1 = ["MPRK22(1.0)"; "MPRK43I(0.5,0.75)"]
+
 # compute work-precision data
 wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
@@ -234,7 +238,6 @@ plot(wp, [labels1; labels2]; title = "Robertson benchmark", legend = :bottomleft
 ```
 
 Here too, some methods show that the error does not decrease even though stricter tolerances are used.
-Interestingly, the `MPRK43I(0.5, 0.75)` is superior to almost all other methods in this comparison. Only `Rodas3()` is preferable when higher accuracy is demanded.
 
 Finally, we compare `MPRK43I(0.5, 0.75)` and `MPRK22(1.0)` to [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 

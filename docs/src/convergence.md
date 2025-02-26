@@ -8,11 +8,11 @@ First, we consider conservative production-destruction systems (PDS). To investi
 
 ```math
 \begin{aligned}
-u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1,\\
-u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2.
+u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1, & u_1(0)&=0.9\\
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2, & u_2(0)&=0.1
 \end{aligned}
 ```
-
+for ``0≤ t≤ 1``.
 The PDS is conservative, since the sum of the right hand side terms equals zero. 
 An implementation of the problem is given next.
 
@@ -24,7 +24,7 @@ using PositiveIntegrators
 P(u, p, t) = [0.0 cos.(π * t) .^ 2 * u[2]; sin.(2 * π * t) .^ 2 * u[1] 0.0]
 prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 1.0))
 
-nothing # hide output
+nothing # hide
 ```
 
 To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances. Since the problem is not stiff we use the high order explicit solver `Vern9()` from [`OrdinaryDiffEq`](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Moreover, we need to choose the different time step sizes which are used to investigate the convergence behavior. 
@@ -117,11 +117,12 @@ In this section we consider the non-autonomous but non-conservative test problem
 
 ```math
 \begin{aligned}
-u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1 - \cos(2\pi t)^2 u_1,\\
-u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2 - \sin(\pi t)^2 u_2.
+u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1 - \cos(2\pi t)^2 u_1, & u_1(0)&=0.9,\\
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2 - \sin(\pi t)^2 u_2, & u_2(0)&=0.1
 \end{aligned}
 ```
 
+for ``0≤ t≤ 1``.
 Since the sum of the right hand side terms don't cancel, the PDS is indeed non-conservative. Hence, we need to use `PDSProblem` for its implementation.
 
 ```@example eoc
