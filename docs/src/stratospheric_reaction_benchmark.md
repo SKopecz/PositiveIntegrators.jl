@@ -65,8 +65,8 @@ First, we show approximations of `Rosenbrock23()` using loose tolerances.
 ref_sol = solve(prob, Rodas4P(); abstol = 1e-12, reltol = 1e-11);
 
 # compute solution with low tolerances
-abstol = 1e-2
-reltol = 1e-1
+abstol = 1e-3
+reltol = 1e-2
 sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol);
 
 # plot solution
@@ -143,7 +143,7 @@ reltols = 10.0 .* abstols
 nothing # hide
 ```
 
-We also note that using MPRK schemes with stricter tolerances, quickly requires more than a million time steps, which makes these schemes inefficient in such situations.
+We also note that MPRK schemes with stricter tolerances, quickly require more than a million time steps, which makes these schemes inefficient in such situations.
 
 First we compare different MPRK schemes. In addition to the default version we also use the schemes with `small_constant = 1e-6`. 
 
@@ -186,11 +186,11 @@ work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref; co
 # plot work-precision diagram
 plot(wp, [labels1; labels2]; title = "Stratospheric reaction benchmark", legend = :bottomleft,     
      color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)...]),
-     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
+     xlims = (10^-8, 10^0), xticks = 10.0 .^ (-8:1:0),
      ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-Wee see that MPRK methods are advantageous if low accuracy is acceptable.
+We see that MPRK methods are advantageous if low accuracy is acceptable.
 
 In addition,  we compare `MPRK22(1.0, small_constant = 1e-6)` and  `MPRK43I(0.5, 0.75)` to some [recommended solvers](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/) of higher order from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Again, to guarantee positive solutions we select the solver option `isoutofdomain = isnegative`.
 
