@@ -30,7 +30,7 @@ nothing # hide
 To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances. Since the problem is not stiff we use the high order explicit solver `Vern9()` from [`OrdinaryDiffEq`](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Moreover, we need to choose the different time step sizes which are used to investigate the convergence behavior. 
 
 ```@example eoc
-using OrdinaryDiffEq
+using OrdinaryDiffEqVerner
 using DiffEqDevTools # load analyticless_test_convergence
 
 # solver and tolerances to compute reference solution
