@@ -28,6 +28,6 @@ docs/contributing.md
 # environment.
 Manifest.toml
 
-run
-run/*
+**/run*
 **/*.code-workspace
+**/*.pb.gz
