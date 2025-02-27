@@ -3,7 +3,8 @@
 Here we use the stiff Robertson problem [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
 ```@example ROBER
-using OrdinaryDiffEq, PositiveIntegrators
+using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using PositiveIntegrators
 
 # select Robertson problem
 prob = prob_pds_robertson

@@ -3,7 +3,8 @@
 We use the stiff stratospheric reaction problem [`prob_pds_stratreac`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
 ```@example stratreac
-using PositiveIntegrators, OrdinaryDiffEq
+using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using PositiveIntegrators
 # select problem
 prob = prob_pds_stratreac
 nothing # hide

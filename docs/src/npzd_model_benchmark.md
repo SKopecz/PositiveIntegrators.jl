@@ -3,7 +3,8 @@
 We use the NPZD model [`prob_pds_npzd`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
 
 ```@example NPZD
-using OrdinaryDiffEqVerner, OrdinaryDiffEqRosenbrock, PositiveIntegrators
+using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
+using PositiveIntegrators
 
 # select NPZD problem
 prob = prob_pds_npzd
