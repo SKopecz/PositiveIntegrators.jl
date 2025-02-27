@@ -24,6 +24,7 @@ on:
       - '.github/workflows/TagBot.yml'
       - 'benchmark/**'
       - 'utils/**'
+      - '.gitignore'
       - 'paper/**'
   workflow_dispatch:
 
