@@ -65,11 +65,12 @@ for i in eachindex(algs2)
 end
 ```
 
-Next, we print a table with the computed data. The table lists the errors obtained with the respective time step size ``Δ t`` as well as the estimated order of convergence in parenthesis.
+Next, we print a table with the computed data.
+The table lists the errors obtained with the respective time step size ``Δ t`` as well as the estimated order of convergence in parentheses.
 
 ```@example eoc
-using Printf # load @sprintf
-using PrettyTables # load pretty_table
+using Printf: @sprintf
+using PrettyTables: pretty_table
 
 # gather data for table
 data = hcat(dts, reduce(hcat,err_eoc))
@@ -81,9 +82,9 @@ pretty_table(data, formatters = formatter, header = ["Δt"; labels2])
 
 The table shows that all schemes converge as expected.
 
-### Third order MPRK schemes
+### Third-order MPRK schemes
 
-In this section, we proceed as above, but consider third order MPRK schemes instead.
+In this section, we proceed as above, but consider third-order MPRK schemes instead.
 
 ```@example eoc
 # select 3rd order schemes
@@ -92,7 +93,7 @@ algs3 = [MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.
 labels3 = ["MPRK43I(1.0,0.5)"; "MPRK43I(0.5, 0.75)"; "MPRK43II(0.5)"; "MPRK43II(2.0/3.0)";
           "SSPMPRK43()"]
 
-#compute errors and experimental order of convergence
+# compute errors and experimental order of convergence
 err_eoc = []
 for i in eachindex(algs3)
      sim = analyticless_test_convergence(dts, prob, algs3[i], test_setup)
@@ -120,12 +121,13 @@ In this section we consider the non-autonomous but non-conservative test problem
 ```math
 \begin{aligned}
 u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1 - \cos(2\pi t)^2 u_1, & u_1(0)&=0.9,\\
-u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2 - \sin(\pi t)^2 u_2, & u_2(0)&=0.1
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2 - \sin(\pi t)^2 u_2, & u_2(0)&=0.1,
 \end{aligned}
 ```
 
 for ``0≤ t≤ 1``.
-Since the sum of the right hand side terms don't cancel, the PDS is indeed non-conservative. Hence, we need to use `PDSProblem` for its implementation.
+Since the sum of the right-hand side terms does not cancel, the PDS is indeed non-conservative.
+Hence, we need to use [`PDSProblem`](@ref) for its implementation.
 
 ```@example eoc
 # choose problem
@@ -138,10 +140,10 @@ nothing # hide
 
 The following sections will show that the selected MPRK schemes show the expected convergence order also for this non-conservative PDS.
 
-### Second order MPRK schemes
+### Second-order MPRK schemes
 
 ```@example eoc
-#compute errors and experimental order of convergence
+# compute errors and experimental order of convergence
 err_eoc = []
 for i in eachindex(algs2)
      sim = analyticless_test_convergence(dts, prob, algs2[i], test_setup)
@@ -160,10 +162,10 @@ formatter = (v, i, j) ->  (j>1) ? (@sprintf "%5.2e (%4.2f) " v[1] v[2]) : (@spri
 pretty_table(data, formatters = formatter, header = ["Δt"; labels2])                  
 ```
 
-### Third order MPRK schemes
+### Third-order MPRK schemes
 
 ```@example eoc
-#compute errors and experimental order of convergence
+# compute errors and experimental order of convergence
 err_eoc = []
 for i in eachindex(algs3)
      sim = analyticless_test_convergence(dts, prob, algs3[i], test_setup)

@@ -51,7 +51,7 @@ isnonnegative(args...) = !isnegative(args...)
 """
     rel_max_error_tend(sol, ref_sol)
 
-Returns the relative maximum error between sol and ref_sol at time `sol.t[end]`.   
+Returns the relative maximum error between `sol` and `ref_sol` at time `sol.t[end]`.   
 """
 function rel_max_error_tend(sol, ref_sol)
     return maximum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end]))
@@ -60,7 +60,7 @@ end
 """
     rel_max_error_overall(sol, ref_sol)
 
-Returns the maximum of the relative maximum errors between sol and ref_sol over all time steps.    
+Returns the maximum of the relative maximum errors between `sol` and `ref_sol` over all time steps.    
 """
 function rel_max_error_overall(sol, ref_sol)
     err = zero(eltype(eltype(sol)))
@@ -76,7 +76,7 @@ end
 """
     rel_l1_error_tend(sol, ref_sol)
 
-Returns the relative l1 error between sol and ref_sol at time `sol.t[end]`.   
+Returns the relative l1 error between `sol` and `ref_sol` at time `sol.t[end]`.   
 """
 function rel_l1_error_tend(sol, ref_sol)
     return sum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end])) / length(ref_sol[end])
@@ -88,7 +88,7 @@ end
 Returns the relative l2 error between `sol` and `ref_sol` at time `sol.t[end]`.   
 """
 function rel_l2_error_tend(sol, ref_sol)
-    return sqrt(sum(((sol[end] .- ref_sol[end]) ./ ref_sol[end]) .^ 2) /
+    return sqrt(sum(abs2.((sol[end] .- ref_sol[end]) ./ ref_sol[end])) /
                 length(ref_sol[end]))
 end
 
