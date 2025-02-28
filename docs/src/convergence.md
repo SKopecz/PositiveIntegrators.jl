@@ -44,7 +44,7 @@ dts = 0.5 .^ (5:10)
 nothing # hide
 ```
 
-### Second order MPRK schemes
+### Second-order MPRK schemes
 
 First, we test several second order MPRK schemes.
 
