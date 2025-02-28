@@ -1,6 +1,6 @@
 # [Experimental convergence order of MPRK schemes](@id convergence_mprk)
 
-In this tutorial we check that the implemented MPRK schemes have the expected order of convergence. 
+In this tutorial, we check that the implemented MPRK schemes have the expected order of convergence. 
 
 ## Conservative production-destruction systems
 
