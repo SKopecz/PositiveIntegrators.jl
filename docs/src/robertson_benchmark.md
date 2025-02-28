@@ -16,7 +16,7 @@ To keep the following code as clear as possible, we define a helper function `ro
 ```@example ROBER
 using Plots
 
-robertson_plot = function (sol, sol_ref = nothing, title = "")
+function robertson_plot(sol, sol_ref = nothing, title = "")
     colors = palette(:default)[1:3]'
     if !isnothing(sol_ref)
         p = plot(sol_ref, tspan = (1e-6, 1e11), xaxis = :log,
@@ -26,13 +26,13 @@ robertson_plot = function (sol, sol_ref = nothing, title = "")
               markers = :circle, ylims = (-0.2, 1.2),
               idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)],
               title, xticks = 10.0 .^ (-6:4:10), color = colors,
-              linewidht = 2, legend = :right, label = ["u₁" "u₂" "u₃"])
+              linewidht = 2, legend = :right, label = ["u₁" "10⁴ u₂" "u₃"])
     else
         p = plot(sol; tspan = (1e-6, 1e11), xaxis = :log, denseplot = false,
                  markers = :circle, ylims = (-0.2, 1.2),
                  idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)],
                  title, xticks = 10.0 .^ (-6:4:10), color = colors,
-                 linewidht = 2, legend = :right, label = ["u₁" "u₂" "u₃"])
+                 linewidht = 2, legend = :right, label = ["u₁" "10⁴ u₂" "u₃"])
     end
     return p
 end
@@ -72,7 +72,8 @@ robertson_plot(sol_Ros23, ref_sol, "Rosenbrock23")
 In the following we show several work-precision diagrams, which compare different methods with respect to computing time and the respective error. 
 We focus solely on adaptive methods, since the time interval ``(0, 10^{11})`` is too large to generate accurate solutions with fixed step sizes.
 
-Since the Robertson problem is stiff, we need to use a suited implicit scheme to compute a reference solution, see the [solver guide](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/#Stiff-Problems). Note that we cannot use the recommended method `radau()`, since [`prob_pds_robertson`](@ref) uses [StaticArrays](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of arrays of type `Float64`.
+Since the Robertson problem is stiff, we need to use a suited implicit scheme to compute a reference solution, see the [solver guide](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/#Stiff-Problems).
+Note that we cannot use the recommended method `radau()`, since [`prob_pds_robertson`](@ref) uses [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of standard `Array`s.
 
 ```@example ROBER
 # select solver to compute reference solution
@@ -119,8 +120,8 @@ plot(wp, labels; title = "Robertson benchmark", legend = :topright,
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-We see that the second and third order schemes perform very similar, with the exception of `MPRK22(0.5)`.
-This superior performance of `MPRK22(0.5)` cannot be seen in other benchmarks is therefore an exception here.
+We see that the second- and third-order schemes perform very similar, except for `MPRK22(0.5)`.
+This superior performance of `MPRK22(0.5)` cannot be seen in other benchmarks; it is, therefore, an exception here.
 
 The scheme `SSPMPRK22(0.5, 1.0)` has not been considered above, since it generates oscillatory solutions.
 
@@ -131,7 +132,7 @@ sol1 = solve(prob, SSPMPRK22(0.5, 1.0), abstol=1e-5, reltol = 1e-4);
 robertson_plot(sol1, ref_sol, "SSPMPRK22(0.5, 1.0)")
 ```
 
-For comparisons with schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order schemes `MPRK22(0.5)` and `MPRK22(1.0)` as well as the third order scheme `MPRK43I(0.5, 0.75)`.
+For comparisons with schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/), we choose the second-order schemes `MPRK22(0.5)` and `MPRK22(1.0)` as well as the third-order scheme `MPRK43I(0.5, 0.75)`.
 
 ```@example ROBER
 sol_MPRK22_½ = solve(prob, MPRK22(0.5); abstol, reltol)
@@ -144,7 +145,7 @@ p3 = robertson_plot(sol_MPRK43, ref_sol, "MPRK43I(0.5, 0.75)");
 plot(p1, p2, p3)
 ```
 
-Now we compare these three schemes with a selection of second and third order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions, we use the solver option `isoutofdomain = isnegative`.
+Now we compare these three schemes with a selection of second- and third-order stiff solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions, we use the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # select reference MPRK methods
@@ -217,7 +218,9 @@ plot(wp, labels; title = "Robertson benchmark", legend = :top,
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-Notably, the error of the second-order methods does not decrease when stricter tolerances are used. We choose the second order scheme `MPRK22(1.0)` and the third order scheme `MPRK43I(0.5, 0.75)` for comparison with solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
+Notably, the error of the second-order methods does not decrease when stricter tolerances are used.
+We choose the second-order scheme `MPRK22(1.0)` and the third-order scheme `MPRK43I(0.5, 0.75)` for comparison with solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+To guarantee nonnegative solutions of these methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example ROBER
 # select reference MPRK methods
@@ -266,7 +269,9 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve",
+            "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock",
+            "OrdinaryDiffEqSDIRK"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```

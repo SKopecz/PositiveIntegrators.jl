@@ -33,7 +33,7 @@ Moreover, we choose time step sizes to investigate the convergence behavior.
 
 ```@example eoc
 using OrdinaryDiffEqVerner
-using DiffEqDevTools # load analyticless_test_convergence
+using DiffEqDevTools: analyticless_test_convergence
 
 # solver and tolerances to compute reference solution
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
@@ -46,14 +46,14 @@ nothing # hide
 
 ### Second-order MPRK schemes
 
-First, we test several second order MPRK schemes.
+First, we test several second-order MPRK schemes.
 
 ```@example eoc
 # select schemes
 algs2 = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0)]
 labels2 = ["MPRK22(0.5)"; "MPRK22(2.0/3.0)"; "MPRK22(1.0)"; "SSPMPRK22(0.5, 1.0)"]
 
-#compute errors and experimental order of convergence
+# compute errors and experimental order of convergence
 err_eoc = []
 for i in eachindex(algs2)
      sim = analyticless_test_convergence(dts, prob, algs2[i], test_setup)
