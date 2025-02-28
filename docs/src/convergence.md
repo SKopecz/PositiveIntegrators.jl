@@ -4,7 +4,7 @@ In this tutorial, we check that the implemented MPRK schemes have the expected o
 
 ## Conservative production-destruction systems
 
-First, we consider conservative production-destruction systems (PDS). To investigate the convergence order we define the non-autonomous test problem 
+First, we consider conservative production-destruction systems (PDS). To investigate the convergence order, we define the non-autonomous test problem 
 
 ```math
 \begin{aligned}
