@@ -91,7 +91,7 @@ sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol,
 stratreac_plot(sol_Ros23,  "Ros23", ref_sol)
 ```
 
-For this problem the use of adaptive MPRK schemes with loose tolerances will generally result in poor approximations. In particular with respect to the O₂ component.
+For this problem, using adaptive MPRK schemes with loose tolerances will generally lead to poor approximations, particularly regarding the O₂ component.
 
 ```@example stratreac
 sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
@@ -168,7 +168,8 @@ plot(wp, labels; title = "Stratospheric reaction benchmark", legend = :bottomlef
 ```
 
 We see that using `small_constant = 1e-6` clearly improves the performance of most methods. 
-For comparisons with other second and third order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second order scheme `MPRK22(1.0, small_constant = 1e-6)` and the third order scheme `MPRK43I(0.5, 0.75)`. To guarantee positive solutions of the [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) methods, we select the solver option `isoutofdomain = isnegative`.
+For comparisons with other second- and third-order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) we choose the second-order scheme `MPRK22(1.0, small_constant = 1e-6)` and the third-order scheme `MPRK43I(0.5, 0.75)`.
+To guarantee positive solutions of the [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) methods, we select the solver option `isoutofdomain = isnegative`.
 
 ```@example stratreac
 # select reference MPRK methods
@@ -294,7 +295,9 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
-           mode=PKGMODE_MANIFEST)
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve",
+            "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock",
+            "OrdinaryDiffEqSDIRK"],
+           mode = PKGMODE_MANIFEST)
 nothing # hide
 ```
