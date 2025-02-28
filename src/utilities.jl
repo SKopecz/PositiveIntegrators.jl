@@ -273,7 +273,7 @@ Additional keyword arguments are passed on to `solve`.
 - `reltol_ref`: See `adaptive_ref`.
 - `compute_error(sol::ODESolution, ref_sol::ODESolution)`: A function to compute the error between `sol` and `ref_sol`.
 - `seconds`: If the measured computing time of a single solve is larger than `seconds`, then this computing time is stored in the dictionary.
-- `numruns`: If the measured computing time of a single solve is less or equal to `seconds`, then `numruns` solves are performed and the median of the respective computing times is stored in the dictionary.
+- `numruns`: If the measured computing time of a single solve is less than or equal to `seconds`, then `numruns` solves are performed and the median of the respective computing times is stored in the dictionary.
 """
 function work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                                  adaptive_ref = false,
