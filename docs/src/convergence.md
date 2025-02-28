@@ -8,8 +8,8 @@ First, we consider conservative production-destruction systems (PDS). To investi
 
 ```math
 \begin{aligned}
-u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1, & u_1(0)&=0.9\\
-u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2, & u_2(0)&=0.1
+u_1' &= \cos(\pi t)^2 u_2 - \sin(2\pi t)^2 u_1, & u_1(0)&=0.9, \\
+u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2, & u_2(0)&=0.1,
 \end{aligned}
 ```
 for ``0≤ t≤ 1``.
