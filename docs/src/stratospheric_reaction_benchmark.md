@@ -230,28 +230,22 @@ dts = dt0 ./ 2.0 .^ (0:1:10)
 nothing # hide
 ```
 
-Other than for adaptive schemes increasing `small_constant` has no positive effect, as the following examples show.
+In contrast to the adaptive methods, increasing `small_constant` does not have a positive effect on accuracy, but actually worsens it.
+To demonstrate this we compare the default version of `MPRK22(1.0)` to versions with `small_constant = 1e-6` and `small_constant = 1e-100`.
 
 ```@example stratreac
 # solve prob with large step size
 sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
+sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-6); dt = dt0, adaptive = false)
+sol3 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
 
 # plot solution
 stratreac_plot(sol1, "MPRK22(1.0)", ref_sol)
+stratreac_plot(sol2, "MPRK22(1.0, sc=1e-6)", ref_sol)
+stratreac_plot(sol3, "MPRK22(1.0, sc=1e-100)", ref_sol)
 ```
 
-Choosing `small_constant = 1e-100` gives poorer results.
-
-```@example stratreac
-# solve prob with large step size and slightly increased small_constant
-sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
-
-# plot solution
-stratreac_plot(sol2, "MPRK22(1.0)", ref_sol)
-```
-
-Increasing `small_constant` only a little bit, already results in worse solutions.
-For this reason we will only consider schemes with default values of `small_constant`.
+Based on the above comparison, we will only consider schemes in which `small_constant` is set to the default value in the following.
 
 ```@example stratreac
 # select schemes
