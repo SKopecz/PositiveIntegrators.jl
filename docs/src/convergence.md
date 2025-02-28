@@ -13,7 +13,7 @@ u_2' & = \sin(2\pi t)^2 u_1 - \cos(\pi t)^2 u_2, & u_2(0)&=0.1,
 \end{aligned}
 ```
 for ``0≤ t≤ 1``.
-The PDS is conservative, since the sum of the right hand side terms equals zero. 
+The PDS is conservative since the sum of the right-hand side terms equals zero. 
 An implementation of the problem is given next.
 
 
