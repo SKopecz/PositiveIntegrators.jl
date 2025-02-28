@@ -27,7 +27,9 @@ prob = ConservativePDSProblem(P, [0.9; 0.1], (0.0, 1.0))
 nothing # hide
 ```
 
-To use `analyticless_test_convergence` from [`DiffEqDevTools`](https://github.com/SciML/DiffEqDevTools.jl) we need to pick a solver to compute the reference solution and specify tolerances. Since the problem is not stiff we use the high order explicit solver `Vern9()` from [`OrdinaryDiffEq`](https://docs.sciml.ai/OrdinaryDiffEq/stable/). Moreover, we need to choose the different time step sizes which are used to investigate the convergence behavior. 
+To use `analyticless_test_convergence` from [DiffEqDevTools.jl](https://github.com/SciML/DiffEqDevTools.jl), we need to pick a solver to compute the reference solution and specify tolerances.
+Since the problem is not stiff, we use the high-order explicit solver `Vern9()` from [OrdinaryDiffEqVerner.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+Moreover, we choose time step sizes to investigate the convergence behavior. 
 
 ```@example eoc
 using OrdinaryDiffEqVerner
