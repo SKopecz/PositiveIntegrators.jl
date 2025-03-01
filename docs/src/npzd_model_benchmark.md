@@ -16,18 +16,18 @@ To keep the following code as clear as possible, we define a helper function `np
 ```@example NPZD
 using Plots
 
-npzd_plot = function(sol, sol_ref = nothing, title = "")
+function npzd_plot(sol, sol_ref = nothing, title = "")
      colors = palette(:default)[1:4]'
      if !isnothing(sol_ref)
           p = plot(sol_ref, linestyle = :dash, label = "", color = colors, 
-          linewidth = 2)
+                   linewidth = 2)
           plot!(p, sol; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
-          color = colors, title, label = ["N" "P" "Z" "D"], legend = :right,
-          linewidth = 2);
+                color = colors, title, label = ["N" "P" "Z" "D"], legend = :right,
+                linewidth = 2);
      else
           p = plot(sol; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
-          color = colors, title, label = ["N" "P" "Z" "D"], legend = :right, 
-          linewidths = 2);
+                   color = colors, title, label = ["N" "P" "Z" "D"], legend = :right, 
+                   linewidths = 2);
      end
      return p
 end
@@ -35,8 +35,8 @@ nothing  # hide
 ```
 
 Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes.
-The reason for this is that there is only a tiny margin for negative values in ``N``. 
-In most cases negative values of ``N``, will directly lead to a further decrease in ``N`` and thus completely inaccurate solutions.  
+This is because the first variable, ``N``, has only a tiny margin for negative values. 
+In most cases, negative values of ``N``will directly decrease ``N``further, resulting in completely inaccurate solutions.  
 
 ```@example NPZD
 # compute reference solution for plotting
@@ -65,8 +65,7 @@ npzd_plot(sol_Ros23, ref_sol) #auxiliary function defined above
 
 ## Work-Precision diagrams
 
-In the following sections we show several work-precision diagrams, which compare different methods with respect to computing time and error. 
-First we focus on adaptive methods, afterwards we also show results obtained with fixed time step sizes.
+In the following sections, we present several work-precision diagrams that compare various methods in terms of computing time and error. First, we focus on adaptive methods; afterward, we also display resultsixed time step sizes. obtained with f
 
 Since the NPZD problem is not stiff, we can use an explicit high-order scheme to compute a reference solution.
 
@@ -180,7 +179,7 @@ plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
 ```
 
-We see that it is advisable to use a high order explicit method like `Vern7()` with `isoutofdomain = isnegative` to obtain nonnegative solutions of such a non-stiff problem.
+We see that it is advisable to use a high-order explicit method like `Vern7()` or Rosenbrock methods like `Rodas4P()` with `isoutofdomain = isnegative` to obtain nonnegative solutions of such a non-stiff problem.
 
 #### Relative maximum error over all time steps
 
@@ -238,7 +237,7 @@ plot(wp, [labels1; labels3]; title = "NPZD benchmark", legend = :topright,
      ylims = (10^-6, 10^0), yticks = 10.0 .^ (-6:1:0), minorticks = 10)
 ```
 
-### Fixed time steps sizes
+### Fixed time step sizes
 
 Here we use fixed time step sizes instead of adaptive time stepping. 
 Similar to the adaptive situation above, standard schemes are likely to compute negative solutions for the NPZD problem. 
@@ -284,7 +283,7 @@ labels = ["MPE()"; labels; "SSPMPRK43"]
 
 # compute work-precision data
 wp = work_precision_fixed(prob, algs, labels, dts, alg_ref;
-                               compute_error)
+                          compute_error)
 
 # plot work-precision diagram
 plot(wp, labels; title = "NPZD benchmark", legend = :bottomleft,     
@@ -294,7 +293,7 @@ plot(wp, labels; title = "NPZD benchmark", legend = :bottomleft,
 ```
 
 Apart from `MPE()` the schemes behave very similar and a difference in order can only be observed for the smaller step sizes. 
-We choose `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` for comparisons with other second and third order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+We choose `MPRK22(1.0)` and `MPRK43I(1.0, 0.5)` for comparisons with other second- and third-order schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 ```@example NPZD
 # compute work-precision data
@@ -388,7 +387,10 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve", "OrdinaryDiffEq"],
-           mode=PKGMODE_MANIFEST)
+Pkg.status(["PositiveIntegrators", "StaticArrays", "LinearSolve",
+            "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqSDIRK",
+            "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5",
+            "OrdinaryDiffEqVerner"],
+           mode = PKGMODE_MANIFEST)
 nothing # hide
 ```
