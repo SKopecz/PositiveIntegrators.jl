@@ -240,9 +240,21 @@ sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
 sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-6); dt = dt0, adaptive = false)
 sol3 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
 
+
+```@example stratreac
+# solve prob with large step size
+sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
 # plot solution
 stratreac_plot(sol1, "MPRK22(1.0)", ref_sol)
+```
+
+```@example stratreac
+sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-6); dt = dt0, adaptive = false)
 stratreac_plot(sol2, "MPRK22(1.0, sc=1e-6)", ref_sol)
+```
+
+```@example stratreac
+sol3 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
 stratreac_plot(sol3, "MPRK22(1.0, sc=1e-100)", ref_sol)
 ```
 
