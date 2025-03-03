@@ -43,20 +43,15 @@ TODO
 
 # Related research and software
 
+The first order scheme `MPE` together with the first second order MPRK scheme were introduced in @burchard2003. Based on these, the family of `MPRK22` schemes was developed in @kopeczmeister2018order2. This also lead to the introduction of the `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
+
+All aforementioned schemes were derived from the classical formulation of Runge-Kutta schemes. Using the Shu-Osher formulation instead lead to the introduction of the second order schemes `SSPMPR22` in @huang2019order2 and the third order scheme `SSMPRK43` in @huang2019order3.
+
+The implemented schemes were originally introduced only for conservative production-destruction systems. An extension to non-conservative production-destrucion-systems was presented in @benzmeister2015. We implemented a modification of the algorithm suggested in @benzmeister2015, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
+
+Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the following papers: @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023
+
 TODO
-
-@burchard2003
-@kopeczmeister2018order2
-@kopeczmeister2018order3
-@huang2019order2
-@huang2019order3
-@benzmeister2015
-
-@kopeczmeister2019
-@izgin2022stability1
-@izgin2022stability2
-@huang2023
-@torlo2022
 
 @bartel2024structure
 
