@@ -37,7 +37,7 @@ The application of MPRK schemes requires the ODE system to be represented as a p
 ```math
     u_i'(t) = \sum_{j=1}^N \bigl(p_{ij}(t,\boldsymbol u) - d_{ij}(t,\boldsymbol u)\bigr),\quad i=1,\dots,N,
 ```
-where ``\boldsymbol u=(u_1,\dots,u_n)^T`` is the vector of unknowns and both production terms ``p_{ij}(t,\boldsymbol u)`` and destruction terms ``d_{ij}(t,\boldsymbol u)`` must be nonnegative for all ``i,j=1,\dots,N``. The meaning behind ``p_{ij}`` and ``d_{ij}`` is as follows:
+where ``\boldsymbol u=(u_1,\dots,u_N)^T`` is the vector of unknowns and both production terms ``p_{ij}(t,\boldsymbol u)`` and destruction terms ``d_{ij}(t,\boldsymbol u)`` must be nonnegative for all ``i,j=1,\dots,N``. The meaning behind ``p_{ij}`` and ``d_{ij}`` is as follows:
 * ``p_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which
   appear in equation ``i`` with a positive sign and in equation ``j`` with a negative sign.
 * ``d_{ij}`` with ``i\ne j`` represents the sum of all nonnegative terms which
