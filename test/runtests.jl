@@ -218,9 +218,9 @@ end
         # The persistent_tasks test fails in the Downgrade CI
         # action but not in regular CI - we just skip it there.
         if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
-            persistent_tasks = true
-        else
             persistent_tasks = false
+        else
+            persistent_tasks = true
         end
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,
