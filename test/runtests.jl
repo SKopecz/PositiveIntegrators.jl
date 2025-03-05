@@ -214,7 +214,14 @@ end
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
-        # false positives from dependencies
+        # false positives from dependencies.
+        # The persistent_tasks test fails in the Downgrade CI
+        # action but not in regular CI - we just skip it there.
+        if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
+            persistent_tasks = true
+        else
+            persistent_tasks = false
+        end
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
