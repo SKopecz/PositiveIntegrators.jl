@@ -20,7 +20,7 @@ and this idea can easily be generalized to higher order explicit Runge-Kutta sch
 By closer inspection we realize that this is exactly the approach the MPRK schemes of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) use to solve non-conservative PDS for which the production matrix is diagonal. 
 Hence, we can use the existing schemes to solve a scalar PDS by regarding the production term as a ``1x1``-matrix and the destruction term as a ``1``-vector.
 
-# Example 1 (id example-1)
+# [Example 1](@id example-1)
 
 Here, we want to solve
 
