@@ -225,7 +225,7 @@ end
         Aqua.test_all(PositiveIntegrators;
                       ambiguities = false,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
-                      persistent_tasks = (; tmax = 30,),)
+                      persistent_tasks = persistent_tasks,)
     end
 
     @testset "ExplicitImports.jl" begin
