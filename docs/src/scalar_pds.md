@@ -107,9 +107,9 @@ sol = solve(prob, Rosenbrock23(); isoutofdomain = (u, p, t) -> any(<(0), u))
 We see that `isoutofdomain` cannot be used to ensure nonnegative solutions in this case, as the computation stops at about ``t≈ 2`` before the desired final time is reached. 
 For at least first- and second-order explicit Runge-Kutta schemes, this can also be shown analytically. A brief computation reveals that to ensure nonnegative solutions, the time step size must tend to zero if the numerical solution tends to zero.
 
-Next, we want try to use an MPRK scheme. 
-We can choose ``p(u)=0`` as production term and ``d(u)=\sqrt{\lvert u\rvert }`` as destruction term. 
-Furthermore, we create the [`PDSProblem`](@ref) in the same way as in [Example 1](@ref example-1).
+Next, we want to use an MPRK scheme. 
+We can choose ``p(u)=0`` as the production term and ``d(u)=\sqrt{\lvert u\rvert }`` as the destruction term. 
+Furthermore, we create the [`PDSProblem`](@ref) in the same way as in [Example 1](@ref scalar-example-1).
 
 ```@example
 using PositiveIntegrators, StaticArrays, Plots
