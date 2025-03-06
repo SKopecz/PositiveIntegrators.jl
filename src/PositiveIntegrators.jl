@@ -2,6 +2,8 @@ module PositiveIntegrators
 
 # 1. Load dependencies
 using LinearAlgebra: LinearAlgebra, Tridiagonal, I, diag, mul!
+using Statistics: median
+
 using SparseArrays: SparseArrays, AbstractSparseMatrix,
                     issparse, nonzeros, nzrange, rowvals, spdiagm
 using StaticArrays: SVector, SMatrix, StaticArray, @SVector, @SMatrix
@@ -38,6 +40,8 @@ import OrdinaryDiffEqCore: alg_order, isfsal,
                            _ode_interpolant, _ode_interpolant!,
                            get_fsalfirstlast
 
+using RecipesBase: @recipe
+
 # 2. Export functionality defining the public API
 export PDSFunction, PDSProblem
 export ConservativePDSFunction, ConservativePDSProblem
@@ -50,6 +54,9 @@ export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_bertolazzi, prob_pds_npzd, prob_pds_stratreac, prob_pds_minmapk
 
 export isnegative, isnonnegative
+export work_precision_adaptive, work_precision_adaptive!, work_precision_fixed,
+       work_precision_fixed!
+export rel_max_error_overall, rel_max_error_tend, rel_l1_error_tend, rel_l2_error_tend
 
 # 3. Load source code
 

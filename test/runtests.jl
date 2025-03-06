@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using SparseArrays
-using Statistics: mean
+using Statistics: mean, median
 
 using StaticArrays: MVector, @SVector, SA
 
@@ -9,15 +9,16 @@ using Unitful: @u_str, ustrip
 
 using ADTypes
 using OrdinaryDiffEqLowOrderRK: Euler
-using OrdinaryDiffEqRosenbrock: Rosenbrock23
+using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas4P
 using OrdinaryDiffEqSDIRK: ImplicitEuler, SDIRK2, TRBDF2
 using OrdinaryDiffEqTsit5: Tsit5
-using OrdinaryDiffEqVerner: Vern9
+using OrdinaryDiffEqVerner: Vern7, Vern9
 using PositiveIntegrators
 
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
+using RecipesBase: RecipesBase # only for Aqua tests
 using ExplicitImports: check_no_implicit_imports, check_no_stale_explicit_imports
 
 """
@@ -213,9 +214,18 @@ end
 @testset "PositiveIntegrators.jl tests" begin
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
-        # false positives from dependencies
+        # false positives from dependencies.
+        # The persistent_tasks test fails in the Downgrade CI
+        # action but not in regular CI - we just skip it there.
+        if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
+            persistent_tasks = false
+        else
+            persistent_tasks = true
+        end
         Aqua.test_all(PositiveIntegrators;
-                      ambiguities = false,)
+                      ambiguities = false,
+                      piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
+                      persistent_tasks = persistent_tasks,)
     end
 
     @testset "ExplicitImports.jl" begin
@@ -2221,8 +2231,19 @@ end
 
     @testset "plot" begin
         using Plots
+
+        # plot ode solution
         sol = solve(prob_pds_linmod, MPRK22(1.0))
         @test_nowarn plot(sol)
+
+        # plot work-precision diagram
+        prob = prob_pds_nonlinmod
+        algs = [MPE(); MPRK22(1.0)]
+        labels = ["MPE"; "MPRK"]
+        dts = [0.1; 0.01; 0.001]
+        alg_ref = Vern7()
+        wp = work_precision_fixed(prob, algs, labels, dts, alg_ref)
+        @test_nowarn plot(wp, labels; minorticks = 10)
     end
 
     @testset "utilities" begin
@@ -2240,6 +2261,120 @@ end
             @test isnegative(sol_bruss)
             @test isnegative(sol_bruss.u)
             @test isnegative(last(sol_bruss.u))
+        end
+
+        @testset "errors" begin
+            v = [[1.0; 2.0; 3.0], [4.0; 5.0; 6.0]]
+            w = [[8.0; 10.0; 12.0], [2.0; 4.0; 6.0]]
+
+            @test rel_max_error_tend(v, w) == 1.0
+            @test rel_l1_error_tend(v, w) == 1.25 / 3
+            @test rel_l2_error_tend(v, w) == sqrt(1.0625 / 3)
+            @test rel_max_error_overall(w, v) == 7.0
+        end
+
+        # Here we run a single scheme multiple times and check
+        # that the errors are identical and that the computing times 
+        # differ only slightly.
+        @testset "work-precision fixed" begin
+            prob = prob_pds_nonlinmod
+            alg = MPRK22(1.0)
+            algs = [alg; alg; alg; alg; alg]
+            labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+            labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+            dts = (last(prob.tspan) - first(prob.tspan)) / 10.0 * 0.5 .^ (4:13)
+            alg_ref = Vern7()
+            wp = work_precision_fixed(prob, [alg; alg; alg; alg; alg], labelsA, dts,
+                                      alg_ref)
+            work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
+                                  alg_ref)
+
+            # check that errors agree
+            for (i, _) in enumerate(dts)
+                v = [value[i][1] for (key, value) in wp]
+                @test all(y -> y == v[1], v)
+            end
+
+            # check that computing times are close enough 
+            for (i, _) in enumerate(dts)
+                v = [value[i][2] for (key, value) in wp]
+                m1 = mean(v)
+                # This test allows computing times that are
+                # 2.5 times the mean value. In a loglog plot these
+                # differences won't be significant.
+                @test maximum((v .- m1) ./ m1) < 1.5
+            end
+        end
+
+        # Here we run a single scheme multiple times and check
+        # that the errors are identical and that the computing times 
+        # differ only slightly.
+        @testset "work-precision adaptive" begin
+            @testset "adatpive_ref = false" begin
+                prob = prob_pds_nonlinmod
+                alg = MPRK22(1.0)
+                algs = [alg; alg; alg; alg; alg]
+                labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+                labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+                abstols = 1 ./ 10 .^ (4:8)
+                reltols = 1 ./ 10 .^ (3:7)
+                alg_ref = Vern7()
+                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
+                                             abstols,
+                                             reltols, alg_ref)
+                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
+                                         abstols,
+                                         reltols, alg_ref)
+
+                # check that errors agree
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][1] for (key, value) in wp]
+                    @test all(y -> y == v[1], v)
+                end
+
+                # check that computing times are close enough 
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][2] for (key, value) in wp]
+                    m1 = mean(v)
+                    # This test allows computing times that are
+                    # 2.5 times the mean value. In a loglog plot these
+                    # differences won't be significant.        
+                    @test maximum((v .- m1) ./ m1) < 1.5
+                end
+            end
+
+            @testset "adatpive_ref = true" begin
+                prob = prob_pds_robertson
+                alg = MPRK22(1.0)
+                algs = [alg; alg; alg; alg; alg]
+                labelsA = ["A_1"; "A_2"; "A_3"; "A_4"; "A_5"]
+                labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
+                abstols = 1 ./ 10 .^ (4:8)
+                reltols = 1 ./ 10 .^ (3:7)
+                alg_ref = Rodas4P()
+                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
+                                             abstols,
+                                             reltols, alg_ref; adaptive_ref = true)
+                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
+                                         abstols,
+                                         reltols, alg_ref; adaptive_ref = true)
+
+                # check that errors agree
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][1] for (key, value) in wp]
+                    @test all(y -> y == v[1], v)
+                end
+
+                # check that computing times are close enough 
+                for (i, _) in enumerate(abstols)
+                    v = [value[i][2] for (key, value) in wp]
+                    m1 = mean(v)
+                    # This test allows computing times that are
+                    # 2.5 times the mean value. In a loglog plot these
+                    # differences won't be significant.        
+                    @test maximum((v .- m1) ./ m1) < 1.5
+                end
+            end
         end
     end
 end;

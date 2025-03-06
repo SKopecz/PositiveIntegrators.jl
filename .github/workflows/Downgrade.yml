@@ -51,3 +51,4 @@ jobs:
         env:
           PYTHON: ""
           GKSwstype: "100" # for Plots/GR
+          POSITIVEINTEGRATORS_DOWNGRADE_CI: "true"
