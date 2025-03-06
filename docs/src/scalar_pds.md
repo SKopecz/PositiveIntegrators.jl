@@ -107,7 +107,9 @@ sol = solve(prob, Rosenbrock23(); isoutofdomain = (u, p, t) -> any(<(0), u))
 We see that `isoutofdomain` cannot be used to ensure nonnegative solutions in this case, as the computation stops at about ``t≈ 2`` before the desired final time is reached. 
 At least for first and second order explicit Runge-Kutta schemes this can also be shown analytically. A short computation reveals that to ensure nonnegative solutions the time step size must tend to zero if the numerical solution tends to zero. 
 
-Next, we want try to use an MPRK scheme. We can choose ``p(u)=0`` as production term and ``d(u)=\sqrt{\lvert u\rvert }`` as destruction term. Furthermore, we proceed as in [Example 1](@ref example-1).
+Next, we want try to use an MPRK scheme. 
+We can choose ``p(u)=0`` as production term and ``d(u)=\sqrt{\lvert u\rvert }`` as destruction term. 
+Furthermore, we create the [`PDSProblem`](@ref) in the same way as in [Example 1](@ref example-1).
 
 ```@example
 using PositiveIntegrators, StaticArrays, Plots
@@ -128,7 +130,7 @@ plot(tt, f(tt), label="exact")
 plot!(sol, label="u")
 ```
 
-We see that the used MPRK scheme is well suited to solve the problem. 
+We see that `MPRK22(1.0)` is well suited to solve the problem. The same is true for the other MPRK schemes.
 
 
 ## Package versions
@@ -140,7 +142,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "SparseArrays"],
+Pkg.status(["OrdinaryDiffEqRosenbrock", "PositiveIntegrators", "SparseArrays"],
            mode=PKGMODE_MANIFEST)
 nothing # hide
 ```
