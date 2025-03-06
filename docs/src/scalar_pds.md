@@ -142,7 +142,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["PositiveIntegrators", "Staticrrays", "OrdinaryDiffEqRosenbrock"],
+Pkg.status(["PositiveIntegrators", "StaticArrays", "OrdinaryDiffEqRosenbrock"],
            mode = PKGMODE_MANIFEST)
 nothing # hide
 ```
