@@ -1,26 +1,26 @@
-# [Tutorial: Solving scalar production-destruction systems with MPRK schemes](@id tutorial-scalar-pds)
+# [Tutorial: Solving a scalar production-destruction equation with MPRK schemes](@id tutorial-scalar-pds)
 
 Originally, modified Patankar-Runge-Kutta (MPRK) schemes were designed to solve positive and conservative systems of ordinary differential equations.
 The conservation property requires that the system consists of at least two scalar differential equations. 
-Nevertheless, we can also apply the idea of the Patankar-trick to a scalar production-destruction system (PDS)
+Nevertheless, we can also apply the idea of the Patankar trick to a scalar production-destruction system (PDS)
 
 ```math
 u'(t)=p(u(t))-d(u(t)),\quad u(0)=u_0>0
 ```
 
 with nonnegative functions ``p`` and ``d``.
-Since conservation is not an issue here, we can apply the Patankar-trick to the destruction term ``d`` to ensure positivity and leave the production term ``p`` unweighted. 
-A first order scheme of this type, based on the forward Euler method, reads
+Since conservation is not an issue here, we can apply the Patankar trick to the destruction term ``d`` to ensure positivity and leave the production term ``p`` unweighted. 
+A first-order scheme of this type, based on the forward Euler method, reads
 
 ```math
 u^{n+1}= u^n + Δ t p(u^n) - Δ t d(u^n)\frac{u^{n+1}}{u^n}
 ```
-and this idea can easily be generalized to higher order explicit Runge-Kutta schemes. 
+and this idea can easily be generalized to higher-order explicit Runge-Kutta schemes. 
 
 By closer inspection we realize that this is exactly the approach the MPRK schemes of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) use to solve non-conservative PDS for which the production matrix is diagonal. 
 Hence, we can use the existing schemes to solve a scalar PDS by regarding the production term as a ``1×1``-matrix and the destruction term as a ``1``-vector.
 
-# [Example 1](@id example-1)
+# [Example 1](@id scalar-example-1)
 
 We want to solve
 
@@ -41,7 +41,7 @@ Please note that must use [`PDSProblem`](@ref) to create the problem.
 Furthermore, we use static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of standard arrays for efficiency.
 
 
-```@example example_1
+```@example scalar_example_1
 using PositiveIntegrators, StaticArrays, Plots
 
 u0 = @SVector [0.95] # 1-vector
@@ -55,16 +55,16 @@ prob = PDSProblem(prod, dest, u0, tspan)
 sol = solve(prob, MPRK22(1.0))
 
 # plot
-tt = collect(0:0.1:10)
-f(t) = 19.0 ./ (19.0 .+ exp.(t)) # exact solution
-plot(tt, f(tt), label="exact")
+tt = 0:0.1:10
+f(t) = 19.0 / (19.0 + exp(t)) # exact solution
+plot(tt, f.(tt), label="exact")
 plot!(sol, label="u")
 ```
 
-# [Example 2] (@id example-2)
+# [Example 2] (@id scalar-example-2)
 
 Next, we want to compute positive solutions of a more challenging scalar PDS. 
-In [Example 1](@ref example-1) we could have also used standard schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and use the solver option `isoutofdomain` to ensure positivity.
+In [Example 1](@ref scalar-example-1), we could have also used standard schemes from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and use the solver option `isoutofdomain` to ensure positivity.
 But this is not always the case as the following example will show.
 
 We want to compute the nonnegative solution of 
@@ -87,7 +87,7 @@ But among these, the only nonnegative solution is
 u(t) = \begin{cases} \frac{1}{4}(t-2)^2, & 0≤ t< 2,\\ 0, & 2≤ t. \end{cases}
 ```
 
-And it is this solution that we want to compute. 
+This is the solution we want to compute.
 
 First, we try this using a standard solver from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 We try to enforce positivity with the solver option `isoutofdomain` by specifying that negative solution components are not acceptable.
@@ -105,7 +105,7 @@ sol = solve(prob, Rosenbrock23(); isoutofdomain = (u, p, t) -> any(<(0), u))
 ```
 
 We see that `isoutofdomain` cannot be used to ensure nonnegative solutions in this case, as the computation stops at about ``t≈ 2`` before the desired final time is reached. 
-At least for first and second order explicit Runge-Kutta schemes this can also be shown analytically. A short computation reveals that to ensure nonnegative solutions the time step size must tend to zero if the numerical solution tends to zero. 
+For at least first- and second-order explicit Runge-Kutta schemes, this can also be shown analytically. A brief computation reveals that to ensure nonnegative solutions, the time step size must tend to zero if the numerical solution tends to zero.
 
 Next, we want try to use an MPRK scheme. 
 We can choose ``p(u)=0`` as production term and ``d(u)=\sqrt{\lvert u\rvert }`` as destruction term. 
@@ -124,9 +124,9 @@ prob = PDSProblem(prod, dest, u0, tspan)
 sol = solve(prob, MPRK22(1.0))
 
 # plot
-tt = collect(0:0.03:3)
-f(t) = 0.25 * (t .- 2.0) .^ 2 .* (t .<= 2) # exact solution
-plot(tt, f(tt), label="exact")
+tt = 0:0.03:3
+f(t) = 0.25 * (t - 2)^2 * (t <= 2) # exact solution
+plot(tt, f.(tt), label="exact")
 plot!(sol, label="u")
 ```
 
@@ -136,7 +136,7 @@ We see that `MPRK22(1.0)` is well suited to solve the problem. The same is true 
 ## Package versions
 
 These results were obtained using the following versions.
-```@example example_1
+```@example scalar_example_1
 using InteractiveUtils
 versioninfo()
 println()

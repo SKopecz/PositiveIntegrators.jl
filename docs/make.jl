@@ -80,7 +80,7 @@ makedocs(modules = [PositiveIntegrators],
                  "Linear Advection" => "linear_advection.md",
                  "Heat Equation, Neumann BCs" => "heat_equation_neumann.md",
                  "Heat Equation, Dirichlet BCs" => "heat_equation_dirichlet.md",
-                 "MPRK schemes for scalar production-destruction systems" => "scalar_pds.md"
+                 "Scalar equation" => "scalar_pds.md"
              ],
              "Troubleshooting, FAQ" => "faq.md",
              "API reference" => "api_reference.md",
