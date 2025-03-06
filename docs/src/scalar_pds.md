@@ -130,7 +130,7 @@ plot(tt, f.(tt), label="exact")
 plot!(sol, label="u")
 ```
 
-We see that `MPRK22(1.0)` is well suited to solve the problem. The same is true for the other MPRK schemes.
+We can see that the MPRK scheme used is well suited to solve the problem. 
 
 
 ## Package versions
@@ -142,7 +142,7 @@ versioninfo()
 println()
 
 using Pkg
-Pkg.status(["OrdinaryDiffEqRosenbrock", "PositiveIntegrators", "SparseArrays"],
-           mode=PKGMODE_MANIFEST)
+Pkg.status(["PositiveIntegrators", "Staticrrays", "OrdinaryDiffEqRosenbrock"],
+           mode = PKGMODE_MANIFEST)
 nothing # hide
 ```
