@@ -15,6 +15,8 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqVerner: Vern9
 using PositiveIntegrators
 
+# load RecursiveFactorization to get RFLUFactorization
+using RecursiveFactorization: RecursiveFactorization
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
