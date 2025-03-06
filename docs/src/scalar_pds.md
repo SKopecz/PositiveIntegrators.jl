@@ -37,7 +37,7 @@ u(t) = \frac{19}{19+e^{t}}.
 ```
 
 Next, we show how to solve this scalar PDS in the way discussed above.
-Please note that must use [`PDSProblem`](@ref) to create the problem.
+Please note that we must use [`PDSProblem`](@ref) to create the problem.
 Furthermore, we use static matrices and vectors from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) instead of standard arrays for efficiency.
 
 
