@@ -1092,6 +1092,15 @@ end
             @test_throws "SSPMPRK43 can only be applied to production-destruction systems" solve(prob_ip,
                                                                                                  SSPMPRK43(),
                                                                                                  dt = 0.1)
+            @test_throws "MPDeC can only be applied to production-destruction systems" solve(prob_ip,
+                                                                                             MPDeC(2),
+                                                                                             dt = 0.1)
+            @test_throws "MPDeC can only be applied to production-destruction systems" solve(prob_oop,
+                                                                                             MPDeC(2),
+                                                                                             dt = 0.1)
+            @test_throws "MPDeC requires the parameter K to be an integer." solve(prob_pds_linmod,
+                                                                                  MPDeC(2.1),
+                                                                                  dt = 0.1)
         end
 
         # Here we check that algorithms which accept input parameters return constants
@@ -1121,7 +1130,8 @@ end
 
             algs = (MPRK22(0.5f0), MPRK22(1.0f0), MPRK22(2.0f0), MPRK43I(1.0f0, 0.5f0),
                     MPRK43I(0.5f0, 0.75f0), MPRK43II(0.5f0), MPRK43II(2.0f0 / 3.0f0),
-                    SSPMPRK22(0.5f0, 1.0f0), SSPMPRK43())
+                    SSPMPRK22(0.5f0, 1.0f0), SSPMPRK43(), MPDeC(2),
+                    MPDeC(2, nodes = :lagrange))
             for alg in algs
                 sol = solve(prob, alg; dt = 0.1f0, save_everystep = false)
                 @test sol.t isa Vector{Float32}
@@ -1185,6 +1195,7 @@ end
 
         # Here we check that MPRK22(α) = SSPMPRK22(0,α)
         @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
+            #TODO: Add MPDeC(2) and MPDeC(2, nodes=:lagrange) REQUIRES ADAPTIVITY
             for α in (0.5, 2.0 / 3.0, 1.0, 2.0)
                 # conservative PDS
                 sol1 = solve(prob_pds_linmod, MPRK22(α))
@@ -1204,6 +1215,7 @@ end
 
         # Here we check that different linear solvers can be used
         @testset "Different linear solvers" begin
+            #TODO: Add MPDeC - REQUIRES PDSProblem
             # problem data
             u0 = [0.9, 0.1]
             tspan = (0.0, 2.0)
@@ -1264,6 +1276,7 @@ end
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
         @testset "Different matrix types (conservative)" begin
+            #TODO: Add MPDeC - REQUIRES spare and tridiagonal matrices
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1348,6 +1361,8 @@ end
         end
 
         @testset "Different matrix types (conservative, adaptive)" begin
+            #TODO: SSPMPRK43 is not adaptive and needs to be removed
+            #TODO: Add MPDeC
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1434,6 +1449,7 @@ end
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
         @testset "Different matrix types (nonconservative)" begin
+            #TODO: Add MPDeC
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1559,6 +1575,8 @@ end
         end
 
         @testset "Different matrix types (nonconservative, adaptive)" begin
+            #TODO: SSPMPRK43 is not adaptive and needs to be removed
+            #TODO: Add MPDeC - Requires PDSProblem and adaptivity
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1690,6 +1708,7 @@ end
         # defines the types of the Ps inside the algorithm caches.
         # We test sparse, tridiagonal, and dense matrices.
         @testset "Prototype type check" begin
+            #TODO: Add MPDeC
             #prod and dest functions
             prod_inner! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1770,7 +1789,8 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0),
+                    MPDeC(2), MPDeC(2, nodes = :lagrange))
             dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -1806,6 +1826,7 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
+            #TODO: Add MPDeC - PDSProblem
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
             dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod_nonconservative,
@@ -1837,6 +1858,7 @@ end
             end
         end
 
+        #TODO: Check order of MPDeC(K) for K ≥ 4
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
@@ -1844,7 +1866,8 @@ end
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43(), MPDeC(3),
+                    MPDeC(3, nodes = :lagrange))
             for alg in algs, prob in problems
                 orders = experimental_orders_of_convergence(prob, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
@@ -1854,6 +1877,7 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
+            #TODO: Add MPDeC(3) - PDSProblem
             dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
