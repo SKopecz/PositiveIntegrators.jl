@@ -329,7 +329,7 @@ end
     u2 = C[:, M + 1]
 
     #TODO: Remove this
-    @assert u2 ≈ MPDeC_check(K, M, uprev, theta, f, p, t, dt)
+    #@assert u2 ≈ MPDeC_check(K, M, uprev, theta, f, p, t, dt)
 
     integrator.u = u2
 end
