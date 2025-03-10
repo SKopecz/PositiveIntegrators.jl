@@ -331,7 +331,7 @@ end
     #TODO: Remove this
     @assert u2 ≈ MPDeC_check(K, M, uprev, theta, f, p, t, dt)
 
-    integrator.u = u1
+    integrator.u = u2
 end
 
 struct MPDeCCache{uType, PType, CType, tabType, F} <: MPRKMutableCache
