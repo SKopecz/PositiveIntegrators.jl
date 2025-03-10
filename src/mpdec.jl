@@ -234,7 +234,7 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     if !(f isa PDSFunction || f isa ConservativePDSFunction)
-        throw(ArgumentError("MPDEC can only be applied to production-destruction systems"))
+        throw(ArgumentError("MPDeC can only be applied to production-destruction systems"))
     end
 
     theta = get_constant_parameters(alg)
