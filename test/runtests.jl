@@ -1195,7 +1195,6 @@ end
 
         # Here we check that MPRK22(α) = SSPMPRK22(0,α)
         @testset "MPRK22(α) = SSPMPRK22(0, α)" begin
-            #TODO: Add MPDeC(2) and MPDeC(2, nodes=:lagrange) REQUIRES ADAPTIVITY
             for α in (0.5, 2.0 / 3.0, 1.0, 2.0)
                 # conservative PDS
                 sol1 = solve(prob_pds_linmod, MPRK22(α))
@@ -1211,6 +1210,19 @@ end
                 sol4 = solve(prob_pds_linmod_nonconservative_inplace, SSPMPRK22(0.0, α))
                 @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u
             end
+        end
+
+        # Here we check that MPRK22(1.0) = MPDeC(2)
+        @testset "MPRK22(1.0) = MPDeC(2)" begin
+            #TODO: Add MPDeC(2) for nonconservative PDS - REQUIRES PDSProblem
+            # conservative PDS
+            sol1 = solve(prob_pds_linmod, MPRK22(1.0))
+            sol2 = solve(prob_pds_linmod, MPDeC(2))
+            sol3 = solve(prob_pds_linmod, MPDeC(2, nodes = :lagrange))
+            sol4 = solve(prob_pds_linmod_inplace, MPRK22(1.0))
+            sol5 = solve(prob_pds_linmod_inplace, MPDeC(2))
+            sol6 = solve(prob_pds_linmod_inplace, MPDeC(2, nodes = :lagrange))
+            @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u ≈ sol5.u ≈ sol6.u
         end
 
         # Here we check that different linear solvers can be used
@@ -1361,7 +1373,7 @@ end
         end
 
         @testset "Different matrix types (conservative, adaptive)" begin
-            #TODO: SSPMPRK43 is not adaptive and needs to be removed
+            #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt!)
             #TODO: Add MPDeC
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1575,7 +1587,7 @@ end
         end
 
         @testset "Different matrix types (nonconservative, adaptive)" begin
-            #TODO: SSPMPRK43 is not adaptive and needs to be removed
+            #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt)
             #TODO: Add MPDeC - Requires PDSProblem and adaptivity
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1934,7 +1946,8 @@ end
             dts = 0.5 .^ (4:15)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                     MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43(),
-                    MPDeC(2), MPDeC(2, nodes = :lagrange), MPDeC(3), MPDeC(3, nodes = :lagrange))
+                    MPDeC(2), MPDeC(2, nodes = :lagrange), MPDeC(3),
+                    MPDeC(3, nodes = :lagrange))
             @testset "$alg" for alg in algs
                 orders = experimental_orders_of_convergence(prob_oop, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)

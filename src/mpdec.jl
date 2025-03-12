@@ -32,7 +32,7 @@ to avoid divisions by zero. You can pass a value explicitly, otherwise `small_co
   "Arbitrary high-order, conservative and positivity preserving Patankar-type deferred correction schemes."
   Applied Numerical Mathematics 153 (2020): 15-34.
 """
-struct MPDeC{T, N, F, T2} <: OrdinaryDiffEqAlgorithm
+struct MPDeC{T, N, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     K::T
     M::T
     nodes::N
@@ -359,19 +359,14 @@ end
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack K, M, nodes, theta, small_constant = cache
 
+    C = zeros(length(uprev), M + 1)
     C2 = zeros(length(uprev), M + 1)
     for i in 1:(M + 1)
         C2[:, i] = uprev
     end
 
-    if uprev isa StaticArray
-        #TODO make C static
-        C = copy(C2)
-    else
-        C = copy(C2)
-    end
-
-    for k in 1:K
+    for _ in 1:K
+        C .= C2
         for m in 2:(M + 1)
             Mmat = build_mpdec_matrix(m, f.p, C, p, t, dt, nodes, theta, small_constant)
 
@@ -381,15 +376,22 @@ end
             C2[:, m] = sol.u
             integrator.stats.nsolve += 1
         end
-        C = copy(C2)
+        #C = copy(C2)        
     end
-    u2 = C[:, M + 1]
+    u = C2[:, M + 1]
+    u1 = C[:, M + 1] # one order less accurate
 
-    #TODO: Remove this
-    #u1 = MPDeC_check(K, M, uprev, theta, f, p, t, dt)
-    #@assert u2 ≈ u1
+    #TODO: Remove this check
+    # Check only valid for autonomous conserverative PDS
+    #u_check = MPDeC_check(K, M, uprev, theta, f, p, t, dt)
+    #@assert u ≈ u_check
 
-    integrator.u = u2
+    tmp = u - u1
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+                               integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+    integrator.u = u
 end
 
 struct MPDeCCache{uType, PType, CType, tabType, F} <: MPRKMutableCache
@@ -407,6 +409,7 @@ struct MPDeCCache{uType, PType, CType, tabType, F} <: MPRKMutableCache
 end
 
 struct MPDeCConservativeCache{uType, PType, CType, tabType, F} <: MPRKMutableCache
+    tmp::uType
     P::PType
     P2::PType
     σ::uType
@@ -445,7 +448,7 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPDeCConservativeCache(P, P2, σ, C, C2,
+        MPDeCConservativeCache(tmp, P, P2, σ, C, C2,
                                tab, #MPDeCConstantCache
                                linsolve_rhs,
                                linsolve)
@@ -566,19 +569,19 @@ end
 @muladd function perform_step!(integrator, cache::MPDeCConservativeCache,
                                repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
+    @unpack tmp, P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
     @unpack K, M, nodes, theta, small_constant = cache.tab
 
     # Set right hand side of linear system
     linsolve_rhs .= uprev
 
-    # Initializ C matrices
+    # Initialize C matrices
     for i in 1:(M + 1)
-        C2[:, i] = uprev
-        C[:, i] = uprev
+        C2[:, i] .= uprev
     end
 
     for _ in 1:K
+        C .= C2
         for m in 2:(M + 1)
             build_mpdec_matrix!(P2, m, f.p, P, C, p, t, dt, nodes, theta, small_constant)
 
@@ -588,10 +591,19 @@ end
             C2[:, m] .= linres
             integrator.stats.nsolve += 1
         end
-        C .= C2
     end
 
-    u .= C[:, M + 1]
+    u .= C2[:, M + 1]
+    σ .= C[:, M + 1] # one order less accurate
+
+    # Now σ stores the error estimate
+    @.. broadcast=false σ=u - σ
+
+    # Now tmp stores error residuals
+    calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
 ########################################################################################################
