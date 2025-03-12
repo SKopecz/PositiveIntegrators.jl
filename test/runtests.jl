@@ -38,7 +38,7 @@ solution is computed using `ref_alg`.
 """
 function experimental_orders_of_convergence(prob, alg, dts; test_time = nothing,
                                             only_first_index = false,
-                                            ref_alg = TRBDF2(autodiff = AutoFiniteDiff()))
+                                            ref_alg = Vern7())
     @assert length(dts) > 1
     errors = zeros(eltype(dts), length(dts))
 
@@ -1826,7 +1826,7 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Add MPDeC - PDSProblem
+            #TODO: Add MPDeC(2) - PDSProblem
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
             dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod_nonconservative,
@@ -1877,7 +1877,7 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Add MPDeC(3) - PDSProblem
+            #TODO: Add MPDeC(K), K≥ 3 - PDSProblem
             dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
@@ -1890,10 +1890,15 @@ end
         end
 
         @testset "Interpolation tests (conservative)" begin
-            #TODO: Add MPDeC
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), MPRK43I(1.0, 0.5),
                     MPRK43I(0.5, 0.75), MPRK43II(0.5), MPRK43II(2.0 / 3.0),
-                    SSPMPRK22(0.5, 1.0), SSPMPRK43())
+                    SSPMPRK22(0.5, 1.0), SSPMPRK43(),
+                    MPDeC(2), MPDeC(2, nodes = :gausslobatto),
+                    MPDeC(3), MPDeC(3, nodes = :gausslobatto),
+                    MPDeC(4), MPDeC(4, nodes = :gausslobatto),
+                    MPDeC(5), MPDeC(5, nodes = :gausslobatto),
+                    MPDeC(6), MPDeC(6, nodes = :gausslobatto),
+                    MPDeC(7), MPDeC(7, nodes = :gausslobatto))
             dt = 0.5^6
             problems = (prob_pds_linmod, prob_pds_linmod_array,
                         prob_pds_linmod_mvector, prob_pds_linmod_inplace)
@@ -1909,11 +1914,11 @@ end
         end
 
         @testset "Check convergence order (nonautonomous conservative PDS)" begin
-            #TODO: Add MPDeC
+            #TODO: Check MPDeC(K) order for K ≥ 4
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 P[1, 2] = sin(t)^2 * u[2]
-                P[2, 1] = cos(2 * t)^2 * u[1]
+                P[2, 1] = cos(t)^2 * u[1]
                 return nothing
             end
             prod = (u, p, t) -> begin
@@ -1921,14 +1926,15 @@ end
                 prod!(P, u, p, t)
                 return P
             end
-            u0 = [1.0; 0.0]
+            u0 = [1.1; 0.9] # values close to zero may decrease the order
             tspan = (0.0, 1.0)
             prob_oop = ConservativePDSProblem(prod, u0, tspan) #out-of-place
             prob_ip = ConservativePDSProblem(prod!, u0, tspan) #in-place
 
             dts = 0.5 .^ (4:15)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43(),
+                    MPDeC(2), MPDeC(2, nodes = :lagrange), MPDeC(3), MPDeC(3, nodes = :lagrange))
             @testset "$alg" for alg in algs
                 orders = experimental_orders_of_convergence(prob_oop, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)

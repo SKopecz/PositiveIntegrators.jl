@@ -74,6 +74,7 @@ isfsal(::MPDeC) = false
 
 function get_constant_parameters(alg::MPDeC)
     if alg.nodes == :lagrange
+        nodes = collect(0.0:(1 / alg.M):1.0)
         if alg.M == 1
             theta = [0.0 0.5; 0.0 0.5]
         elseif alg.M == 2
@@ -153,23 +154,35 @@ function get_constant_parameters(alg::MPDeC)
         end
     else # alg.nodes == :gausslobatto 
         if alg.M == 1
+            nodes = [0.0, 1.0]
             theta = [0.0 0.5; 0.0 0.5]
         elseif alg.M == 2
+            nodes = [0.0, 0.5, 1.0]
             theta = [0.0 0.20833333333333337 0.16666666666666652;
                      0.0 0.33333333333333337 0.6666666666666667;
                      0.0 -0.04166666666666667 0.16666666666666663]
         elseif alg.M == 3
+            nodes = [0.0, 0.27639320225002106, 0.7236067977499789, 1.0]
             theta = [0.0 0.11030056647916493 0.07303276685416865 0.08333333333333393;
                      0.0 0.1896994335208352 0.45057403089581083 0.41666666666666785;
                      0.0 -0.033907364229143935 0.22696723314583123 0.4166666666666661;
                      0.0 0.010300566479164913 -0.026967233145831604 0.08333333333333326]
         elseif alg.M == 4
+            nodes = [0.0, 0.1726731646460114, 0.5, 0.8273268353539887, 1.0]
             theta = [0.0 0.0677284321861569 0.04062499999999991 0.05370013924241501 0.05000000000000071;
                      0.0 0.11974476934341162 0.30318418332304287 0.2615863979968083 0.27222222222222214;
                      0.0 -0.021735721866558116 0.17777777777777748 0.3772912774221129 0.35555555555555296;
                      0.0 0.010635824225415487 -0.0309619611008205 0.1524774528788102 0.27222222222222037;
                      0.0 -0.0037001392424145354 0.009375000000000022 -0.017728432186157494 0.04999999999999982]
         elseif alg.M == 5
+            nodes = [
+                0.0,
+                0.11747233803526769,
+                0.3573842417596774,
+                0.6426157582403226,
+                0.8825276619647323,
+                1.0
+            ]
             theta = [0.0 0.04567980513375505 0.025908385387879762 0.03746264288972734 0.03168990732937349 0.033333333333333215;
                      0.0 0.08186781700897068 0.2138408086328255 0.177429781771262 0.19370925858950017 0.18923747814892522;
                      0.0 -0.01487460578908985 0.13396073565086075 0.30143326325089315 0.2698015123994857 0.2774291885177327;
@@ -177,6 +190,15 @@ function get_constant_parameters(alg::MPDeC)
                      0.0 -0.004471780440573713 0.011807696377659743 -0.02460333048390262 0.10736966113994595 0.18923747814891745;
                      0.0 0.0016434260039545345 -0.004129309556393734 0.007424947945453564 -0.012346471800418257 0.03333333333333588]
         elseif alg.M == 6
+            nodes = [
+                0.0,
+                0.08488805186071652,
+                0.2655756032646429,
+                0.5,
+                0.7344243967353571,
+                0.9151119481392835,
+                1.0
+            ]
             theta = [0.0 0.03284626432829264 0.018002223201815104 0.027529761904763195 0.02170954269630787 0.02464779425215191 0.023809523809520172;
                      0.0 0.059322894027551365 0.15770113064168867 0.1277882555598353 0.14409488824697547 0.13619592709181916 0.1384130236807124;
                      0.0 -0.01076859445118926 0.10235481204686203 0.23748565272164512 0.20629511050420746 0.2193616205757678 0.21587269060495373;
@@ -185,6 +207,16 @@ function get_constant_parameters(alg::MPDeC)
                      0.0 0.002217096588914541 -0.005681864566224326 0.010624768120945982 -0.019288106960911655 0.07909012965322404 0.13841302368079056;
                      0.0 -0.000838270442615105 0.0020999811132187685 -0.0037202380952379155 0.005807300607708399 -0.00903674051876635 0.02380952380952195]
         elseif alg.M == 7
+            nodes = [
+                0.0,
+                0.06412992574519666,
+                0.20414990928342885,
+                0.3953503910487606,
+                0.6046496089512394,
+                0.7958500907165711,
+                0.9358700742548034,
+                1.0
+            ]
             theta = [0.0 0.024737514438875514 0.013258719822130019 0.021034356725210923 0.01577972028613317 0.019036721343624663 0.017385669593011244 0.01785714285716722;
                      0.0 0.044892662602755 0.12064973282409763 0.09628017831208524 0.11096097521429726 0.10224716355590147 0.10657833455800869 0.10535211357202456;
                      0.0 -0.008140767742389747 0.07999763578665159 0.1890416498443277 0.16114433643933257 0.17539401516496778 0.1687159595472414 0.17056134624175545;
@@ -194,6 +226,17 @@ function get_constant_parameters(alg::MPDeC)
                      0.0 -0.0012262209861064882 0.00310495001592085 -0.005608861642537821 0.00907193525967287 -0.015297619252294226 0.060459450968835426 0.10535211357171193;
                      0.0 0.0004714732640502682 -0.001179578486445107 0.002077422571009513 -0.003177213868071016 0.0045984230350075705 -0.006880371581776679 0.017857142857105046]
         elseif alg.M == 8
+            nodes = [
+                0.0,
+                0.05012100229426997,
+                0.16140686024463113,
+                0.3184412680869109,
+                0.5,
+                0.6815587319130891,
+                0.8385931397553689,
+                0.94987899770573,
+                1.0
+            ]
             theta = [0.0 0.019293838201043245 0.01018408040822739 0.01656936984357027 0.011990017361096061 0.01514127656190567 0.013175811859724718 0.01417408466352299 0.013888888888914153;
                      0.0 0.03512552097762184 0.09508650844936217 0.07509351709620726 0.08786983372308654 0.07945805621039881 0.08459518591985216 0.0820139081133675 0.08274768078126726;
                      0.0 -0.006364102418704803 0.0639319956284379 0.15288206102488378 0.12868222230659399 0.14236568211174472 0.13451403216049584 0.13834341694882824 0.13726935625072656;
@@ -204,6 +247,18 @@ function get_constant_parameters(alg::MPDeC)
                      0.0 0.0007337726665392911 -0.0018475051393835457 0.0032896245700402282 -0.005122152942657721 0.007654163684208015 -0.012338827668713748 0.04762215980304063 0.08274768078103989;
                      0.0 -0.00028519577496630263 0.0007130770290413452 -0.0012523876730271555 0.0018988715277794554 -0.002680480954676767 0.0037048084806841075 -0.005404949312023177 0.013888888889184159]
         elseif alg.M == 9
+            nodes = [
+                0.0,
+                0.04023304591677057,
+                0.13061306744724743,
+                0.26103752509477773,
+                0.4173605211668065,
+                0.5826394788331936,
+                0.7389624749052223,
+                0.8693869325527526,
+                0.9597669540832294,
+                1.0
+            ]
             theta = [0.0 0.015465148886122208 0.008074564828863144 0.013376018525479871 0.009424872116881033 0.012319010010855891 0.010311035538052238 0.01156730916181914 0.010928591594165482 0.011111111110039928;
                      0.0 0.02821797600073163 0.07677451467523239 0.060184542475466785 0.07119971523047752 0.06348355183104104 0.06872200531256567 0.06548282490166457 0.06711913714752882 0.0666529954141879;
                      0.0 -0.0051090759506765785 0.05211803626519543 0.12565307727248143 0.10482643149413295 0.11734393918791586 0.10937232662209873 0.11414511256730009 0.11177491077136281 0.1124446710354885;
@@ -218,12 +273,13 @@ function get_constant_parameters(alg::MPDeC)
             error("Theta Gauss-Lobatto M > 9")
         end
     end
-    return theta
+    return nodes, theta
 end
 
-struct MPDeCConstantCache{KType, T, T2} <: OrdinaryDiffEqConstantCache
+struct MPDeCConstantCache{KType, NType, T, T2} <: OrdinaryDiffEqConstantCache
     K::KType
     M::KType
+    nodes::NType
     theta::T2
     small_constant::T
 end
@@ -237,15 +293,16 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
         throw(ArgumentError("MPDeC can only be applied to production-destruction systems"))
     end
 
-    theta = get_constant_parameters(alg)
-    MPDeCConstantCache(alg.K, alg.M, theta, alg.small_constant_function(uEltypeNoUnits))
+    nodes, theta = get_constant_parameters(alg)
+    MPDeCConstantCache(alg.K, alg.M, nodes, theta,
+                       alg.small_constant_function(uEltypeNoUnits))
 end
 
 function initialize!(integrator, cache::MPDeCConstantCache)
 end
 
 # out-of-place
-function build_mpdec_matrix(m, prod, C, p, t, dt, theta, small_constant)
+function build_mpdec_matrix(m, prod, C, p, t, dt, nodes, theta, small_constant)
     N, M = size(C)
     M = M - 1
 
@@ -253,7 +310,7 @@ function build_mpdec_matrix(m, prod, C, p, t, dt, theta, small_constant)
     # P stores the production matrix in in-place computations.
     # In out-of-place computations it is not needed
     P = nothing
-    build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, theta, small_constant)
+    build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, nodes, theta, small_constant)
 
     if C isa StaticArray
         return SMatrix(Mmat)
@@ -263,7 +320,7 @@ function build_mpdec_matrix(m, prod, C, p, t, dt, theta, small_constant)
 end
 
 # in-place for dense arrays
-function build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, theta, small_constant)
+function build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, nodes, theta, small_constant)
     N, M = size(C)
     M = M - 1
 
@@ -280,9 +337,9 @@ function build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, theta, small_constan
         dt_th = dt * th
         #TODO: This should be checked earlier and only once
         if isinplace(prod, 4)
-            prod(P, C[:, r], p, t)
+            prod(P, C[:, r], p, t + nodes[r] * dt)
         else
-            P = prod(C[:, r], p, t)
+            P = prod(C[:, r], p, t + nodes[r] * dt)
         end
         for i in 1:N
             for j in 1:N
@@ -300,7 +357,7 @@ end
 
 @muladd function perform_step!(integrator, cache::MPDeCConstantCache, repeat_step = false)
     @unpack alg, t, dt, uprev, f, p = integrator
-    @unpack K, M, theta, small_constant = cache
+    @unpack K, M, nodes, theta, small_constant = cache
 
     C2 = zeros(length(uprev), M + 1)
     for i in 1:(M + 1)
@@ -314,9 +371,9 @@ end
         C = copy(C2)
     end
 
-    for _ in 1:K
+    for k in 1:K
         for m in 2:(M + 1)
-            Mmat = build_mpdec_matrix(m, f.p, C, p, t, dt, theta, small_constant)
+            Mmat = build_mpdec_matrix(m, f.p, C, p, t, dt, nodes, theta, small_constant)
 
             # solve linear system
             linprob = LinearProblem(Mmat, uprev)
@@ -329,7 +386,8 @@ end
     u2 = C[:, M + 1]
 
     #TODO: Remove this
-    #@assert u2 ≈ MPDeC_check(K, M, uprev, theta, f, p, t, dt)
+    #u1 = MPDeC_check(K, M, uprev, theta, f, p, t, dt)
+    #@assert u2 ≈ u1
 
     integrator.u = u2
 end
@@ -366,8 +424,8 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
                    uprev, uprev2, f, t, dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    theta = get_constant_parameters(alg)
-    tab = MPDeCConstantCache(alg.K, alg.M, theta,
+    nodes, theta = get_constant_parameters(alg)
+    tab = MPDeCConstantCache(alg.K, alg.M, nodes, theta,
                              alg.small_constant_function(uEltypeNoUnits))
 
     tmp = zero(u)
@@ -509,7 +567,7 @@ end
                                repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
-    @unpack K, M, theta, small_constant = cache.tab
+    @unpack K, M, nodes, theta, small_constant = cache.tab
 
     # Set right hand side of linear system
     linsolve_rhs .= uprev
@@ -522,7 +580,7 @@ end
 
     for _ in 1:K
         for m in 2:(M + 1)
-            build_mpdec_matrix!(P2, m, f.p, P, C, p, t, dt, theta, small_constant)
+            build_mpdec_matrix!(P2, m, f.p, P, C, p, t, dt, nodes, theta, small_constant)
 
             # Same as linres = P2 \ linsolve_rhs
             linsolve.A = P2
