@@ -302,25 +302,35 @@ function initialize!(integrator, cache::MPDeCConstantCache)
 end
 
 # out-of-place
-function build_mpdec_matrix(m, prod, C, p, t, dt, nodes, theta, small_constant)
+function build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta, small_constant)
     N, M = size(C)
     M = M - 1
 
     Mmat = zeros(eltype(C), N, N)
+    rhs = similar(uprev)
+    rhs .= uprev
+
     # P stores the production matrix in in-place computations.
     # In out-of-place computations it is not needed
     P = nothing
-    build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, nodes, theta, small_constant)
+    if f isa PDSFunction
+        build_mpdec_matrix!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
+                            small_constant, f.d)
+    else
+        build_mpdec_matrix!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta, small_constant)
+    end
 
     if C isa StaticArray
-        return SMatrix(Mmat)
+        return SMatrix(Mmat), SVector(rhs)
     else
-        return Mmat
+        return Mmat, rhs
     end
 end
 
 # in-place for dense arrays
-function build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, nodes, theta, small_constant)
+function build_mpdec_matrix!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
+                             small_constant,
+                             dest = nothing)
     N, M = size(C)
     M = M - 1
 
@@ -338,10 +348,27 @@ function build_mpdec_matrix!(Mmat, m, prod, P, C, p, t, dt, nodes, theta, small_
         #TODO: This should be checked earlier and only once
         if isinplace(prod, 4)
             prod(P, C[:, r], p, t + nodes[r] * dt)
+            #if !isnothing(dest)
+            #    dest(D, C[:, r], p, t + nodes[r] * dt)
+            #end
         else
             P = prod(C[:, r], p, t + nodes[r] * dt)
+            if !isnothing(dest)
+                d = dest(C[:, r], p, t + nodes[r] * dt)
+            end
         end
+
         for i in 1:N
+            # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
+            if !isnothing(dest)
+                if th >= 0
+                    Mmat[i, i] += dt_th * d[i] / σ[i]
+                    rhs[i] += dt_th * P[i, i]
+                else
+                    Mmat[i, i] -= dt_th * P[i, i] / σ[i]
+                    rhs[i] -= dt_th * d[i]
+                end
+            end
             for j in 1:N
                 if th >= 0
                     Mmat[i, j] -= dt_th * P[i, j] / σ[j]
@@ -368,10 +395,11 @@ end
     for _ in 1:K
         C .= C2
         for m in 2:(M + 1)
-            Mmat = build_mpdec_matrix(m, f.p, C, p, t, dt, nodes, theta, small_constant)
+            Mmat, rhs = build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta,
+                                           small_constant)
 
             # solve linear system
-            linprob = LinearProblem(Mmat, uprev)
+            linprob = LinearProblem(Mmat, rhs)
             sol = solve(linprob, alg.linsolve)
             C2[:, m] = sol.u
             integrator.stats.nsolve += 1
@@ -572,7 +600,7 @@ end
     @unpack tmp, P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
     @unpack K, M, nodes, theta, small_constant = cache.tab
 
-    # Set right hand side of linear system
+    # Initialize right hand side of linear system
     linsolve_rhs .= uprev
 
     # Initialize C matrices
@@ -583,7 +611,8 @@ end
     for _ in 1:K
         C .= C2
         for m in 2:(M + 1)
-            build_mpdec_matrix!(P2, m, f.p, P, C, p, t, dt, nodes, theta, small_constant)
+            build_mpdec_matrix!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes, theta,
+                                small_constant)
 
             # Same as linres = P2 \ linsolve_rhs
             linsolve.A = P2
