@@ -40,8 +40,17 @@ struct MPDeC{T, N, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
+function small_constant_function_MPDeC(type)
+    if type == Float64
+        small_constant = 1e-200
+    else
+        small_constant = floatmin(type)
+    end
+    return small_constant
+end
+
 function MPDeC(K; nodes = :gausslobatto, linsolve = LUFactorization(),
-               small_constant = nothing)
+               small_constant = small_constant_function_MPDeC)
     if !(isinteger(K))
         throw(ArgumentError("MPDeC requires the parameter K to be an integer."))
     end
@@ -49,9 +58,7 @@ function MPDeC(K; nodes = :gausslobatto, linsolve = LUFactorization(),
         K = Int(K)
     end
 
-    if isnothing(small_constant)
-        small_constant_function = floatmin
-    elseif small_constant isa Number
+    if small_constant isa Number
         small_constant_function = Returns(small_constant)
     else # assume small_constant isa Function
         small_constant_function = small_constant
@@ -302,7 +309,7 @@ function initialize!(integrator, cache::MPDeCConstantCache)
 end
 
 # out-of-place
-function build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta, small_constant)
+function build_mpdec_matrix_and_rhs(uprev, m, f, C, p, t, dt, nodes, theta, small_constant)
     N, M = size(C)
     M = M - 1
 
@@ -314,10 +321,11 @@ function build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta, small_consta
     # In out-of-place computations it is not needed
     P = nothing
     if f isa PDSFunction
-        build_mpdec_matrix!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
-                            small_constant, f.d)
+        build_mpdec_matrix_and_rhs!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
+                                    small_constant, f.d)
     else
-        build_mpdec_matrix!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta, small_constant)
+        build_mpdec_matrix_and_rhs!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
+                                    small_constant)
     end
 
     if C isa StaticArray
@@ -328,9 +336,9 @@ function build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta, small_consta
 end
 
 # in-place for dense arrays
-function build_mpdec_matrix!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
-                             small_constant,
-                             dest = nothing)
+function build_mpdec_matrix_and_rhs!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
+                                     small_constant,
+                                     dest = nothing, d = nothing)
     N, M = size(C)
     M = M - 1
 
@@ -340,6 +348,7 @@ function build_mpdec_matrix!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
         Mmat[i, i] = oneMmat
     end
 
+    #TODO: use predefined memory in inplace computations
     σ = add_small_constant(C[:, m], small_constant)
 
     for r in 1:(M + 1)
@@ -348,9 +357,9 @@ function build_mpdec_matrix!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
         #TODO: This should be checked earlier and only once
         if isinplace(prod, 4)
             prod(P, C[:, r], p, t + nodes[r] * dt)
-            #if !isnothing(dest)
-            #    dest(D, C[:, r], p, t + nodes[r] * dt)
-            #end
+            if !isnothing(dest)
+                dest(d, C[:, r], p, t + nodes[r] * dt)
+            end
         else
             P = prod(C[:, r], p, t + nodes[r] * dt)
             if !isnothing(dest)
@@ -395,8 +404,8 @@ end
     for _ in 1:K
         C .= C2
         for m in 2:(M + 1)
-            Mmat, rhs = build_mpdec_matrix(uprev, m, f, C, p, t, dt, nodes, theta,
-                                           small_constant)
+            Mmat, rhs = build_mpdec_matrix_and_rhs(uprev, m, f, C, p, t, dt, nodes, theta,
+                                                   small_constant)
 
             # solve linear system
             linprob = LinearProblem(Mmat, rhs)
@@ -404,7 +413,6 @@ end
             C2[:, m] = sol.u
             integrator.stats.nsolve += 1
         end
-        #C = copy(C2)        
     end
     u = C2[:, M + 1]
     u1 = C[:, M + 1] # one order less accurate
@@ -426,8 +434,7 @@ struct MPDeCCache{uType, PType, CType, tabType, F} <: MPRKMutableCache
     tmp::uType
     P::PType
     P2::PType
-    D::uType
-    D2::uType
+    d::uType
     σ::uType
     C::CType
     C2::CType
@@ -462,6 +469,7 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp = zero(u)
     P = p_prototype(u, f) # stores evaluation of the production matrix
     P2 = p_prototype(u, f) # stores the linear system matrix
+    d = zero(u)
     σ = zero(u)
     C = zeros(eltype(u), length(u), alg.M + 1)
     C2 = zeros(eltype(u), length(u), alg.M + 1)
@@ -485,11 +493,7 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
-        MPDeCCache(tmp, P, P2,
-                   similar(u), # D
-                   similar(u), # D2
-                   σ,
-                   C, C2,
+        MPDeCCache(tmp, P, P2, d, σ, C, C2,
                    tab, #MPDeCConstantCache
                    linsolve_rhs,
                    linsolve)
@@ -501,107 +505,10 @@ end
 function initialize!(integrator, cache::Union{MPDeCCache, MPDeCConservativeCache})
 end
 
-#= COPY OF MPRK22
 @muladd function perform_step!(integrator, cache::MPDeCCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, P, P2, D, D2, σ, linsolve = cache
-    @unpack a21, b1, b2, small_constant = cache.tab
-
-    # We use P2 to store the last evaluation of the PDS
-    # as well as to store the system matrix of the linear system
-
-    f.p(P, uprev, p, t) # evaluate production terms
-    f.d(D, uprev, p, t) # evaluate nonconservative destruction terms
-    integrator.stats.nf += 1
-    if issparse(P)
-        # We need to keep the structural nonzeros of the production terms.
-        # However, this is not guaranteed by broadcasting, see
-        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
-        nz_P = nonzeros(P)
-        nz_P2 = nonzeros(P2)
-        @.. broadcast=false nz_P2=a21 * nz_P
-    else
-        @.. broadcast=false P2=a21 * P
-    end
-    @.. broadcast=false D2=a21 * D
-
-    # avoid division by zero due to zero Patankar weights
-    @.. broadcast=false σ=uprev + small_constant
-
-    # tmp holds the right hand side of the linear system
-    tmp .= uprev
-    @inbounds for i in eachindex(tmp)
-        tmp[i] += dt * P2[i, i]
-    end
-
-    build_mprk_matrix!(P2, P2, σ, dt, D2)
-
-    # Same as linres = P2 \ tmp
-    linsolve.A = P2
-    linres = solve!(linsolve)
-
-    u .= linres
-    integrator.stats.nsolve += 1
-
-    if isone(a21)
-        σ .= u
-    else
-        @.. broadcast=false σ=σ^(1 - 1 / a21) * u^(1 / a21)
-    end
-    @.. broadcast=false σ=σ + small_constant
-
-    f.p(P2, u, p, t + a21 * dt) # evaluate production terms
-    f.d(D2, u, p, t + a21 * dt) # evaluate nonconservative destruction terms
-    integrator.stats.nf += 1
-
-    if issparse(P)
-        # We need to keep the structural nonzeros of the production terms.
-        # However, this is not guaranteed by broadcasting, see
-        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190
-        nz_P = nonzeros(P)
-        nz_P2 = nonzeros(P2)
-        @.. broadcast=false nz_P2=b1 * nz_P + b2 * nz_P2
-    else
-        @.. broadcast=false P2=b1 * P + b2 * P2
-    end
-    @.. broadcast=false D2=b1 * D + b2 * D2
-
-    # tmp holds the right hand side of the linear system
-    tmp .= uprev
-    @inbounds for i in eachindex(tmp)
-        tmp[i] += dt * P2[i, i]
-    end
-
-    build_mprk_matrix!(P2, P2, σ, dt, D2)
-
-    # Same as linres = P2 \ tmp
-    linsolve.A = P2
-    linres = solve!(linsolve)
-
-    u .= linres
-    integrator.stats.nsolve += 1
-
-    # Now σ stores the error estimate
-    # If a21 = 1, then σ is the MPE approximation, i.e. suited for stiff problems.
-    # Otherwise, this is not clear.
-    @.. broadcast=false σ=u - σ
-
-    # Now tmp stores error residuals
-    calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol, integrator.opts.internalnorm, t,
-                         False())
-    integrator.EEst = integrator.opts.internalnorm(tmp, t)
-end
-=#
-
-@muladd function perform_step!(integrator, cache::MPDeCConservativeCache,
-                               repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
+    @unpack tmp, P, P2, d, σ, C, C2, linsolve_rhs, linsolve = cache
     @unpack K, M, nodes, theta, small_constant = cache.tab
-
-    # Initialize right hand side of linear system
-    linsolve_rhs .= uprev
 
     # Initialize C matrices
     for i in 1:(M + 1)
@@ -611,8 +518,10 @@ end
     for _ in 1:K
         C .= C2
         for m in 2:(M + 1)
-            build_mpdec_matrix!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes, theta,
-                                small_constant)
+            linsolve_rhs .= uprev
+            build_mpdec_matrix_and_rhs!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes,
+                                        theta,
+                                        small_constant, f.d, d)
 
             # Same as linres = P2 \ linsolve_rhs
             linsolve.A = P2
@@ -635,6 +544,50 @@ end
     integrator.EEst = integrator.opts.internalnorm(tmp, t)
 end
 
+@muladd function perform_step!(integrator, cache::MPDeCConservativeCache,
+                               repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, P, P2, σ, C, C2, linsolve_rhs, linsolve = cache
+    @unpack K, M, nodes, theta, small_constant = cache.tab
+
+    # Initialize right hand side of linear system
+    linsolve_rhs .= uprev
+
+    # Initialize C matrices
+    for i in 1:(M + 1)
+        C2[:, i] .= uprev
+    end
+
+    for _ in 1:K
+        C .= C2
+        for m in 2:(M + 1)
+            linsolve_rhs .= uprev
+            build_mpdec_matrix_and_rhs!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes,
+                                        theta,
+                                        small_constant)
+
+            # Same as linres = P2 \ linsolve_rhs
+            linsolve.A = P2
+            linres = solve!(linsolve)
+            C2[:, m] .= linres
+            integrator.stats.nsolve += 1
+        end
+    end
+
+    u .= C2[:, M + 1]
+    σ .= C[:, M + 1] # one order less accurate
+
+    # Now σ stores the error estimate
+    @.. broadcast=false σ=u - σ
+
+    # Now tmp stores error residuals
+    calculate_residuals!(tmp, σ, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol, integrator.opts.internalnorm, t,
+                         False())
+    integrator.EEst = integrator.opts.internalnorm(tmp, t)
+end
+
+# TODO: Remove the code below after testing is complete
 ########################################################################################################
 ########################################################################################################
 #### The functions below are provided with the original paper and used for validation.              ####

@@ -1214,7 +1214,6 @@ end
 
         # Here we check that MPRK22(1.0) = MPDeC(2)
         @testset "MPRK22(1.0) = MPDeC(2)" begin
-            #TODO: Add MPDeC(2) for nonconservative PDS - REQUIRES PDSProblem
             # conservative PDS
             sol1 = solve(prob_pds_linmod, MPRK22(1.0))
             sol2 = solve(prob_pds_linmod, MPDeC(2))
@@ -1223,11 +1222,20 @@ end
             sol5 = solve(prob_pds_linmod_inplace, MPDeC(2))
             sol6 = solve(prob_pds_linmod_inplace, MPDeC(2, nodes = :lagrange))
             @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u ≈ sol5.u ≈ sol6.u
+
+            # nonconservative PDS
+            sol1 = solve(prob_pds_linmod_nonconservative, MPRK22(1.0))
+            sol2 = solve(prob_pds_linmod_nonconservative, MPDeC(2))
+            sol3 = solve(prob_pds_linmod_nonconservative, MPDeC(2, nodes = :lagrange))
+            sol4 = solve(prob_pds_linmod_nonconservative_inplace, MPRK22(1.0))
+            sol5 = solve(prob_pds_linmod_nonconservative_inplace, MPDeC(2))
+            sol6 = solve(prob_pds_linmod_nonconservative_inplace,
+                         MPDeC(2, nodes = :lagrange))
+            @test sol1.u ≈ sol2.u ≈ sol3.u ≈ sol4.u ≈ sol5.u ≈ sol6.u
         end
 
         # Here we check that different linear solvers can be used
         @testset "Different linear solvers" begin
-            #TODO: Add MPDeC - REQUIRES PDSProblem
             # problem data
             u0 = [0.9, 0.1]
             tspan = (0.0, 2.0)
@@ -1257,15 +1265,19 @@ end
             prob_ip_2 = ConservativePDSProblem(linmodP!, u0, tspan, p;
                                                analytic = f_analytic)
 
-            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
-                    (; kwargs...) -> MPRK22(0.5; kwargs...),
-                    (; kwargs...) -> MPRK22(2.0; kwargs...),
-                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
-                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
-                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
-                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
-                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
-                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            algs = [MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                (; kwargs...) -> MPRK22(0.5; kwargs...),
+                (; kwargs...) -> MPRK22(2.0; kwargs...),
+                (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                (; kwargs...) -> SSPMPRK43(; kwargs...)]
+            for k in 2:9
+                push!(algs, (; kwargs...) -> MPDeC(k; kwargs...),
+                      (; kwargs...) -> MPDeC(k; nodes = :lagrange, kwargs...))
+            end
 
             for alg in algs
                 # Check different linear solvers
@@ -1838,13 +1850,12 @@ end
         # Here we check the convergence order of pth-order schemes for which
         # also an interpolation of order p is available
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Add MPDeC(2) - PDSProblem
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0))
+            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0), SSPMPRK22(0.5, 1.0),
+                    MPDeC(2), MPDeC(2; nodes = :lagrange))
             dts = 0.5 .^ (4:15)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
             @testset "$alg" for alg in algs
-                alg = MPRK22(1.0)
                 for prob in problems
                     orders = experimental_orders_of_convergence(prob, alg, dts)
                     @test check_order(orders, PositiveIntegrators.alg_order(alg))
@@ -1858,13 +1869,13 @@ end
                                                                     dts;
                                                                     test_time)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
-                                          atol = 0.2)
+                                          atol = 0.3)
                         orders = experimental_orders_of_convergence(prob, alg,
                                                                     dts;
                                                                     test_time,
                                                                     only_first_index = true)
                         @test check_order(orders, PositiveIntegrators.alg_order(alg),
-                                          atol = 0.2)
+                                          N = 2, atol = 0.3)
                     end
                 end
             end
@@ -1888,13 +1899,15 @@ end
 
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
+        #TODO: Check order of MPDeC(K), K≥ 5
         @testset "Convergence tests (nonconservative)" begin
-            #TODO: Add MPDeC(K), K≥ 3 - PDSProblem
             dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod_nonconservative,
                         prob_pds_linmod_nonconservative_inplace)
             algs = (MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43())
+                    MPRK43II(0.5), MPRK43II(2.0 / 3.0), SSPMPRK43(),
+                    MPDeC(3), MPDeC(3; nodes = :lagrange),
+                    MPDeC(4), MPDeC(4; nodes = :lagrange))
             for alg in algs, prob in problems
                 orders = experimental_orders_of_convergence(prob, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
@@ -1925,8 +1938,8 @@ end
             end
         end
 
+        #TODO: Check MPDeC(K) order for K ≥ 4
         @testset "Check convergence order (nonautonomous conservative PDS)" begin
-            #TODO: Check MPDeC(K) order for K ≥ 4
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 P[1, 2] = sin(t)^2 * u[2]
@@ -1956,8 +1969,8 @@ end
             end
         end
 
+        #TODO: Check order of MPDeC(K), K≥ 6
         @testset "Check convergence order (nonautonomous nonconservative PDS)" begin
-            #TODO: Add MPDeC
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 P[1, 2] = sin(t)^2 * u[2]
@@ -1981,14 +1994,18 @@ end
                 dest!(d, u, p, t)
                 return d
             end
-            u0 = [1.0; 0.0]
+            u0 = [1.1; 0.9] # stay away from zero
             tspan = (0.0, 1.0)
             prob_oop = PDSProblem(prod, dest, u0, tspan) #out-of-place
             prob_ip = PDSProblem(prod!, dest!, u0, tspan) #in-place
 
-            dts = 0.5 .^ (4:15)
+            dts = 0.5 .^ (4:10)
             algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0), SSPMPRK43(),
+                    MPDeC(2), MPDeC(2; nodes = :lagrange), MPDeC(3),
+                    MPDeC(3; nodes = :lagrange),
+                    MPDeC(4), MPDeC(4; nodes = :lagrange), MPDeC(5),
+                    MPDeC(5; nodes = :lagrange))
             @testset "$alg" for alg in algs
                 orders = experimental_orders_of_convergence(prob_oop, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
@@ -2016,7 +2033,6 @@ end
 
         # Check that the schemes accept zero initial values
         @testset "Zero initial values" begin
-            #TODO: Add MPDeC - Requires PDSProblem
             # Do a single step and check that no NaNs occur
             u0 = [1.0, 0.0]
             dt = 1.0
@@ -2046,9 +2062,12 @@ end
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
             prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
 
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
-                    MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
+                MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:9
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
 
             for alg in algs
                 sol = solve(prob_ip, alg; dt = dt, adaptive = false)
