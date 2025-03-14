@@ -1,18 +1,19 @@
+#TODO: Comment on choice of small_consant 
 """
     MPDeC(K; [nodes = :gausslobatto, linsolve = ..., small_constant = ...])
 
 A family of arbitrary order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is an adaptive, one-step method which is
 Kth order accurate, unconditionally positivity-preserving, and linearly
-implicit. 
+implicit. The integer K must be chosen to satisfy 2 ≤ K ≤ 10. 
+Available node choices are Lagrange or Gauss-Lobatto nodes, with the latter being the default.
+These methods support adaptive time stepping using the numerical solution obtained with one correction step less, as lower order approximation to estimate the error.
 
-This method supports adaptive time stepping, using TODO: ???, as lower order approximations to estimate the error.
-
-These schemes were introduced by Torlo and Öffner (2020) for conservative production-destruction systems.
+The MPDeC schemes were introduced by Torlo and Öffner (2020) for autonomous conservative production-destruction systems.
 For nonconservative production–destruction systems we use a straight forward extension
 analogous to [`MPE`](@ref).
-
-TODO: We need a sentences about the nodes choices. Literature for Gauss-Lobatto?
+A general discussion of DeC schemes applied to non-autonomous differential equations 
+and using general integration nodes is given by Ong and Spiteri (2020).
 
 The MPDeC methods require the special structure of a
 [`PDSProblem`](@ref) or a [`ConservativePDSProblem`](@ref).
@@ -29,7 +30,9 @@ to avoid divisions by zero. You can pass a value explicitly, otherwise `small_co
 - Davide Torlo, and Philipp Öffner.
   "Arbitrary high-order, conservative and positivity preserving Patankar-type deferred correction schemes."
   Applied Numerical Mathematics 153 (2020): 15-34.
-- TODO: Literature non-autonomous DeC
+- Benjamin W. Ong & Raymond J. Spiteri.
+  "Deferred Correction Methods for Ordinary Differential Equations."
+  Journal of Scientific Computing 83 (2020): Article 60
 """
 struct MPDeC{T, N, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     K::T
@@ -321,86 +324,148 @@ function initialize!(integrator, cache::MPDeCConstantCache)
 end
 
 # out-of-place
-function build_mpdec_matrix_and_rhs(uprev, m, f, C, p, t, dt, nodes, theta, small_constant)
-    N, M = size(C)
-    M = M - 1
-
-    Mmat = zeros(eltype(C), N, N)
-    rhs = similar(uprev)
-    rhs .= uprev
-
-    # P stores the production matrix in in-place computations.
-    # In out-of-place computations it is not needed
-    P = nothing
+function build_mpdec_matrix_and_rhs_oop(uprev, m, f, C, p, t, dt, nodes, theta,
+                                        small_constant)
+    N = length(uprev)
     if f isa PDSFunction
         # Additional destruction terms 
-        build_mpdec_matrix_and_rhs!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
-                                    small_constant, f.d)
+        Mmat, rhs = _build_mpdec_matrix_and_rhs_oop(uprev, m, f.p, C, p, t, dt, nodes,
+                                                    theta,
+                                                    small_constant, f.d)
     else
         # No additional destruction terms 
-        build_mpdec_matrix_and_rhs!(Mmat, rhs, m, f.p, P, C, p, t, dt, nodes, theta,
-                                    small_constant)
+        Mmat, rhs = _build_mpdec_matrix_and_rhs_oop(uprev, m, f.p, C, p, t, dt, nodes,
+                                                    theta,
+                                                    small_constant)
     end
 
-    if C isa StaticArray
-        return SMatrix(Mmat), SVector(rhs)
+    if uprev isa StaticArray
+        return SMatrix{N, N}(Mmat), SVector{N}(rhs)
     else
         return Mmat, rhs
     end
 end
 
+# out-of-place for dense arrays
+@muladd function _build_mpdec_matrix_and_rhs_oop(uprev, m, prod, C, p, t, dt, nodes, theta,
+                                                 small_constant, dest = nothing)
+    N, M = size(C)
+    M = M - 1
+
+    # Create linear system matrix and rhs 
+    Mmat = zeros(eltype(C), N, N)
+    rhs = similar(uprev)
+
+    # Initialize linear system matrix and rhs
+    fill!(Mmat, zero(eltype(Mmat)))
+    oneMmat = one(eltype(Mmat))
+    @inbounds for i in 1:N
+        Mmat[i, i] = oneMmat
+    end
+    rhs .= uprev
+
+    σ = add_small_constant(C[:, m], small_constant)
+
+    @fastmath @inbounds @simd for r in 1:(M + 1)
+        th = theta[r, m]
+        dt_th = dt * th
+        P = prod(C[:, r], p, t + nodes[r] * dt)
+        if !isnothing(dest)
+            d = dest(C[:, r], p, t + nodes[r] * dt)
+        else
+            d = nothing
+        end
+        _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d)
+    end
+
+    return Mmat, rhs
+end
+
 # in-place for dense arrays
-function build_mpdec_matrix_and_rhs!(Mmat, rhs, m, prod, P, C, p, t, dt, nodes, theta,
-                                     small_constant,
-                                     dest = nothing, d = nothing)
+@muladd function build_mpdec_matrix_and_rhs_ip!(Mmat, rhs, m, prod, P, C, p, t, dt, σ,
+                                                nodes, theta, small_constant,
+                                                dest = nothing, d = nothing)
     N, M = size(C)
     M = M - 1
 
     fill!(Mmat, zero(eltype(Mmat)))
     oneMmat = one(eltype(Mmat))
-    for i in 1:N
+    @inbounds for i in 1:N
         Mmat[i, i] = oneMmat
     end
 
-    #TODO: use predefined memory in inplace computations
-    σ = add_small_constant(C[:, m], small_constant)
+    σ .= C[:, m] .+ small_constant
 
-    for r in 1:(M + 1)
+    @fastmath @inbounds @simd for r in 1:(M + 1)
         th = theta[r, m]
         dt_th = dt * th
-        #TODO: This should be checked earlier and only once
-        if isinplace(prod, 4)
-            prod(P, C[:, r], p, t + nodes[r] * dt)
-            if !isnothing(dest)
-                dest(d, C[:, r], p, t + nodes[r] * dt)
-            end
-        else
-            P = prod(C[:, r], p, t + nodes[r] * dt)
-            if !isnothing(dest)
-                d = dest(C[:, r], p, t + nodes[r] * dt)
-            end
+
+        prod(P, C[:, r], p, t + nodes[r] * dt)
+        if !isnothing(dest)
+            dest(d, C[:, r], p, t + nodes[r] * dt)
         end
 
-        for i in 1:N
-            # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
-            if !isnothing(dest)
-                if th >= 0
-                    Mmat[i, i] += dt_th * d[i] / σ[i]
-                    rhs[i] += dt_th * P[i, i]
+        _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d)
+    end
+end
+
+#=
+function _build_mpdec_matrix_and_rhs_old!(Mmat, rhs, P, dt_th, σ, d = nothing)
+    N = length(rhs)
+    @fastmath @inbounds @simd for i in 1:N
+        # Add nonconservative destruction terms to diagonal (PDSFunctions only!)
+        if !isnothing(d)
+            if dt_th >= 0
+                Mmat[i, i] += dt_th * d[i] / σ[i]
+                rhs[i] += dt_th * P[i, i]
+            else
+                Mmat[i, i] -= dt_th * P[i, i] / σ[i]
+                rhs[i] -= dt_th * d[i]
+            end
+        end
+        @fastmath @inbounds @simd for j in 1:N
+            if j != i
+                if dt_th >= 0
+                    Mmat[i, j] -= dt_th * P[i, j] / σ[j]
+                    Mmat[i, i] += dt_th * P[j, i] / σ[i] # P[j, i] = D[i, j]
                 else
-                    Mmat[i, i] -= dt_th * P[i, i] / σ[i]
-                    rhs[i] -= dt_th * d[i]
+                    Mmat[i, j] += dt_th * P[j, i] / σ[j] # P[j, i] = D[i, j]
+                    Mmat[i, i] -= dt_th * P[i, j] / σ[i]
                 end
             end
-            for j in 1:N
-                if j != i
-                    if th >= 0
-                        Mmat[i, j] -= dt_th * P[i, j] / σ[j]
-                        Mmat[i, i] += dt_th * P[j, i] / σ[i] # P[j, i] = D[i, j]
-                    else
-                        Mmat[i, j] += dt_th * P[j, i] / σ[j] # P[j, i] = D[i, j]
-                        Mmat[i, i] -= dt_th * P[i, j] / σ[i]
-                    end
+        end
+    end
+end
+=#
+function _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d = nothing)
+    @fastmath @inbounds @simd for I in CartesianIndices(P)
+        if !iszero(P[I])
+            dt_th_P = dt_th * P[I]
+            if I[1] != I[2]
+                if dt_th ≥ 0
+                    Mmat[I] -= dt_th_P / σ[I[2]]
+                    Mmat[I[2], I[2]] += dt_th_P / σ[I[2]]
+                else
+                    Mmat[I[2], I[1]] += dt_th_P / σ[I[1]]
+                    Mmat[I[1], I[1]] -= dt_th_P / σ[I[1]]
+                end
+            else # diagonal elements
+                if dt_th >= 0
+                    rhs[I[1]] += dt_th_P
+                else
+                    Mmat[I] -= dt_th_P / σ[I[1]]
+                end
+            end
+        end
+    end
+
+    if !isnothing(d)
+        @fastmath @inbounds @simd for i in eachindex(d)
+            if !iszero(d[i])
+                if dt_th >= 0
+                    Mmat[i, i] += dt_th * d[i] / σ[i]
+                else
+                    rhs[i] -= dt_th * d[i]
                 end
             end
         end
@@ -420,9 +485,9 @@ end
     for _ in 1:K
         C .= C2
         for m in 2:(M + 1)
-            Mmat, rhs = build_mpdec_matrix_and_rhs(uprev, m, f, C, p, t, dt, nodes, theta,
-                                                   small_constant)
-
+            Mmat, rhs = build_mpdec_matrix_and_rhs_oop(uprev, m, f, C, p, t, dt, nodes,
+                                                       theta,
+                                                       small_constant)
             # solve linear system
             linprob = LinearProblem(Mmat, rhs)
             sol = solve(linprob, alg.linsolve)
@@ -535,9 +600,10 @@ end
         C .= C2
         for m in 2:(M + 1)
             linsolve_rhs .= uprev
-            build_mpdec_matrix_and_rhs!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes,
-                                        theta,
-                                        small_constant, f.d, d)
+            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ,
+                                           nodes,
+                                           theta,
+                                           small_constant, f.d, d)
 
             # Same as linres = P2 \ linsolve_rhs
             linsolve.A = P2
@@ -578,9 +644,10 @@ end
         C .= C2
         for m in 2:(M + 1)
             linsolve_rhs .= uprev
-            build_mpdec_matrix_and_rhs!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, nodes,
-                                        theta,
-                                        small_constant)
+            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ,
+                                           nodes,
+                                           theta,
+                                           small_constant)
 
             # Same as linres = P2 \ linsolve_rhs
             linsolve.A = P2
