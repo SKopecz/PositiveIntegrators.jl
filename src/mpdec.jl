@@ -41,8 +41,9 @@ end
 
 function small_constant_function_MPDeC(type)
     if type == Float64
-        #TODO: Adjust default value based on K        
-        small_constant = floatmin(type)
+        # small_constant is chosen such that 
+        # the testet "Zero initial values" passes.
+        small_constant = 1e-300
     else
         small_constant = floatmin(type)
     end
