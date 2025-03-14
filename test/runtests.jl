@@ -2084,7 +2084,6 @@ end
         # Check that approximations, and thus the Patankar weights,
         # remain positive to avoid division by zero.
         @testset "Positvity check" begin
-            #TODO: Add MPDeC - Requires PDSProblem
             # For this problem u[1] decreases montonically to 0 very fast.
             # We perform 10^5 steps and check that u[end] does not contain any NaNs
             u0 = [0.9, 0.1]
@@ -2114,9 +2113,12 @@ end
             prob_oop = ConservativePDSProblem(prod, u0, tspan, p)
             prob_oop_2 = PDSProblem(prod, dest, u0, tspan, p)
 
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
-                    MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
+                MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:9
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
 
             dt = 1e-3
             for alg in algs
@@ -2135,9 +2137,11 @@ end
         # Here we check that the implemented schemes can solve the predefined PDS
         # (at least for specific parameters)
         @testset "PDS problem library (adaptive schemes)" begin
-            #TODO: Add MPDeC
-            algs = (MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                    MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0))
+            algs = [MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0)]
+            for k in 2:9
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
             probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
                      prob_pds_robertson, prob_pds_bertolazzi, prob_pds_brusselator,
                      prob_pds_npzd,
@@ -2150,6 +2154,9 @@ end
                         break
                     elseif prob == prob_pds_stratreac && alg == MPRK43I(0.5, 0.75)
                         # Not successful on Julia 1.9
+                        break
+                    elseif prob == prob_pds_stratreac && alg == MPDeC(9; nodes = :lagrange)
+                        # unstable
                         break
                     end
                     # later versions of OrdinaryDiffEq.jl use dtmin = 0 by default,
@@ -2179,7 +2186,6 @@ end
 
         #Here we check the different possibilities to define small_constant.
         @testset "Different possibilities to set small_constant" begin
-            #TODO: Add MPDeC - Requires PDSProblem
             # For this problem u[1] decreases montonically to 0 very fast.
             u0 = [0.9, 0.1]
             tspan = (0.0, 100.0)
@@ -2213,11 +2219,15 @@ end
                      prob_pds_npzd,
                      prob_pds_sir, prob_pds_stratreac)
 
-            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
-                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
-                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
-                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
-                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            algs = [MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                (; kwargs...) -> SSPMPRK43(; kwargs...)]
+            for k in 2:9
+                push!(algs, (; kwargs...) -> MPDeC(k; kwargs...),
+                      (; kwargs...) -> MPDeC(k; nodes = :lagrange, kwargs...))
+            end
             for alg in algs
                 for prob in probs
                     sol1 = solve(prob_pds_linmod, alg(), dt = 0.1)
@@ -2230,13 +2240,21 @@ end
             end
         end
 
-        #Here we check if the RK methods on which the MPRK schemes are based integrate
+        # Here we check if the RK methods on which the MPRK schemes are based integrate
         # u'(t) = q * t^(q-1) exactly for q from 1 to the order of the method.
+        # This is also true for MPDeC as long as the theta matrix is nonnegative, i.e. K = 2.
+        # Nevertheless, the results of most MPDeC schemes are good enough to pass this test
         @testset "Exact solutions (RK)" begin
             #TODO: Add MPDeC - Requires PDSProblem
-            algs = (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
-                    MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
-                    MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
+                MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:10
+                push!(algs, MPDeC(k))
+                if k != 9
+                    push!(algs, MPDeC(k, nodes = :lagrange))
+                end
+            end
             @testset "$alg, $q" for alg in algs, q in 1:PositiveIntegrators.alg_order(alg)
                 f(t) = q * t^(q - 1)
                 function prod!(P, u, p, t)
