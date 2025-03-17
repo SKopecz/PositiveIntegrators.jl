@@ -391,10 +391,18 @@ end
     N, M = size(C)
     M = M - 1
 
-    fill!(Mmat, zero(eltype(Mmat)))
     oneMmat = one(eltype(Mmat))
-    @inbounds for i in 1:N
-        Mmat[i, i] = oneMmat
+    zeroMmat = zero(eltype(Mmat))
+
+    if Mmat isa Tridiagonal
+        Mmat.d .= oneMmat
+        Mmat.du .= zeroMmat
+        Mmat.dl .= zeroMmat
+    else
+        fill!(Mmat, zeroMmat)
+        @inbounds for i in 1:N
+            Mmat[i, i] = oneMmat
+        end
     end
 
     σ .= C[:, m] .+ small_constant
@@ -493,36 +501,62 @@ function _build_mpdec_matrix_and_rhs!(M::Tridiagonal, rhs, P::Tridiagonal, dt_th
     Base.require_one_based_indexing(M.dl, M.d, M.du, P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
+            
+    if dt_th ≥ 0
+        @fastmath @inbounds @simd for i in eachindex(P.d, rhs)
+            rhs[i] += dt_th * P.d[i]
+        end
 
-    @fastmath @inbounds @simd for I in CartesianIndices(P)
-        if !iszero(P[I])
-            dt_th_P = dt_th * P[I]
-            if I[1] != I[2]
-                if dt_th ≥ 0
-                    M[I] -= dt_th_P / σ[I[2]]
-                    M[I[2], I[2]] += dt_th_P / σ[I[2]]
-                else
+        for i in eachindex(M.dl, P.dl)
+            dt_th_P = dt_th * P.dl[i]
+            M.dl[i] -= dt_th_P / σ[i]
+            M.d[i] += dt_th_P / σ[i]
+        end
+        
+        for i in eachindex(M.du, P.du)
+            dt_th_P = dt_th * P.du[i]
+            M.du[i] -= dt_th_P / σ[i + 1]
+            M.d[i + 1] += dt_th_P / σ[i + 1]
+        end
+
+        if !isnothing(d)
+            @fastmath @inbounds @simd for i in eachindex(M.d, σ, d)
+                M.d[i] += dt_th * d[i] / σ[i]
+            end
+        end
+    else # dt_th ≤ 0
+        #=
+        @fastmath @inbounds @simd for I in CartesianIndices(P)
+            if !iszero(P[I])
+                dt_th_P = dt_th * P[I]
+                if I[1] != I[2]
                     M[I[2], I[1]] += dt_th_P / σ[I[1]]
                     M[I[1], I[1]] -= dt_th_P / σ[I[1]]
                 end
-            else # diagonal elements
-                if dt_th >= 0
-                    rhs[I[1]] += dt_th_P
-                else
-                    M[I] -= dt_th_P / σ[I[1]]
-                end
             end
         end
-    end
+        =#
 
-    if !isnothing(d)
-        @fastmath @inbounds @simd for i in eachindex(d)
-            if !iszero(d[i])
-                if dt_th >= 0
-                    M[i, i] += dt_th * d[i] / σ[i]
-                else
-                    rhs[i] -= dt_th * d[i]
-                end
+        @fastmath @inbounds @simd for i in eachindex(M.d, P.d, σ)
+            M.d[i] -= dt_th * P.d[i] / σ[i]
+        end
+
+        for i in eachindex(M.dl, P.dl)
+            dt_th_P = dt_th * P.dl[i]
+            M.du[i] += dt_th_P / σ[i+1]
+            M.d[i+1] -= dt_th_P / σ[i+1]
+        end
+        
+        for i in eachindex(M.du, P.du)
+            dt_th_P = dt_th * P.du[i]
+            M.dl[i] += dt_th_P / σ[i]
+            M.d[i] -= dt_th_P / σ[i]
+        end
+
+
+        if !isnothing(d)
+            @fastmath @inbounds @simd for i in eachindex(rhs, d)
+                rhs[i] -= dt_th * d[i]
             end
         end
     end
