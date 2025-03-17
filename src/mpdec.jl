@@ -440,23 +440,76 @@ function _build_mpdec_matrix_and_rhs_old!(Mmat, rhs, P, dt_th, σ, d = nothing)
     end
 end
 =#
-function _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d = nothing)
+function _build_mpdec_matrix_and_rhs!(M, rhs, P, dt_th, σ, d = nothing)
+    Base.require_one_based_indexing(M, P, σ)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(σ)
+
+    if dt_th ≥ 0
+        @fastmath @inbounds @simd for I in CartesianIndices(P)
+            if !iszero(P[I])
+                dt_th_P = dt_th * P[I]
+                if I[1] != I[2]
+                    M[I] -= dt_th_P / σ[I[2]]
+                    M[I[2], I[2]] += dt_th_P / σ[I[2]]
+                else # diagonal elements
+                    rhs[I[1]] += dt_th_P
+                end
+            end
+        end
+
+        if !isnothing(d)
+            @fastmath @inbounds @simd for i in eachindex(d)
+                if !iszero(d[i])
+                    M[i, i] += dt_th * d[i] / σ[i]
+                end
+            end
+        end
+    else # dt_th ≤ 0
+        @fastmath @inbounds @simd for I in CartesianIndices(P)
+            if !iszero(P[I])
+                dt_th_P = dt_th * P[I]
+                if I[1] != I[2]
+                    M[I[2], I[1]] += dt_th_P / σ[I[1]]
+                    M[I[1], I[1]] -= dt_th_P / σ[I[1]]
+                else # diagonal elements
+                    M[I] -= dt_th_P / σ[I[1]]
+                end
+            end
+        end
+
+        if !isnothing(d)
+            @fastmath @inbounds @simd for i in eachindex(d)
+                if !iszero(d[i])
+                    rhs[i] -= dt_th * d[i]
+                end
+            end
+        end
+    end
+end
+
+# optimized version for Tridiagonal matrices
+function _build_mpdec_matrix_and_rhs!(M::Tridiagonal, rhs, P::Tridiagonal, dt_th, σ,
+                                      d = nothing)
+    Base.require_one_based_indexing(M.dl, M.d, M.du, P.dl, P.d, P.du, σ)
+    @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
+            length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
+
     @fastmath @inbounds @simd for I in CartesianIndices(P)
         if !iszero(P[I])
             dt_th_P = dt_th * P[I]
             if I[1] != I[2]
                 if dt_th ≥ 0
-                    Mmat[I] -= dt_th_P / σ[I[2]]
-                    Mmat[I[2], I[2]] += dt_th_P / σ[I[2]]
+                    M[I] -= dt_th_P / σ[I[2]]
+                    M[I[2], I[2]] += dt_th_P / σ[I[2]]
                 else
-                    Mmat[I[2], I[1]] += dt_th_P / σ[I[1]]
-                    Mmat[I[1], I[1]] -= dt_th_P / σ[I[1]]
+                    M[I[2], I[1]] += dt_th_P / σ[I[1]]
+                    M[I[1], I[1]] -= dt_th_P / σ[I[1]]
                 end
             else # diagonal elements
                 if dt_th >= 0
                     rhs[I[1]] += dt_th_P
                 else
-                    Mmat[I] -= dt_th_P / σ[I[1]]
+                    M[I] -= dt_th_P / σ[I[1]]
                 end
             end
         end
@@ -466,7 +519,7 @@ function _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d = nothing)
         @fastmath @inbounds @simd for i in eachindex(d)
             if !iszero(d[i])
                 if dt_th >= 0
-                    Mmat[i, i] += dt_th * d[i] / σ[i]
+                    M[i, i] += dt_th * d[i] / σ[i]
                 else
                     rhs[i] -= dt_th * d[i]
                 end
