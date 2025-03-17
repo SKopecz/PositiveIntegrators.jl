@@ -352,12 +352,15 @@ end
     N, M = size(C)
     M = M - 1
 
-    # Create linear system matrix and rhs 
-    Mmat = zeros(eltype(C), N, N)
+    # Create linear system matrix and rhs
+    if uprev isa StaticArray
+        Mmat = MMatrix{N, N}(zeros(eltype(uprev), N, N))
+    else
+        Mmat = zeros(eltype(uprev), N, N)
+    end
     rhs = similar(uprev)
 
-    # Initialize linear system matrix and rhs
-    fill!(Mmat, zero(eltype(Mmat)))
+    # Initialize
     oneMmat = one(eltype(Mmat))
     @inbounds for i in 1:N
         Mmat[i, i] = oneMmat
@@ -476,8 +479,16 @@ end
     @unpack alg, t, dt, uprev, f, p = integrator
     @unpack K, M, nodes, theta, small_constant = cache
 
-    C = zeros(length(uprev), M + 1)
-    C2 = zeros(length(uprev), M + 1)
+    N = length(uprev)
+
+    if uprev isa StaticArray
+        C = MMatrix{N, M + 1}(zeros(N, M + 1))
+        C2 = MMatrix{N, M + 1}(zeros(N, M + 1))
+    else
+        C = zeros(N, M + 1)
+        C2 = zeros(N, M + 1)
+    end
+
     for i in 1:(M + 1)
         C2[:, i] = uprev
     end
