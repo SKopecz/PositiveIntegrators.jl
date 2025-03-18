@@ -385,7 +385,7 @@ end
 end
 
 # in-place for dense arrays
-@muladd function build_mpdec_matrix_and_rhs_ip!(Mmat, rhs, m, prod, P, C, p, t, dt, σ,
+@muladd function build_mpdec_matrix_and_rhs_ip!(Mmat, rhs, m, prod, P, C, p, t, dt, σ, tmp,
                                                 nodes, theta, small_constant,
                                                 dest = nothing, d = nothing)
     N, M = size(C)
@@ -398,6 +398,21 @@ end
         Mmat.d .= oneMmat
         Mmat.du .= zeroMmat
         Mmat.dl .= zeroMmat
+    elseif issparse(Mmat)
+        # Fill sparse matrix with zeros without changing the sparsity pattern, see
+        # https://github.com/JuliaSparse/SparseArrays.jl/issues/190#issuecomment-1186690008.
+        fill!(Mmat.nzval, false)
+
+        M_rows = rowvals(Mmat)
+        M_vals = nonzeros(Mmat)
+        for j in 1:N
+            for idx_M in nzrange(Mmat, j)
+                i = M_rows[idx_M]
+                if i == j
+                    M_vals[idx_M] = oneMmat
+                end
+            end
+        end
     else
         fill!(Mmat, zeroMmat)
         @inbounds for i in 1:N
@@ -416,7 +431,11 @@ end
             dest(d, C[:, r], p, t + nodes[r] * dt)
         end
 
-        _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d)
+        if issparse(Mmat)
+            _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d, tmp)
+        else
+            _build_mpdec_matrix_and_rhs!(Mmat, rhs, P, dt_th, σ, d)
+        end
     end
 end
 
@@ -501,7 +520,7 @@ function _build_mpdec_matrix_and_rhs!(M::Tridiagonal, rhs, P::Tridiagonal, dt_th
     Base.require_one_based_indexing(M.dl, M.d, M.du, P.dl, P.d, P.du, σ)
     @assert length(M.dl) + 1 == length(M.d) == length(M.du) + 1 ==
             length(P.dl) + 1 == length(P.d) == length(P.du) + 1 == length(σ)
-            
+
     if dt_th ≥ 0
         @fastmath @inbounds @simd for i in eachindex(P.d, rhs)
             rhs[i] += dt_th * P.d[i]
@@ -512,7 +531,7 @@ function _build_mpdec_matrix_and_rhs!(M::Tridiagonal, rhs, P::Tridiagonal, dt_th
             M.dl[i] -= dt_th_P / σ[i]
             M.d[i] += dt_th_P / σ[i]
         end
-        
+
         for i in eachindex(M.du, P.du)
             dt_th_P = dt_th * P.du[i]
             M.du[i] -= dt_th_P / σ[i + 1]
@@ -525,39 +544,108 @@ function _build_mpdec_matrix_and_rhs!(M::Tridiagonal, rhs, P::Tridiagonal, dt_th
             end
         end
     else # dt_th ≤ 0
-        #=
-        @fastmath @inbounds @simd for I in CartesianIndices(P)
-            if !iszero(P[I])
-                dt_th_P = dt_th * P[I]
-                if I[1] != I[2]
-                    M[I[2], I[1]] += dt_th_P / σ[I[1]]
-                    M[I[1], I[1]] -= dt_th_P / σ[I[1]]
-                end
-            end
-        end
-        =#
-
         @fastmath @inbounds @simd for i in eachindex(M.d, P.d, σ)
             M.d[i] -= dt_th * P.d[i] / σ[i]
         end
 
         for i in eachindex(M.dl, P.dl)
             dt_th_P = dt_th * P.dl[i]
-            M.du[i] += dt_th_P / σ[i+1]
-            M.d[i+1] -= dt_th_P / σ[i+1]
+            M.du[i] += dt_th_P / σ[i + 1]
+            M.d[i + 1] -= dt_th_P / σ[i + 1]
         end
-        
+
         for i in eachindex(M.du, P.du)
             dt_th_P = dt_th * P.du[i]
             M.dl[i] += dt_th_P / σ[i]
             M.d[i] -= dt_th_P / σ[i]
         end
 
-
         if !isnothing(d)
             @fastmath @inbounds @simd for i in eachindex(rhs, d)
                 rhs[i] -= dt_th * d[i]
             end
+        end
+    end
+end
+
+# optimized version for sparse matrices
+function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractSparseMatrix,
+                                      dt_th, σ,
+                                      d = nothing, tmp = nothing)
+    Base.require_one_based_indexing(M, P, σ)
+    @assert size(M, 1) == size(M, 2) == size(P, 1) == size(P, 2) == length(σ)
+    if !isnothing(d)
+        Base.require_one_based_indexing(d)
+        @assert length(σ) == length(d)
+    end
+
+    # By construction M and P share the same sparsity pattern.
+    M_rows = rowvals(M)
+    M_vals = nonzeros(M)
+    P_rows = rowvals(P)
+    P_vals = nonzeros(P)
+    n = size(M, 2)
+
+    # tmp[j] = M[j,j]
+    zeroP = zero(eltype(P))
+    for i in eachindex(tmp)
+        tmp[i] = zeroP
+    end
+
+    if dt_th ≥ 0
+        for j in 1:n # j is column index 
+            for idx_P in nzrange(P, j)
+                dt_th_P = dt_th * P_vals[idx_P]
+                i = P_rows[idx_P] # i is row index 
+                if i != j
+                    M_vals[idx_P] -= dt_th_P / σ[j]
+                    tmp[j] += dt_th_P / σ[j]
+                else
+                    rhs[i] += dt_th_P
+                end
+            end
+        end
+
+        if !isnothing(d)
+            for i in eachindex(d)
+                tmp[i] += dt_th * d[i] / σ[i]
+            end
+        end
+
+        for j in 1:n
+            for idx_P in nzrange(P, j)
+                i = P_rows[idx_P]
+                if i == j
+                    M_vals[idx_P] += tmp[j]
+                end
+            end
+        end
+    else # dt ≤ 0
+        for j in 1:n # j is column index 
+            for idx_P in nzrange(P, j)
+                dt_th_P = dt_th * P_vals[idx_P]
+                i = P_rows[idx_P] # i is row index 
+                if i != j
+                    #TODO: In general (j,i) is not in the sparsity pattern! 
+                    M[j, i] += dt_th_P / σ[i]
+                    tmp[i] -= dt_th_P / σ[i]
+                else
+                    M_vals[idx_P] -= dt_th_P / σ[i]
+                end
+            end
+        end
+
+        for j in 1:n
+            for idx_P in nzrange(P, j)
+                i = P_rows[idx_P]
+                if i == j
+                    M_vals[idx_P] += tmp[j]
+                end
+            end
+        end
+
+        if !isnothing(d)
+            @.. broadcast=false rhs-=dt_th * d
         end
     end
 end
@@ -698,7 +786,7 @@ end
         C .= C2
         for m in 2:(M + 1)
             linsolve_rhs .= uprev
-            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ,
+            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ, tmp,
                                            nodes,
                                            theta,
                                            small_constant, f.d, d)
@@ -742,7 +830,7 @@ end
         C .= C2
         for m in 2:(M + 1)
             linsolve_rhs .= uprev
-            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ,
+            build_mpdec_matrix_and_rhs_ip!(P2, linsolve_rhs, m, f.p, P, C, p, t, dt, σ, tmp,
                                            nodes,
                                            theta,
                                            small_constant)

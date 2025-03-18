@@ -1300,7 +1300,6 @@ end
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
         @testset "Different matrix types (conservative)" begin
-            #TODO: Add MPDeC - REQUIRES spare and tridiagonal matrices
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1336,11 +1335,21 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [
+                MPE(),
+                MPRK22(0.5),
+                MPRK22(1.0),
+                MPRK43I(1.0, 0.5),
+                MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0),
+                MPRK43II(0.5),
+                SSPMPRK22(0.5, 1.0),
+                SSPMPRK43()
+            ]
+            for k in 2:10
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
+            @testset "$alg" for alg in algs
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1386,7 +1395,6 @@ end
 
         @testset "Different matrix types (conservative, adaptive)" begin
             #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt!)
-            #TODO: Add MPDeC
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1424,11 +1432,15 @@ end
 
             rtol = sqrt(eps(Float32))
 
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [MPE(),
+                MPRK22(0.5), MPRK22(1.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:10
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
+            @testset "$alg" for alg in algs
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1473,7 +1485,6 @@ end
         # Here we check that in-place and out-of-place implementations
         # deliver the same results
         @testset "Different matrix types (nonconservative)" begin
-            #TODO: Add MPDeC
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1540,11 +1551,16 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            algs = [MPE(),
+                MPRK22(0.5), MPRK22(1.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:10
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
+
+            @testset "$alg" for alg in algs
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -1600,7 +1616,6 @@ end
 
         @testset "Different matrix types (nonconservative, adaptive)" begin
             #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt)
-            #TODO: Add MPDeC - Requires PDSProblem and adaptivity
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1667,12 +1682,17 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
+            algs = [MPE(),
+                MPRK22(0.5), MPRK22(1.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:10
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
+
             rtol = sqrt(eps(Float32))
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in algs
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod! = prod_3!
@@ -1732,7 +1752,6 @@ end
         # defines the types of the Ps inside the algorithm caches.
         # We test sparse, tridiagonal, and dense matrices.
         @testset "Prototype type check" begin
-            #TODO: Add MPDeC
             #prod and dest functions
             prod_inner! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1785,11 +1804,17 @@ end
                                      p_prototype = P_dense)
             prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
                                       p_prototype = P_sparse)
+
+            algs = [MPE(),
+                MPRK22(0.5), MPRK22(1.0),
+                MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
+                MPRK43II(2.0 / 3.0), MPRK43II(0.5),
+                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+            for k in 2:10
+                push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
+            end
             #solve and test
-            for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
-                        MPRK43I(0.5, 0.75),
-                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0),
-                        SSPMPRK43())
+            for alg in algs
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
@@ -2065,7 +2090,7 @@ end
             algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                 MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
                 MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
-            for k in 2:9
+            for k in 2:10
                 push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
             end
 
@@ -2245,7 +2270,6 @@ end
         # This is also true for MPDeC as long as the theta matrix is nonnegative, i.e. K = 2.
         # Nevertheless, the results of most MPDeC schemes are good enough to pass this test
         @testset "Exact solutions (RK)" begin
-            #TODO: Add MPDeC - Requires PDSProblem
             algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                 MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
                 MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
