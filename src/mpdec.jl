@@ -394,6 +394,7 @@ end
     oneMmat = one(eltype(Mmat))
     zeroMmat = zero(eltype(Mmat))
 
+    #Initialize Mmat as identity matrix
     if Mmat isa Tridiagonal
         Mmat.d .= oneMmat
         Mmat.du .= zeroMmat
@@ -579,6 +580,9 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
         @assert length(σ) == length(d)
     end
 
+    #TODO: It is crucial that evaluation of the production function 
+    # does not alter the sparsity pattern of p_prototype. This should be checked earlier. 
+
     # By construction M and P share the same sparsity pattern.
     M_rows = rowvals(M)
     M_vals = nonzeros(M)
@@ -587,59 +591,72 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
     n = size(M, 2)
 
     # tmp[j] = M[j,j]
-    zeroP = zero(eltype(P))
-    for i in eachindex(tmp)
-        tmp[i] = zeroP
-    end
+    fill!(tmp, zero(eltype(tmp)))
 
     if dt_th ≥ 0
-        for j in 1:n # j is column index 
-            for idx_P in nzrange(P, j)
+        for j in 1:n # run through columns of P  
+            for idx_P in nzrange(P, j) # run through rows of P
+                i = P_rows[idx_P]
                 dt_th_P = dt_th * P_vals[idx_P]
-                i = P_rows[idx_P] # i is row index 
                 if i != j
-                    M_vals[idx_P] -= dt_th_P / σ[j]
-                    tmp[j] += dt_th_P / σ[j]
+                    for idx_M in nzrange(M, j)
+                        if M_rows[idx_M] == i
+                            M_vals[idx_M] -= dt_th_P / σ[j] # M_ij <- P_ij 
+                            #break
+                        end
+                    end
+                    tmp[j] += dt_th_P / σ[j] # M_jj <- P_ij = D_ji
                 else
-                    rhs[i] += dt_th_P
+                    rhs[i] += dt_th_P # rhs_i <- P_ii
                 end
             end
         end
 
         if !isnothing(d)
             for i in eachindex(d)
-                tmp[i] += dt_th * d[i] / σ[i]
+                tmp[i] += dt_th * d[i] / σ[i] # M_ii <- D_i
             end
         end
 
         for j in 1:n
-            for idx_P in nzrange(P, j)
-                i = P_rows[idx_P]
+            for idx_M in nzrange(M, j)
+                i = M_rows[idx_M]
                 if i == j
-                    M_vals[idx_P] += tmp[j]
+                    M_vals[idx_M] += tmp[j]
+                    #break
                 end
             end
         end
     else # dt ≤ 0
         for j in 1:n # j is column index 
             for idx_P in nzrange(P, j)
-                dt_th_P = dt_th * P_vals[idx_P]
                 i = P_rows[idx_P] # i is row index 
+                dt_th_P = dt_th * P_vals[idx_P]
                 if i != j
-                    #TODO: In general (j,i) is not in the sparsity pattern! 
-                    M[j, i] += dt_th_P / σ[i]
+                    for idx_M in nzrange(M, i)
+                        if M_rows[idx_M] == j
+                            M_vals[idx_M] += dt_th_P / σ[i] # M_ji <- P_ij
+                        end
+                        #break
+                    end
                     tmp[i] -= dt_th_P / σ[i]
                 else
-                    M_vals[idx_P] -= dt_th_P / σ[i]
+                    for idx_M in nzrange(M, j)
+                        if i == M_rows[idx_M]
+                            M_vals[idx_M] -= dt_th_P / σ[i] # M_ij <- P_ij
+                            #break
+                        end
+                    end
                 end
             end
         end
 
         for j in 1:n
-            for idx_P in nzrange(P, j)
-                i = P_rows[idx_P]
+            for idx_M in nzrange(M, j)
+                i = M_rows[idx_M]
                 if i == j
-                    M_vals[idx_P] += tmp[j]
+                    M_vals[idx_M] += tmp[j]
+                    #break
                 end
             end
         end
@@ -736,6 +753,11 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp = zero(u)
     P = p_prototype(u, f) # stores evaluation of the production matrix
     P2 = p_prototype(u, f) # stores the linear system matrix
+    if issparse(P2) && alg.K > 2
+        # Negative weights of MPDeC(K) , K >=3 require
+        # a symmetric sparsity pattern
+        P2 = P2 + P2'
+    end
     d = zero(u)
     σ = zero(u)
     C = zeros(eltype(u), length(u), alg.M + 1)

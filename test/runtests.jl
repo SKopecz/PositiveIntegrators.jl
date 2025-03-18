@@ -1274,7 +1274,7 @@ end
                 (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
                 (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
                 (; kwargs...) -> SSPMPRK43(; kwargs...)]
-            for k in 2:9
+            for k in 2:10
                 push!(algs, (; kwargs...) -> MPDeC(k; kwargs...),
                       (; kwargs...) -> MPDeC(k; nodes = :lagrange, kwargs...))
             end
@@ -2141,7 +2141,7 @@ end
             algs = [MPE(), MPRK22(0.5), MPRK22(1.0), MPRK22(2.0),
                 MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75), MPRK43II(0.5),
                 MPRK43II(2.0 / 3.0), SSPMPRK22(0.5, 1.0), SSPMPRK43()]
-            for k in 2:9
+            for k in 2:10
                 push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
             end
 
@@ -2164,7 +2164,7 @@ end
         @testset "PDS problem library (adaptive schemes)" begin
             algs = [MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                 MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0)]
-            for k in 2:9
+            for k in 2:10
                 push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
             end
             probs = (prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
@@ -2249,7 +2249,7 @@ end
                 (; kwargs...) -> MPRK43II(0.5; kwargs...),
                 (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
                 (; kwargs...) -> SSPMPRK43(; kwargs...)]
-            for k in 2:9
+            for k in 2:10
                 push!(algs, (; kwargs...) -> MPDeC(k; kwargs...),
                       (; kwargs...) -> MPDeC(k; nodes = :lagrange, kwargs...))
             end
