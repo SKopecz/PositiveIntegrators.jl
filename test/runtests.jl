@@ -1101,6 +1101,19 @@ end
             @test_throws "MPDeC requires the parameter K to be an integer." solve(prob_pds_linmod,
                                                                                   MPDeC(2.1),
                                                                                   dt = 0.1)
+            @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod, MPDeC(123))
+            @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod, MPDeC(123, nodes =:lagrange))
+            P = spdiagm(1 => [1.0])
+            function prod!(P, u, p, t)
+                P[2, 1] = one(eltype(P))
+            end
+            prob = ConservativePDSProblem(prod!, ones(2, 1), (0.0, 1.0); p_prototype = P)
+            @test_throws "must not alter the sparsity pattern" solve(prob, MPDeC(2))
+        end
+
+        # Check parameter type conversions
+        @testset "Parameter input" begin
+            @test_nowarn solve(prob_pds_linmod, MPDeC(2.0))
         end
 
         # Here we check that algorithms which accept input parameters return constants
