@@ -1102,7 +1102,8 @@ end
                                                                                   MPDeC(2.1),
                                                                                   dt = 0.1)
             @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod, MPDeC(123))
-            @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod, MPDeC(123, nodes =:lagrange))
+            @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod,
+                                                            MPDeC(123, nodes = :lagrange))
             P = spdiagm(1 => [1.0])
             function prod!(P, u, p, t)
                 P[2, 1] = one(eltype(P))
