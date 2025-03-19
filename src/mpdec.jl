@@ -630,9 +630,8 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
         if alg.K > 2
             # Negative weights of MPDeC(K) , K > 2 require
             # a symmetric sparsity pattern of the linear system matrix P2 
-            P2 = P2 + P2'
+            P2 = P + P'
         end
-    else
     end
     d = zero(u)
     σ = zero(u)
