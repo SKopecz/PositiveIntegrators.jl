@@ -343,22 +343,22 @@ end
         prod_1! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
             for i in 1:(length(u) - 1)
-                P[i, i + 1] = i * u[i]
+                P[i, i + 1] = i * u[i + 1]
             end
             return nothing
         end
         prod_2! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
             for i in 1:(length(u) - 1)
-                P[i + 1, i] = i * u[i + 1]
+                P[i + 1, i] = i * u[i]
             end
             return nothing
         end
         prod_3! = (P, u, p, t) -> begin
             fill!(P, zero(eltype(P)))
             for i in 1:(length(u) - 1)
-                P[i, i + 1] = i * u[i]
-                P[i + 1, i] = i * u[i + 1]
+                P[i, i + 1] = i * u[i + 1]
+                P[i + 1, i] = i * u[i]
             end
             return nothing
         end
@@ -1317,7 +1317,7 @@ end
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                    P[i, i + 1] = i * u[i + 1]
                 end
                 return nothing
             end
@@ -1325,7 +1325,7 @@ end
             prod_2! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 return nothing
             end
@@ -1333,8 +1333,8 @@ end
             prod_3! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i, i + 1] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 return nothing
             end
@@ -1412,7 +1412,7 @@ end
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                    P[i, i + 1] = i * u[i + 1]
                 end
                 return nothing
             end
@@ -1420,7 +1420,7 @@ end
             prod_2! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 return nothing
             end
@@ -1428,8 +1428,8 @@ end
             prod_3! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i, i + 1] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 return nothing
             end
@@ -1502,7 +1502,7 @@ end
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                    P[i, i + 1] = i * u[i + 1]
                 end
                 for i in 1:length(u)
                     P[i, i] = i * u[i]
@@ -1520,7 +1520,7 @@ end
             prod_2! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 for i in 1:length(u)
                     P[i, i] = (i - 1) * u[i]
@@ -1538,8 +1538,8 @@ end
             prod_3! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i, i + 1] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 for i in 1:length(u)
                     P[i, i] = (i + 1) * u[i]
@@ -1633,7 +1633,7 @@ end
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                    P[i, i + 1] = i * u[i + 1]
                 end
                 for i in 1:length(u)
                     P[i, i] = i * u[i]
@@ -1651,7 +1651,7 @@ end
             prod_2! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 for i in 1:length(u)
                     P[i, i] = (i - 1) * u[i]
@@ -1669,8 +1669,8 @@ end
             prod_3! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
-                    P[i + 1, i] = i * u[i + 1]
+                    P[i, i + 1] = i * u[i + 1]
+                    P[i + 1, i] = i * u[i]
                 end
                 for i in 1:length(u)
                     P[i, i] = (i + 1) * u[i]
@@ -1770,7 +1770,7 @@ end
             prod_inner! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                    P[i, i + 1] = i * u[i + 1]
                 end
                 return nothing
             end
