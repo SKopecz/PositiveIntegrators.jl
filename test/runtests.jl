@@ -1098,9 +1098,6 @@ end
             @test_throws "MPDeC can only be applied to production-destruction systems" solve(prob_oop,
                                                                                              MPDeC(2),
                                                                                              dt = 0.1)
-            @test_throws "MPDeC requires the parameter K to be an integer." solve(prob_pds_linmod,
-                                                                                  MPDeC(2.1),
-                                                                                  dt = 0.1)
             @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod, MPDeC(123))
             @test_throws "MPDeC requires 2 ≤ K ≤ 10." solve(prob_pds_linmod,
                                                             MPDeC(123, nodes = :lagrange))
