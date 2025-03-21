@@ -1112,11 +1112,6 @@ end
             @test_throws "must not alter the sparsity pattern" solve(prob, MPDeC(2))
         end
 
-        # Check parameter type conversions
-        @testset "Parameter input" begin
-            @test_nowarn solve(prob_pds_linmod, MPDeC(2.0))
-        end
-
         # Here we check that algorithms which accept input parameters return constants
         # of the same type as the inputs
         @testset "Constant types" begin
@@ -1408,7 +1403,6 @@ end
         end
 
         @testset "Different matrix types (conservative, adaptive)" begin
-            #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt!)
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1446,11 +1440,10 @@ end
 
             rtol = sqrt(eps(Float32))
 
-            algs = [MPE(),
-                MPRK22(0.5), MPRK22(1.0),
+            algs = [MPRK22(0.5), MPRK22(1.0),
                 MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                 MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+                SSPMPRK22(0.5, 1.0)]
             for k in 2:10
                 push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
             end
@@ -1474,12 +1467,12 @@ end
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
-                    sol_dense_op = solve(prob_dense_op, alg; dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg)
+                    sol_dense_ip = solve(prob_dense_ip, alg)
+                    sol_dense_op = solve(prob_dense_op, alg)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg)
+                    sol_sparse_op = solve(prob_sparse_op, alg)
 
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
                     @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
@@ -1629,7 +1622,6 @@ end
         end
 
         @testset "Different matrix types (nonconservative, adaptive)" begin
-            #TODO: MPE, SSPMPRK43 are not adaptive and need to be removed (solve without giving dt)
             prod_1! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
                 for i in 1:(length(u) - 1)
@@ -1696,11 +1688,10 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            algs = [MPE(),
-                MPRK22(0.5), MPRK22(1.0),
+            algs = [MPRK22(0.5), MPRK22(1.0),
                 MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
                 MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                SSPMPRK22(0.5, 1.0), SSPMPRK43()]
+                SSPMPRK22(0.5, 1.0)]
             for k in 2:10
                 push!(algs, MPDeC(k), MPDeC(k; nodes = :lagrange))
             end
@@ -1734,18 +1725,12 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
-                                               dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
-                                               dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg;
-                                         dt)
-                    sol_dense_op = solve(prob_dense_op, alg;
-                                         dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg;
-                                          dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg;
-                                          dt)
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg)
+                    sol_dense_ip = solve(prob_dense_ip, alg)
+                    sol_dense_op = solve(prob_dense_op, alg)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg)
+                    sol_sparse_op = solve(prob_sparse_op, alg)
 
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
                     @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)

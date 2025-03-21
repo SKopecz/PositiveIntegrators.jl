@@ -64,7 +64,6 @@ function MPDeC(K::Integer;
                nodes = :gausslobatto,
                linsolve = LUFactorization(),
                small_constant = small_constant_function_MPDeC)
-
     if small_constant isa Number
         small_constant_function = Returns(small_constant)
     else # assume small_constant isa Function
@@ -454,14 +453,13 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
         @assert length(σ) == length(d)
     end
 
-    # By construction M and P share the same sparsity pattern.
     M_rows = rowvals(M)
     M_vals = nonzeros(M)
     P_rows = rowvals(P)
     P_vals = nonzeros(P)
     n = size(M, 2)
 
-    # tmp[j] = M[j,j]
+    # We use tmp as a buffer for the diagonal elements of M.
     fill!(tmp, zero(eltype(tmp)))
 
     if dt_th ≥ 0
@@ -473,7 +471,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                     for idx_M in nzrange(M, j)
                         if M_rows[idx_M] == i
                             M_vals[idx_M] -= dt_th_P / σ[j] # M_ij <- P_ij 
-                            #break
+                            break
                         end
                     end
                     tmp[j] += dt_th_P / σ[j] # M_jj <- P_ij = D_ji
@@ -494,7 +492,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                 i = M_rows[idx_M]
                 if i == j
                     M_vals[idx_M] += tmp[j]
-                    #break
+                    break
                 end
             end
         end
@@ -508,14 +506,14 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                         if M_rows[idx_M] == j
                             M_vals[idx_M] += dt_th_P / σ[i] # M_ji <- P_ij
                         end
-                        #break
+                        break
                     end
                     tmp[i] -= dt_th_P / σ[i]
                 else
                     for idx_M in nzrange(M, j)
                         if i == M_rows[idx_M]
                             M_vals[idx_M] -= dt_th_P / σ[i] # M_ij <- P_ij
-                            #break
+                            break
                         end
                     end
                 end
@@ -527,7 +525,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                 i = M_rows[idx_M]
                 if i == j
                     M_vals[idx_M] += tmp[j]
-                    #break
+                    break
                 end
             end
         end
