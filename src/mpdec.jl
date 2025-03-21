@@ -6,7 +6,7 @@ production-destruction systems. Each member of this family is an adaptive, one-s
 Kth order accurate, unconditionally positivity-preserving, and linearly
 implicit. The integer K must be chosen to satisfy 2 ≤ K ≤ 10. 
 Available node choices are Lagrange or Gauss-Lobatto nodes, with the latter being the default.
-These methods support adaptive time stepping using the numerical solution obtained with one correction step less, as lower order approximation to estimate the error.
+These methods support adaptive time stepping, using the numerical solution obtained with one correction step less as a lower-order approximation to estimate the error.
 The MPDeC schemes were introduced by Torlo and Öffner (2020) for autonomous conservative production-destruction systems and
 further investigated in Torlo, Öffner and Ranocha (2022).
 
@@ -23,25 +23,27 @@ algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
 to avoid divisions by zero. You can pass a value explicitly, otherwise `small_constant` is set to
-1e-300 in double precision computations or `floatmin` of the floating point type used.
+`1e-300` in double precision computations or `floatmin` of the floating point type used.
 
 ## References
 
-- Davide Torlo, and Philipp Öffner.
+- Davide Torlo and Philipp Öffner.
   "Arbitrary high-order, conservative and positivity preserving Patankar-type deferred correction schemes."
   Applied Numerical Mathematics 153 (2020): 15-34.
+  [DOI: 10.1016/j.apnum.2020.01.025](https://doi.org/10.1016/j.apnum.2020.01.025)
 - Davide Torlo, Philipp Öffner, and Hendrik Ranocha.
   "Issues with positivity-preserving Patankar-type schemes."
   Applied Numerical Mathematics 182 (2022): 117-147.
   [DOI: 10.1016/j.apnum.2022.07.014](https://doi.org/10.1016/j.apnum.2022.07.014)
 
-- Benjamin W. Ong & Raymond J. Spiteri.
+- Benjamin W. Ong and Raymond J. Spiteri.
   "Deferred Correction Methods for Ordinary Differential Equations."
-  Journal of Scientific Computing 83 (2020): Article 60
+  Journal of Scientific Computing 83 (2020): Article 60.
+  [DOI: 10.1007/s10915-020-01235-8](https://doi.org/10.1007/s10915-020-01235-8)
 """
-struct MPDeC{T, N, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
-    K::T
-    M::T
+struct MPDeC{N, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
+    K::Int
+    M::Int
     nodes::N
     linsolve::F
     small_constant_function::T2
@@ -58,14 +60,10 @@ function small_constant_function_MPDeC(type)
     return small_constant
 end
 
-function MPDeC(K; nodes = :gausslobatto, linsolve = LUFactorization(),
+function MPDeC(K::Integer;
+               nodes = :gausslobatto,
+               linsolve = LUFactorization(),
                small_constant = small_constant_function_MPDeC)
-    if !(isinteger(K))
-        throw(ArgumentError("MPDeC requires the parameter K to be an integer."))
-    end
-    if !(typeof(K) <: Integer)
-        K = Int(K)
-    end
 
     if small_constant isa Number
         small_constant_function = Returns(small_constant)
@@ -73,16 +71,16 @@ function MPDeC(K; nodes = :gausslobatto, linsolve = LUFactorization(),
         small_constant_function = small_constant
     end
 
-    if nodes == :lagrange
+    if nodes === :lagrange
         M = K - 1
     else # :gausslobatto 
-        M = ceil(Integer, K / 2)
+        M = cld(K, 2)
     end
 
-    MPDeC{typeof(K), typeof(nodes), typeof(linsolve), typeof(small_constant_function)}(K, M,
-                                                                                       nodes,
-                                                                                       linsolve,
-                                                                                       small_constant_function)
+    MPDeC{typeof(nodes), typeof(linsolve), typeof(small_constant_function)}(K, M,
+                                                                            nodes,
+                                                                            linsolve,
+                                                                            small_constant_function)
 end
 
 alg_order(alg::MPDeC) = alg.K
@@ -202,9 +200,9 @@ function get_constant_parameters(alg::MPDeC)
     return nodes, theta
 end
 
-struct MPDeCConstantCache{KType, NType, T, T2} <: OrdinaryDiffEqConstantCache
-    K::KType
-    M::KType
+struct MPDeCConstantCache{NType, T, T2} <: OrdinaryDiffEqConstantCache
+    K::Int
+    M::Int
     nodes::NType
     theta::T2
     small_constant::T
