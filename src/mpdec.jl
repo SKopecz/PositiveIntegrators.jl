@@ -471,7 +471,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                     for idx_M in nzrange(M, j)
                         if M_rows[idx_M] == i
                             M_vals[idx_M] -= dt_th_P / σ[j] # M_ij <- P_ij 
-                            #break
+                            break
                         end
                     end
                     tmp[j] += dt_th_P / σ[j] # M_jj <- P_ij = D_ji
@@ -492,7 +492,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                 i = M_rows[idx_M]
                 if i == j
                     M_vals[idx_M] += tmp[j]
-                    #break
+                    break
                 end
             end
         end
@@ -505,15 +505,15 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                     for idx_M in nzrange(M, i)
                         if M_rows[idx_M] == j
                             M_vals[idx_M] += dt_th_P / σ[i] # M_ji <- P_ij
+                            break
                         end
-                        #break
                     end
                     tmp[i] -= dt_th_P / σ[i]
                 else
                     for idx_M in nzrange(M, j)
                         if i == M_rows[idx_M]
                             M_vals[idx_M] -= dt_th_P / σ[i] # M_ij <- P_ij
-                            #break
+                            break
                         end
                     end
                 end
@@ -525,7 +525,7 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
                 i = M_rows[idx_M]
                 if i == j
                     M_vals[idx_M] += tmp[j]
-                    #break
+                    break
                 end
             end
         end
