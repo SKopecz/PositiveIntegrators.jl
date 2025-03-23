@@ -15,6 +15,8 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqVerner: Vern7, Vern9
 using PositiveIntegrators
 
+# load RecursiveFactorization to get RFLUFactorization
+using RecursiveFactorization: RecursiveFactorization
 using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
@@ -1265,10 +1267,16 @@ end
         # deliver the same results
         @testset "Different matrix types (conservative)" begin
             prod_1! = (P, u, p, t) -> begin
-                fill!(P, zero(eltype(P)))
-                for i in 1:(length(u) - 1)
-                    P[i, i + 1] = i * u[i]
+                # fill!(P, zero(eltype(P)))
+                for j in axes(P, 2)
+                    for idx in nzrange(P, j)
+                        i = rowvals(P)[idx]
+                        nonzeros(P)[idx] = i * u[i]
+                    end
                 end
+                # for i in 1:(length(u) - 1)
+                #     P[i, i + 1] = i * u[i]
+                # end
                 return nothing
             end
 
@@ -2274,7 +2282,7 @@ end
         end
 
         # Here we run a single scheme multiple times and check
-        # that the errors are identical and that the computing times 
+        # that the errors are identical and that the computing times
         # differ only slightly.
         @testset "work-precision fixed" begin
             prob = prob_pds_nonlinmod
@@ -2295,7 +2303,7 @@ end
                 @test all(y -> y == v[1], v)
             end
 
-            # check that computing times are close enough 
+            # check that computing times are close enough
             for (i, _) in enumerate(dts)
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
@@ -2307,7 +2315,7 @@ end
         end
 
         # Here we run a single scheme multiple times and check
-        # that the errors are identical and that the computing times 
+        # that the errors are identical and that the computing times
         # differ only slightly.
         @testset "work-precision adaptive" begin
             @testset "adatpive_ref = false" begin
@@ -2332,13 +2340,13 @@ end
                     @test all(y -> y == v[1], v)
                 end
 
-                # check that computing times are close enough 
+                # check that computing times are close enough
                 for (i, _) in enumerate(abstols)
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
-                    # differences won't be significant.        
+                    # differences won't be significant.
                     @test maximum((v .- m1) ./ m1) < 1.5
                 end
             end
@@ -2365,13 +2373,13 @@ end
                     @test all(y -> y == v[1], v)
                 end
 
-                # check that computing times are close enough 
+                # check that computing times are close enough
                 for (i, _) in enumerate(abstols)
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
-                    # differences won't be significant.        
+                    # differences won't be significant.
                     @test maximum((v .- m1) ./ m1) < 1.5
                 end
             end

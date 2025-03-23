@@ -429,7 +429,9 @@ end
     build_mprk_matrix!(P, P, σ, dt)
 
     # Same as linres = P \ uprev
+    display(linsolve.A)
     linsolve.A = P
+    display(linsolve.A)
     linres = solve!(linsolve)
 
     u .= linres
@@ -987,7 +989,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. To display the default value for data type `type` evaluate 
+to avoid divisions by zero. To display the default value for data type `type` evaluate
 `MPRK43II(gamma).small_constant_function(type)`, where `type` can be, e.g.,
 `Float64`.
 
