@@ -233,8 +233,7 @@ end
             Aqua.test_all(PositiveIntegrators;
                       ambiguities = ambiguities,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
-                      persistent_tasks = persistent_tasks,
-                      stale_deps = stale_deps,)
+                      persistent_tasks = persistent_tasks)
         end
 
     end
