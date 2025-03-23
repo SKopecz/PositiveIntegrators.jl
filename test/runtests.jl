@@ -227,17 +227,16 @@ end
         # of OrdinaryDiffEq.jl but not in our regular CI - we just
         # skip it there.
         if !isempty(get(ENV, "GROUP", ""))
-            @info "Skipping stale_deps tests from Aqua.jl"
-            stale_deps = false
+            @info "Skipping tests from Aqua.jl"
         else
-            @info "Running stale_deps tests from Aqua.jl"
-            stale_deps = true
-        end
-        Aqua.test_all(PositiveIntegrators;
+            @info "Running tests from Aqua.jl"
+            Aqua.test_all(PositiveIntegrators;
                       ambiguities = ambiguities,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
                       persistent_tasks = persistent_tasks,
                       stale_deps = stale_deps,)
+        end
+
     end
 
     @testset "ExplicitImports.jl" begin
