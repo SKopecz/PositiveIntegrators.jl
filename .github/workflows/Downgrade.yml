@@ -38,7 +38,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
-          skip: LinearAlgebra,SparseArrays,Statistics,Test,SciMLBase
+          skip: LinearAlgebra,SparseArrays,Statistics,Test,SciMLBase,SciMLOperators
           projects: ., test
       - uses: julia-actions/julia-buildpkg@v1
         env:
