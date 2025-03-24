@@ -1402,11 +1402,15 @@ end
 
             rtol = sqrt(eps(Float32))
 
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
+                                        linsolve -> MPRK22(0.5; linsolve),
+                                        linsolve -> MPRK22(1.0; linsolve),
+                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
+                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
+                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
+                                        linsolve -> MPRK43II(0.5; linsolve),
+                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
+                                        linsolve -> SSPMPRK43(; linsolve))
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1426,12 +1430,14 @@ end
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
-                    sol_dense_op = solve(prob_dense_op, alg; dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
+                    alg_lu = alg(LUFactorization())
+                    alg_klu = alg(KLUFactorization())
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu; dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu; dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg_lu; dt)
+                    sol_dense_op = solve(prob_dense_op, alg_lu; dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg_klu; dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg_lu; dt)
 
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
                     @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
@@ -1517,11 +1523,15 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
+                                        linsolve -> MPRK22(0.5; linsolve),
+                                        linsolve -> MPRK22(1.0; linsolve),
+                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
+                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
+                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
+                                        linsolve -> MPRK43II(0.5; linsolve),
+                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
+                                        linsolve -> SSPMPRK43(; linsolve))
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -1547,17 +1557,19 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
+                    alg_lu = alg(LUFactorization())
+                    alg_klu = alg(KLUFactorization())
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu;
                                                dt, adaptive = false)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu;
                                                dt, adaptive = false)
-                    sol_dense_ip = solve(prob_dense_ip, alg;
+                    sol_dense_ip = solve(prob_dense_ip, alg_lu;
                                          dt, adaptive = false)
-                    sol_dense_op = solve(prob_dense_op, alg;
+                    sol_dense_op = solve(prob_dense_op, alg_lu;
                                          dt, adaptive = false)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg;
+                    sol_sparse_ip = solve(prob_sparse_ip, alg_klu;
                                           dt, adaptive = false)
-                    sol_sparse_op = solve(prob_sparse_op, alg;
+                    sol_sparse_op = solve(prob_sparse_op, alg_lu;
                                           dt, adaptive = false)
 
                     @test sol_tridiagonal_ip.t ≈ sol_tridiagonal_op.t
@@ -1643,11 +1655,15 @@ end
             dt = 0.25
 
             rtol = sqrt(eps(Float32))
-            @testset "$alg" for alg in (MPE(),
-                                        MPRK22(0.5), MPRK22(1.0),
-                                        MPRK43I(1.0, 0.5), MPRK43I(0.5, 0.75),
-                                        MPRK43II(2.0 / 3.0), MPRK43II(0.5),
-                                        SSPMPRK22(0.5, 1.0), SSPMPRK43())
+            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
+                                        linsolve -> MPRK22(0.5; linsolve),
+                                        linsolve -> MPRK22(1.0; linsolve),
+                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
+                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
+                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
+                                        linsolve -> MPRK43II(0.5; linsolve),
+                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
+                                        linsolve -> SSPMPRK43(; linsolve))
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod! = prod_3!
@@ -1675,17 +1691,19 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
+                    alg_lu = alg(LUFactorization())
+                    alg_klu = alg(KLUFactorization())
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu;
                                                dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu;
                                                dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg;
+                    sol_dense_ip = solve(prob_dense_ip, alg_lu;
                                          dt)
-                    sol_dense_op = solve(prob_dense_op, alg;
+                    sol_dense_op = solve(prob_dense_op, alg_lu;
                                          dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg;
+                    sol_sparse_ip = solve(prob_sparse_ip, alg_klu;
                                           dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg;
+                    sol_sparse_op = solve(prob_sparse_op, alg_lu;
                                           dt)
 
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
@@ -1760,13 +1778,23 @@ end
             prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
                                       p_prototype = P_sparse)
             #solve and test
-            for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
-                        MPRK43I(0.5, 0.75),
-                        MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0),
-                        SSPMPRK43())
+            for alg in (linsolve -> MPE(; linsolve),
+                        linsolve -> MPRK22(0.5; linsolve),
+                        linsolve -> MPRK22(1.0; linsolve),
+                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
+                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
+                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
+                        linsolve -> MPRK43II(0.5; linsolve),
+                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
+                        linsolve -> SSPMPRK43(; linsolve))
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
+                    if prob == prob_sparse || prob == prob_sparse2
+                        alg = alg(KLUFactorization())
+                    else
+                        alg = alg(LUFactorization())
+                    end
                     sol1 = solve(prob, alg; dt, adaptive = false)
 
                     # test get_tmp_cache and integrator interface - modifying
