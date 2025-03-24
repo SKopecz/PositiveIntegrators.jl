@@ -31,7 +31,7 @@ end
     isnegative(sol::ODESolution)
 
 Returns `true` if `sol.u` contains negative elements.
-    
+
 Please note that negative values may occur when plotting the solution, depending on the interpolation used.
 
 See also [`isnonnegative`](@ref).
@@ -43,7 +43,7 @@ end
 """
     isnonnegative(u)
 
-Negation of [`isnegative`](@ref).    
+Negation of [`isnegative`](@ref).
 """
 isnonnegative(args...) = !isnegative(args...)
 
@@ -51,18 +51,20 @@ isnonnegative(args...) = !isnegative(args...)
 """
     rel_max_error_tend(sol, ref_sol)
 
-Returns the relative maximum error between `sol` and `ref_sol` at time `sol.t[end]`.   
+Returns the relative maximum error between `sol` and `ref_sol` at time `sol.t[end]`.
 """
-function rel_max_error_tend(sol, ref_sol)
+function rel_max_error_tend(sol::AbstractVector, ref_sol::AbstractVector)
     return maximum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end]))
 end
+
+rel_max_error_tend(sol, ref_sol) = rel_max_error_tend(sol.u, ref_sol.u)
 
 """
     rel_max_error_overall(sol, ref_sol)
 
-Returns the maximum of the relative maximum errors between `sol` and `ref_sol` over all time steps.    
+Returns the maximum of the relative maximum errors between `sol` and `ref_sol` over all time steps.
 """
-function rel_max_error_overall(sol, ref_sol)
+function rel_max_error_overall(sol::AbstractVector, ref_sol::AbstractVector)
     err = zero(eltype(eltype(sol)))
     for i in eachindex(sol)
         max_err_i = maximum(abs.((abs.(sol[i]) .- abs.(ref_sol[i])) ./ ref_sol[i]))
@@ -73,26 +75,33 @@ function rel_max_error_overall(sol, ref_sol)
     return err
 end
 
+rel_max_error_overall(sol, ref_sol) = rel_max_error_overall(sol.u, ref_sol.u)
+
 """
     rel_l1_error_tend(sol, ref_sol)
 
-Returns the relative l1 error between `sol` and `ref_sol` at time `sol.t[end]`.   
+Returns the relative l1 error between `sol` and `ref_sol` at time `sol.t[end]`.
 """
-function rel_l1_error_tend(sol, ref_sol)
+function rel_l1_error_tend(sol::AbstractVector, ref_sol::AbstractVector)
     return sum(abs.((sol[end] .- ref_sol[end]) ./ ref_sol[end])) / length(ref_sol[end])
 end
+
+rel_l1_error_tend(sol, ref_sol) = rel_l1_error_tend(sol.u, ref_sol.u)
 
 """
     rel_l2_error_tend(sol, ref_sol)
 
-Returns the relative l2 error between `sol` and `ref_sol` at time `sol.t[end]`.   
+Returns the relative l2 error between `sol` and `ref_sol` at time `sol.t[end]`.
 """
-function rel_l2_error_tend(sol, ref_sol)
+function rel_l2_error_tend(sol::AbstractVector, ref_sol::AbstractVector)
     return sqrt(sum(abs2.((sol[end] .- ref_sol[end]) ./ ref_sol[end])) /
                 length(ref_sol[end]))
 end
 
-### Functions to compute work-precision diagrams ########################################## 
+rel_l2_error_tend(sol, ref_sol) = rel_l2_error_tend(sol.u, ref_sol.u)
+
+
+### Functions to compute work-precision diagrams ##########################################
 function _compute_time(benchmark_f, seconds, numruns)
     benchmark_f() # pre-compile
 
@@ -127,7 +136,7 @@ end
 
 """
     work_precision_fixed!(dict, prob, algs, labels, dts, alg_ref;
-                          compute_error = rel_max_error_tend, 
+                          compute_error = rel_max_error_tend,
                           seconds = 2,
                           numruns = 20)
     )
@@ -170,14 +179,14 @@ end
 """
     work_precision_fixed(prob, algs, labels, dts, alg_ref;
                          compute_error = rel_max_error_tend,
-                         seconds = 2, 
+                         seconds = 2,
                          numruns = 20)
 
-Returns a dictionary to create work-precision diagrams. 
-The problem `prob` is solved by each algorithm in `algs` for all the step sizes defined in `dts`. 
-For each step size the error and computing time are stored in the dictionary. 
+Returns a dictionary to create work-precision diagrams.
+The problem `prob` is solved by each algorithm in `algs` for all the step sizes defined in `dts`.
+For each step size the error and computing time are stored in the dictionary.
 If the solve is not successful for a given step size, then `(Inf, Inf)` is stored in the dictionary.
-The strings in the array `labels` are used as keys of the dictionary. 
+The strings in the array `labels` are used as keys of the dictionary.
 The reference solution used for error computations is computed with the algorithm `alg_ref`.
 
 ### Keyword arguments: ###
@@ -198,10 +207,10 @@ end
 """
     work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = false,
-                            abstol_ref = 1e-14, 
+                            abstol_ref = 1e-14,
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
-                            seconds = 2, 
+                            seconds = 2,
                             numruns = 20,
                             kwargs...)
 
@@ -251,18 +260,18 @@ end
 """
     work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = false,
-                            abstol_ref = 1e-14, 
+                            abstol_ref = 1e-14,
                             reltol_ref = 1e-13,
                             compute_error = rel_max_error_tend,
-                            seconds = 2, 
-                            numruns = 20, 
+                            seconds = 2,
+                            numruns = 20,
                             kwargs...)
 
-Returns a dictionary to create work-precision diagrams. 
-The problem `prob` is solved by each algorithm in `algs` for all tolerances defined in `abstols` and `reltols`. 
-For the respective tolerances the error and computing time are stored in the dictionary. 
+Returns a dictionary to create work-precision diagrams.
+The problem `prob` is solved by each algorithm in `algs` for all tolerances defined in `abstols` and `reltols`.
+For the respective tolerances the error and computing time are stored in the dictionary.
 If the solve is not successful for the given tolerances, then `(Inf, Inf)` is stored in the dictionary.
-The strings in the array `labels` are used as keys of the dictionary. 
+The strings in the array `labels` are used as keys of the dictionary.
 The reference solution used for error computations is computed with the algorithm `alg_ref`.
 Additional keyword arguments are passed on to `solve`.
 
