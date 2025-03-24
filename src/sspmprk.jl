@@ -48,7 +48,7 @@ struct SSPMPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function SSPMPRK22(alpha, beta; linsolve = KLUFactorization(),
+function SSPMPRK22(alpha, beta; linsolve = LUFactorization(),
                    small_constant = nothing)
     if isnothing(small_constant)
         small_constant_function = floatmin
@@ -510,7 +510,7 @@ function small_constant_function_SSPMPRK43(type)
     return small_constant
 end
 
-function SSPMPRK43(; linsolve = KLUFactorization(),
+function SSPMPRK43(; linsolve = LUFactorization(),
                    small_constant = small_constant_function_SSPMPRK43)
     if small_constant isa Number
         small_constant_function = Returns(small_constant)
