@@ -1310,15 +1310,16 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
-                                        linsolve -> MPRK22(0.5; linsolve),
-                                        linsolve -> MPRK22(1.0; linsolve),
-                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
-                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
-                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
-                                        linsolve -> MPRK43II(0.5; linsolve),
-                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
-                                        linsolve -> SSPMPRK43(; linsolve))
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK22(0.5; kwargs...),
+                    (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            @testset "$alg" for alg in algs
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1402,15 +1403,16 @@ end
 
             rtol = sqrt(eps(Float32))
 
-            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
-                                        linsolve -> MPRK22(0.5; linsolve),
-                                        linsolve -> MPRK22(1.0; linsolve),
-                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
-                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
-                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
-                                        linsolve -> MPRK43II(0.5; linsolve),
-                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
-                                        linsolve -> SSPMPRK43(; linsolve))
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK22(0.5; kwargs...),
+                    (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            @testset "$alg" for alg in algs
                 for prod! in (prod_1!, prod_2!, prod_3!)
                     prod = (u, p, t) -> begin
                         P = similar(u, (length(u), length(u)))
@@ -1523,15 +1525,16 @@ end
             tspan = (0.0, 1.0)
             dt = 0.25
 
-            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
-                                        linsolve -> MPRK22(0.5; linsolve),
-                                        linsolve -> MPRK22(1.0; linsolve),
-                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
-                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
-                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
-                                        linsolve -> MPRK43II(0.5; linsolve),
-                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
-                                        linsolve -> SSPMPRK43(; linsolve))
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK22(0.5; kwargs...),
+                    (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            @testset "$alg" for alg in algs
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod = (u, p, t) -> begin
@@ -1655,15 +1658,16 @@ end
             dt = 0.25
 
             rtol = sqrt(eps(Float32))
-            @testset "$alg" for alg in (linsolve -> MPE(; linsolve),
-                                        linsolve -> MPRK22(0.5; linsolve),
-                                        linsolve -> MPRK22(1.0; linsolve),
-                                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
-                                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
-                                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
-                                        linsolve -> MPRK43II(0.5; linsolve),
-                                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
-                                        linsolve -> SSPMPRK43(; linsolve))
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK22(0.5; kwargs...),
+                    (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            @testset "$alg" for alg in algs
                 for (prod!, dest!) in zip((prod_1!, prod_2!, prod_3!),
                                           (dest_1!, dest_2!, dest_3!))
                     prod! = prod_3!
@@ -1777,16 +1781,17 @@ end
                                      p_prototype = P_dense)
             prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
                                       p_prototype = P_sparse)
-            #solve and test
-            for alg in (linsolve -> MPE(; linsolve),
-                        linsolve -> MPRK22(0.5; linsolve),
-                        linsolve -> MPRK22(1.0; linsolve),
-                        linsolve -> MPRK43I(1.0, 0.5; linsolve),
-                        linsolve -> MPRK43I(0.5, 0.75; linsolve),
-                        linsolve -> MPRK43II(2.0 / 3.0; linsolve),
-                        linsolve -> MPRK43II(0.5; linsolve),
-                        linsolve -> SSPMPRK22(0.5, 1.0; linsolve),
-                        linsolve -> SSPMPRK43(; linsolve))
+            # solve and test
+            algs = (MPE, (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK22(0.5; kwargs...),
+                    (; kwargs...) -> MPRK22(1.0; kwargs...),
+                    (; kwargs...) -> MPRK43I(1.0, 0.5; kwargs...),
+                    (; kwargs...) -> MPRK43I(0.5, 0.75; kwargs...),
+                    (; kwargs...) -> MPRK43II(0.5; kwargs...),
+                    (; kwargs...) -> MPRK43II(2.0 / 3.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK22(0.5, 1.0; kwargs...),
+                    (; kwargs...) -> SSPMPRK43(; kwargs...))
+            for alg in algs
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
