@@ -215,6 +215,7 @@ end
     @testset "Aqua.jl" begin
         # We do not test ambiguities since we get a lot of
         # false positives from dependencies.
+        ambiguities = false
         # The persistent_tasks test fails in the Downgrade CI
         # action but not in regular CI - we just skip it there.
         if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
@@ -222,10 +223,21 @@ end
         else
             persistent_tasks = true
         end
+        # The stale_deps test fails in the Downstream CI action
+        # of OrdinaryDiffEq.jl but not in our regular CI - we just
+        # skip it there.
+        if !isempty(get(ENV, "GROUP", ""))
+            @info "Skipping stale_deps tests from Aqua.jl"
+            stale_deps = false
+        else
+            @info "Running stale_deps tests from Aqua.jl"
+            stale_deps = true
+        end
         Aqua.test_all(PositiveIntegrators;
-                      ambiguities = false,
+                      ambiguities = ambiguities,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
-                      persistent_tasks = persistent_tasks,)
+                      persistent_tasks = persistent_tasks,
+                      stale_deps = stale_deps,)
     end
 
     @testset "ExplicitImports.jl" begin
