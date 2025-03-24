@@ -1791,11 +1791,11 @@ end
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
                     if prob == prob_sparse || prob == prob_sparse2
-                        alg = alg(KLUFactorization())
+                        alg_ = alg(KLUFactorization())
                     else
-                        alg = alg(LUFactorization())
+                        alg_ = alg(LUFactorization())
                     end
-                    sol1 = solve(prob, alg; dt, adaptive = false)
+                    sol1 = solve(prob, alg_; dt, adaptive = false)
 
                     # test get_tmp_cache and integrator interface - modifying
                     # values from the cache should not change the final results
@@ -2062,7 +2062,7 @@ end
 
         # Check that approximations, and thus the Patankar weights,
         # remain positive to avoid division by zero.
-        @testset "Positvity check" begin
+        @testset "Positivity check" begin
             # For this problem u[1] decreases montonically to 0 very fast.
             # We perform 10^5 steps and check that u[end] does not contain any NaNs
             u0 = [0.9, 0.1]
