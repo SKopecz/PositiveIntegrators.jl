@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>NPZD model · PositiveIntegrators.jl</title><meta name="title" content="NPZD model · PositiveIntegrators.jl"/><meta property="og:title" content="NPZD model · PositiveIntegrators.jl"/><meta property="twitter:title" content="NPZD model · PositiveIntegrators.jl"/><meta name="description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:description" content="Documentation for PositiveIntegrators.jl."/><meta property="twitter:description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model_benchmark/"/><meta property="twitter:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model_benchmark/"/><link rel="canonical" href="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model_benchmark/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">PositiveIntegrators.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../npzd_model/">NPZD model</a></li><li><a class="tocitem" href="../robertson/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction/">Stratospheric reaction problem</a></li><li><a class="tocitem" href="../linear_advection/">Linear Advection</a></li><li><a class="tocitem" href="../heat_equation_neumann/">Heat Equation, Neumann BCs</a></li><li><a class="tocitem" href="../heat_equation_dirichlet/">Heat Equation, Dirichlet BCs</a></li><li><a class="tocitem" href="../scalar_pds/">Scalar equation</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../convergence/">Experimental order of convergence</a></li><li class="is-active"><a class="tocitem" href>NPZD model</a><ul class="internal"><li><a class="tocitem" href="#Work-Precision-diagrams"><span>Work-Precision diagrams</span></a></li><li><a class="tocitem" href="#Package-versions"><span>Package versions</span></a></li></ul></li><li><a class="tocitem" href="../robertson_benchmark/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction_benchmark/">Stratospheric reaction problem</a></li></ul></li><li><a class="tocitem" href="../faq/">Troubleshooting, FAQ</a></li><li><a class="tocitem" href="../api_reference/">API reference</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../code_of_conduct/">Code of conduct</a></li><li><a class="tocitem" href="../license/">License</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Benchmarks</a></li><li class="is-active"><a href>NPZD model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>NPZD model</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/docs/src/npzd_model_benchmark.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="benchmark-npzd"><a class="docs-heading-anchor" href="#benchmark-npzd">Benchmark: Solution of an NPZD model</a><a id="benchmark-npzd-1"></a><a class="docs-heading-anchor-permalink" href="#benchmark-npzd" title="Permalink"></a></h1><p>We use the NPZD model <a href="../api_reference/#PositiveIntegrators.prob_pds_npzd"><code>prob_pds_npzd</code></a> to assess the efficiency of different solvers from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> and <a href="https://github.com/SKopecz/PositiveIntegrators.jl">PositiveIntegrators.jl</a>.</p><pre><code class="language-julia hljs">using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner
+using PositiveIntegrators
+
+# select NPZD problem
+prob = prob_pds_npzd</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqLowOrderRK...
+   2156.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    835.3 ms<span class="sgr33">  ? </span>DiffEqBase
+    700.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+    597.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqLowOrderRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    598.9 ms<span class="sgr33">  ? </span>OrdinaryDiffEqLowOrderRK
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqSDIRK...
+   2141.4 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    630.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    910.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+   1319.5 ms<span class="sgr33">  ? </span>DiffEqBase
+   1030.3 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1377.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1166.6 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1211.4 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1352.4 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1464.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+   2897.0 ms<span class="sgr33">  ? </span>LinearSolve
+   1428.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseMatrixColoringsExt</span>
+   1565.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   1037.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1408.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+    993.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+   2139.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1025.6 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+   1109.7 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+   1069.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+   1185.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+   2791.0 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1401.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   1582.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   1702.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods → NonlinearSolveSpectralMethodsForwardDiffExt</span>
+   2100.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+   1818.9 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+   1025.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+   1386.0 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+    631.0 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveDiffEqBaseExt</span>
+   1053.1 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt</span>
+    644.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    607.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqSDIRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    595.2 ms<span class="sgr33">  ? </span>OrdinaryDiffEqSDIRK
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqDifferentiation...
+   2212.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    616.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    869.7 ms<span class="sgr33">  ? </span>DiffEqBase
+   1117.7 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1166.5 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1294.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+   1422.7 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   2180.9 ms<span class="sgr33">  ? </span>LinearSolve
+    634.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+    611.8 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    615.5 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqDifferentiation was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+   1211.1 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqNonlinearSolve...
+   2157.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    864.5 ms<span class="sgr33">  ? </span>DiffEqBase
+    965.0 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    979.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+   1047.7 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1065.2 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1416.3 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1379.9 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1474.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+    983.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    989.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+   1217.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseMatrixColoringsExt</span>
+   1507.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   2849.8 ms<span class="sgr33">  ? </span>LinearSolve
+   1461.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   2222.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1142.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1080.3 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+   1044.5 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+   1030.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+   1208.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+   2317.9 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1267.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   1436.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods → NonlinearSolveSpectralMethodsForwardDiffExt</span>
+   1766.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   2184.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+   1813.8 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+    973.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+   1348.0 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+    622.4 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveDiffEqBaseExt</span>
+   1062.3 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt</span>
+    628.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqNonlinearSolve was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    595.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> SimpleNonlinearSolve...
+   2176.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    613.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    636.1 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+    791.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    940.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   1191.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   1268.7 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1175.3 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given SimpleNonlinearSolve was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+   1357.5 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> BracketingNonlinearSolve...
+   2150.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    606.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    754.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given BracketingNonlinearSolve was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+   1073.6 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBase...
+   2142.1 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    613.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBase was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    755.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqCoreEnzymeCoreExt...
+   2142.0 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    845.1 ms<span class="sgr33">  ? </span>DiffEqBase
+    716.6 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqCoreEnzymeCoreExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    592.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> LinearSolveEnzymeExt...
+   2137.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    599.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+   1419.8 ms<span class="sgr33">  ? </span>LinearSolve
+<span class="sgr36"><span class="sgr1">Info</span></span> Given LinearSolveEnzymeExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    608.0 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    617.7 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> SciMLJacobianOperators...
+   2143.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given SciMLJacobianOperators was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    605.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseDiffEqBaseExt...
+   2152.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    628.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    864.7 ms<span class="sgr33">  ? </span>DiffEqBase
+    757.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseDiffEqBaseExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    612.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseForwardDiffExt...
+   2137.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    607.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    750.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseForwardDiffExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    780.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseLinearSolveExt...
+   2153.0 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    605.4 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    622.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    777.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1451.7 ms<span class="sgr33">  ? </span>LinearSolve
+    811.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+    660.8 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseLinearSolveExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    862.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+    869.8 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolve with build ID ffffffff-ffff-ffff-0000-00480ffaecce is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolve [7ed4a6bd-45f5-4d41-b270-4a48e9bafcae] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseSparseArraysExt...
+   2137.1 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    613.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    750.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseSparseArraysExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    750.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> BracketingNonlinearSolveForwardDiffExt...
+   2145.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    622.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    752.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    658.5 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+    798.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given BracketingNonlinearSolveForwardDiffExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    774.7 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> LineSearch...
+   2151.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    623.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given LineSearch was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    613.8 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseLineSearchExt...
+   2137.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    614.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    642.1 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+    768.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseLineSearchExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    596.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> LineSearchLineSearchesExt...
+   2137.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    611.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    609.6 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given LineSearchLineSearchesExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    810.5 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch → LineSearchLineSearchesExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> SimpleNonlinearSolveChainRulesCoreExt...
+   2153.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    617.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    642.0 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    628.9 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+    760.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    649.3 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+    950.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   1143.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+    827.3 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+    641.4 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given SimpleNonlinearSolveChainRulesCoreExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    624.4 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> SimpleNonlinearSolveDiffEqBaseExt...
+   2135.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    631.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    979.9 ms<span class="sgr33">  ? </span>DiffEqBase
+    637.2 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+    984.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    752.9 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+    977.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+    974.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1003.9 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1181.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+    791.2 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+    645.2 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given SimpleNonlinearSolveDiffEqBaseExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    606.4 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveDiffEqBaseExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolve...
+   2152.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    643.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    935.1 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+   1343.5 ms<span class="sgr33">  ? </span>DiffEqBase
+    998.4 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1415.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1163.4 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1312.8 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1448.7 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1158.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseMatrixColoringsExt</span>
+   2763.1 ms<span class="sgr33">  ? </span>LinearSolve
+   1402.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1713.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   1228.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   1131.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1310.3 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1244.1 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+   1131.0 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+   1175.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+   1174.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+   1223.2 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+   1008.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   1013.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   1141.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods → NonlinearSolveSpectralMethodsForwardDiffExt</span>
+    810.6 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+   1014.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    642.7 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt</span>
+    768.9 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveDiffEqBaseExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolve was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    639.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveFirstOrder...
+   2160.4 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    623.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    972.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+   1338.3 ms<span class="sgr33">  ? </span>DiffEqBase
+   1070.5 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1287.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1212.0 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1290.4 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   2494.4 ms<span class="sgr33">  ? </span>LinearSolve
+   1640.8 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1123.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   1263.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1818.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   1086.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+    822.5 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+    918.2 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    950.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveFirstOrder was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    656.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LineSearch with build ID ffffffff-ffff-ffff-0000-00e78443e35f is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LineSearch [87fe0de2-c867-4266-b59a-2f0a94fc965b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveQuasiNewton...
+   2167.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    642.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    917.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+   1187.2 ms<span class="sgr33">  ? </span>DiffEqBase
+   1038.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    996.9 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1236.5 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1056.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1096.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   2266.9 ms<span class="sgr33">  ? </span>LinearSolve
+    624.2 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    838.4 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+    838.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveQuasiNewton was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    635.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveQuasiNewtonForwardDiffExt...
+   2149.9 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    866.7 ms<span class="sgr33">  ? </span>DiffEqBase
+    932.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    943.0 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+   1131.0 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1276.1 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1243.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1440.5 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1009.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1186.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1226.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   2574.0 ms<span class="sgr33">  ? </span>LinearSolve
+    616.4 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    836.8 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+    838.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+    642.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveQuasiNewtonForwardDiffExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    777.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveBaseSparseMatrixColoringsExt...
+   2149.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    617.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    742.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveBaseSparseMatrixColoringsExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    620.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseMatrixColoringsExt</span>
+    762.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveSpectralMethods...
+   2186.4 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    630.1 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    962.2 ms<span class="sgr33">  ? </span>DiffEqBase
+    644.0 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+    859.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    613.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+    617.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveSpectralMethods was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    632.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module DiffEqBase with build ID ffffffff-ffff-ffff-0000-0044a85b2806 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean DiffEqBase [2b5f629d-d688-5b77-993f-72d75c75574e] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveSpectralMethodsForwardDiffExt...
+   2160.3 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    624.8 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+    868.9 ms<span class="sgr33">  ? </span>DiffEqBase
+    647.4 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+    957.5 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1096.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+    639.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+    856.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1048.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+    639.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveSpectralMethodsForwardDiffExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    772.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods → NonlinearSolveSpectralMethodsForwardDiffExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module SciMLBase with build ID ffffffff-ffff-ffff-0000-003fc4430330 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean SciMLBase [0bca4576-84f4-4d90-8ffe-ffa030f20462] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> NonlinearSolveNLsolveExt...
+   2155.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    627.7 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    954.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLJacobianOperators</span>
+   1321.0 ms<span class="sgr33">  ? </span>DiffEqBase
+   1075.3 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch</span>
+   1355.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase</span>
+   1111.8 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1189.9 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   2521.4 ms<span class="sgr33">  ? </span>LinearSolve
+   1668.0 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1349.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseMatrixColoringsExt</span>
+   1492.3 ms<span class="sgr33">  ? </span><span class="sgr90">LineSearch → LineSearchLineSearchesExt</span>
+   1449.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseForwardDiffExt</span>
+   1524.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseSparseArraysExt</span>
+   1045.5 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve</span>
+   1242.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLineSearchExt</span>
+   1157.8 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+   1346.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseDiffEqBaseExt</span>
+   1061.2 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    955.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveBase → NonlinearSolveBaseLinearSolveExt</span>
+    968.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods</span>
+   1309.7 ms<span class="sgr33">  ? </span><span class="sgr90">BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt</span>
+   1015.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   1039.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   1010.2 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve</span>
+   1217.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveSpectralMethods → NonlinearSolveSpectralMethodsForwardDiffExt</span>
+    975.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    663.6 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveDiffEqBaseExt</span>
+    831.6 ms<span class="sgr33">  ? </span><span class="sgr90">SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt</span>
+    634.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given NonlinearSolveNLsolveExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    816.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve → NonlinearSolveNLsolveExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolveBase with build ID ffffffff-ffff-ffff-0000-00dbd3625ff0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolveBase [be0214bd-f91f-a760-ac4e-3421ce2b2da0] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqRosenbrock...
+   2179.2 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    615.5 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase → SciMLBaseChainRulesCoreExt</span>
+    869.4 ms<span class="sgr33">  ? </span>DiffEqBase
+   1186.6 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseChainRulesCoreExt
+   1207.7 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseForwardDiffExt
+   1326.5 ms<span class="sgr33">  ? </span>DiffEqBase → DiffEqBaseSparseArraysExt
+   1328.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+   2143.2 ms<span class="sgr33">  ? </span>LinearSolve
+    665.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+    621.7 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveRecursiveArrayToolsExt
+    648.2 ms<span class="sgr33">  ? </span>LinearSolve → LinearSolveEnzymeExt
+   1207.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqRosenbrock was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    622.7 ms<span class="sgr33">  ? </span>OrdinaryDiffEqRosenbrock
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+<span class="sgr92"><span class="sgr1">Precompiling</span></span> OrdinaryDiffEqTsit5...
+   2169.6 ms<span class="sgr33">  ? </span><span class="sgr90">SciMLBase</span>
+    844.0 ms<span class="sgr33">  ? </span>DiffEqBase
+    714.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore</span>
+    600.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqTsit5 was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span>
+    599.9 ms<span class="sgr33">  ? </span>OrdinaryDiffEqTsit5
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqCore with build ID ffffffff-ffff-ffff-0000-0043c2f5f535 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqCore [bbf590c4-e513-4bbe-9b18-05decba2e5d8] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2541</span></code></pre><p>To keep the following code as clear as possible, we define a helper function <code>npzd_plot</code> that we use for plotting.</p><pre><code class="language-julia hljs">using Plots
+
+function npzd_plot(sol, sol_ref = nothing, title = &quot;&quot;)
+     colors = palette(:default)[1:4]&#39;
+     if !isnothing(sol_ref)
+          p = plot(sol_ref, linestyle = :dash, label = &quot;&quot;, color = colors,
+                   linewidth = 2)
+          plot!(p, sol; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
+                color = colors, title, label = [&quot;N&quot; &quot;P&quot; &quot;Z&quot; &quot;D&quot;], legend = :right,
+                linewidth = 2);
+     else
+          p = plot(sol; denseplot = false, markers = :circle, ylims = (-1.0, 10.0),
+                   color = colors, title, label = [&quot;N&quot; &quot;P&quot; &quot;Z&quot; &quot;D&quot;], legend = :right,
+                   linewidths = 2);
+     end
+     return p
+end</code></pre><p>Standard methods have difficulties to solve the NPZD problem accurately for loose tolerances or large time step sizes. This is because the first variable, <span>$N$</span>, has only a tiny margin for negative values.  In most cases, negative values of <span>$N$</span>will directly decrease <span>$N$</span>further, resulting in completely inaccurate solutions.  </p><pre><code class="language-julia hljs"># compute reference solution for plotting
+ref_sol = solve(prob, Vern7(); abstol = 1e-14, reltol = 1e-13);
+
+# compute solutions with loose tolerances
+abstol = 1e-2
+reltol = 1e-1
+sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol);
+sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
+
+# plot solutions
+p1 = npzd_plot(sol_Ros23, ref_sol, &quot;Rosenbrock23&quot;); # helper function defined above
+p2 = npzd_plot(sol_MPRK, ref_sol, &quot;MPRK22(1.0)&quot;);
+plot(p1, p2)</code></pre><img src="47cf999e.svg" alt="Example block output"/><p>Nevertheless, <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> provides the solver option <code>isoutofdomain</code>, which can be used in combination with <a href="../api_reference/#PositiveIntegrators.isnegative"><code>isnegative</code></a> to guarantee nonnegative solutions. </p><pre><code class="language-julia hljs">sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol,
+                  isoutofdomain = isnegative); #reject negative solutions
+
+npzd_plot(sol_Ros23, ref_sol) #auxiliary function defined above</code></pre><img src="c06e10af.svg" alt="Example block output"/><h2 id="Work-Precision-diagrams"><a class="docs-heading-anchor" href="#Work-Precision-diagrams">Work-Precision diagrams</a><a id="Work-Precision-diagrams-1"></a><a class="docs-heading-anchor-permalink" href="#Work-Precision-diagrams" title="Permalink"></a></h2><p>In the following sections, we present several work-precision diagrams that compare various methods in terms of computing time and error. First, we focus on adaptive methods; afterward, we also display resultsixed time step sizes. obtained with f</p><p>Since the NPZD problem is not stiff, we can use an explicit high-order scheme to compute a reference solution.</p><pre><code class="language-julia hljs"># select solver to compute reference solution
+alg_ref = Vern7()</code></pre><h3 id="Adaptive-schemes"><a class="docs-heading-anchor" href="#Adaptive-schemes">Adaptive schemes</a><a id="Adaptive-schemes-1"></a><a class="docs-heading-anchor-permalink" href="#Adaptive-schemes" title="Permalink"></a></h3><p>We use the functions <a href="../api_reference/#PositiveIntegrators.work_precision_adaptive"><code>work_precision_adaptive</code></a> and <a href="../api_reference/#PositiveIntegrators.work_precision_adaptive!"><code>work_precision_adaptive!</code></a> to compute the data for the diagrams. Furthermore, the following absolute and relative tolerances are used.</p><pre><code class="language-julia hljs"># set absolute and relative tolerances
+abstols = 1.0 ./ 10.0 .^ (2:1:8)
+reltols = abstols .* 10.0</code></pre><h4 id="Relative-maximum-error-at-the-final-time"><a class="docs-heading-anchor" href="#Relative-maximum-error-at-the-final-time">Relative maximum error at the final time</a><a id="Relative-maximum-error-at-the-final-time-1"></a><a class="docs-heading-anchor-permalink" href="#Relative-maximum-error-at-the-final-time" title="Permalink"></a></h4><p>In this section the chosen error is the relative maximum error at the final time <span>$t = 10.0$</span>.</p><pre><code class="language-julia hljs"># select relative maximum error at the end of the problem&#39;s time span.
+compute_error = rel_max_error_tend</code></pre><p>We start with a comparison of different adaptive MPRK schemes.</p><pre><code class="language-julia hljs"># choose methods to compare
+algs = [MPRK22(0.5); MPRK22(2.0 / 3.0); MPRK22(1.0); SSPMPRK22(0.5, 1.0);
+        MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0)]
+labels = [&quot;MPRK22(0.5)&quot;; &quot;MPPRK22(2/3)&quot;; &quot;MPRK22(1.0)&quot;; &quot;SSPMPRK22(0.5,1.0)&quot;;
+          &quot;MPRK43I(1.0, 0.5)&quot;; &quot;MPRK43I(0.5, 0.75)&quot;; &quot;MPRK43II(0.5)&quot;; &quot;MPRK43II(2.0/3.0)&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+                               compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+     xlims = (10^-7, 2*10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="7ae2d53d.svg" alt="Example block output"/><p>The second- and third-order methods behave very similarly. For comparisons with other schemes from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> we choose <code>MPRK22(1.0)</code> and <code>MPRK43I(1.0, 0.5)</code>.</p><pre><code class="language-julia hljs">sol_MPRK22 = solve(prob, MPRK22(1.0); abstol, reltol)
+sol_MPRK43 = solve(prob, MPRK43I(1.0, 0.5); abstol, reltol)
+
+p1 = npzd_plot(sol_MPRK22, ref_sol, &quot;MPRK22(1.0)&quot;);
+p2 = npzd_plot(sol_MPRK43, ref_sol, &quot;MPRK43I(1.0, 0.5)&quot;);
+plot(p1, p2)</code></pre><img src="56609b50.svg" alt="Example block output"/><p>Next we compare <code>MPRK22(1.0)</code> and <code>MPRK43I(1.0, 0.5)</code> to explicit and implicit methods of second and third order from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>.  To guarantee nonnegative solutions, we select the solver option <code>isoutofdomain = isnegative</code>.</p><pre><code class="language-julia hljs"># select MPRK methods for reference
+algs1 = [MPRK22(1.0); MPRK43I(1.0, 0.5)]
+labels1 = [&quot;MPRK22(1.0)&quot;; &quot;MPRK43I(1.0,0.5)&quot;]
+
+# select methods from OrdinaryDiffEq
+algs2 = [Midpoint(); Heun(); Ralston(); TRBDF2(); SDIRK2(); Kvaerno3(); KenCarp3(); Rodas3();
+         ROS2(); ROS3(); Rosenbrock23()]
+labels2 = [&quot;Midpoint&quot;; &quot;Heun&quot;; &quot;Ralston&quot;; &quot;TRBDF2&quot;; &quot;SDIRK2&quot;; &quot;Kvearno3&quot;; &quot;KenCarp3&quot;; &quot;Rodas3&quot;;
+          &quot;ROS2&quot;; &quot;ROS3&quot;; &quot;Rosenbrock23&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+                               compute_error)
+# add work-precision data with isoutofdomain=isnegative
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+                               compute_error, isoutofdomain=isnegative)
+
+plot(wp, [labels1; labels2]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (5*10^-8, 2*10^-1), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="c0153237.svg" alt="Example block output"/><p>We see that for the NPZD problem the use of adaptive MPRK schemes is only beneficial when using the loosest tolerances.</p><p>Now we compare <code>MPRK22(1.0)</code> and <code>MPRK43I(1.0, 0.5)</code> to <a href="https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/">recommended solvers</a> from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>. Again, to guarantee positive solutions we select the solver option <code>isoutofdomain = isnegative</code>.</p><pre><code class="language-julia hljs">algs3 = [Tsit5(); BS3(); Vern6(); Vern7(); Vern8(); TRBDF2(); Rosenbrock23();
+         Rodas5P(); Rodas4P()]
+labels3 = [&quot;Tsit5&quot;; &quot;BS3&quot;; &quot;Vern6&quot;; &quot;Vern7&quot;; &quot;Vern8&quot;; &quot;TRBDF2&quot;; &quot;Rosenbrock23&quot;;
+          &quot;Rodas5P&quot;; &quot;Rodas4P&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+                               compute_error)
+# add work-precision data with isoutofdomain = isnegative
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+                               compute_error, isoutofdomain = isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels3]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 5)...,5, repeat([6], 1)...,repeat([7],2)...]),
+     xlims = (10^-11, 10^1), xticks = 10.0 .^ (-11:1:1),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="5aa0a1ae.svg" alt="Example block output"/><p>We see that it is advisable to use a high-order explicit method like <code>Vern7()</code> or Rosenbrock methods like <code>Rodas4P()</code> with <code>isoutofdomain = isnegative</code> to obtain nonnegative solutions of such a non-stiff problem.</p><h4 id="Relative-maximum-error-over-all-time-steps"><a class="docs-heading-anchor" href="#Relative-maximum-error-over-all-time-steps">Relative maximum error over all time steps</a><a id="Relative-maximum-error-over-all-time-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Relative-maximum-error-over-all-time-steps" title="Permalink"></a></h4><p>In this section we do not compare the relative maximum errors at the final time <span>$t = 10.0$</span>, but the relative maximum errors over all time steps. </p><pre><code class="language-julia hljs"># select relative maximum error over all time steps
+compute_error = rel_max_error_overall</code></pre><p>The results are very similar to those from above.  We therefore only show the work-precision diagrams without further comments.  The main difference are significantly increased errors which mainly occur around time <span>$t = 2.0$</span> where there is a sharp kink in the solution.</p><pre><code class="language-julia hljs"># compute work-precision data
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
+                               compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;NPZD benchmark&quot;, legend = :topright,
+          color = permutedims([repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...]),
+          xlims = (10^-5, 10^4), xticks = 10.0 .^ (-5:1:4),
+          ylims = (10^-6, 10^-1), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="8689ad29.svg" alt="Example block output"/><pre><code class="language-julia hljs"># compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+                               compute_error)
+# add work-precision data with isoutofdomain = isnegative
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
+                               compute_error, isoutofdomain=isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels2]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (10^-5, 10^4), xticks = 10.0 .^ (-5:1:4),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-6:1:0), minorticks = 10)</code></pre><img src="a983d67c.svg" alt="Example block output"/><pre><code class="language-julia hljs"># compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
+                               compute_error)
+# add work-precision data with isoutofdomain = isnegative
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
+                               compute_error, isoutofdomain=isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels3]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 5)...,5, repeat([6], 1)...,repeat([7],2)...]),
+     xlims = (10^-7, 10^5), xticks = 10.0 .^ (-7:1:5),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-6:1:0), minorticks = 10)</code></pre><img src="dcd20191.svg" alt="Example block output"/><h3 id="Fixed-time-step-sizes"><a class="docs-heading-anchor" href="#Fixed-time-step-sizes">Fixed time step sizes</a><a id="Fixed-time-step-sizes-1"></a><a class="docs-heading-anchor-permalink" href="#Fixed-time-step-sizes" title="Permalink"></a></h3><p>Here we use fixed time step sizes instead of adaptive time stepping.  Similar to the adaptive situation above, standard schemes are likely to compute negative solutions for the NPZD problem. </p><pre><code class="language-julia hljs">sol_Ros23 = solve(prob, Rosenbrock23(), dt = 1.0, adaptive = false);
+sol_MPRK = solve(prob, MPRK22(1.0), dt = 1.0, adaptive = false);
+
+p1 = npzd_plot(sol_Ros23, ref_sol, &quot;Rosenbrock23&quot;);
+p2 = npzd_plot(sol_MPRK, ref_sol, &quot;MPRK22(1.0)&quot;);
+plot(p1, p2)</code></pre><img src="fb5b2e47.svg" alt="Example block output"/><p>We use the functions <a href="../api_reference/#PositiveIntegrators.work_precision_fixed"><code>work_precision_fixed</code></a> and <a href="../api_reference/#PositiveIntegrators.work_precision_fixed!"><code>work_precision_fixed!</code></a> to compute the data for the diagrams. Please note that these functions set error and computing time to <code>Inf</code>, whenever a solution contains negative elements.  Consequently, such cases are not visible in the work-precision diagrams.</p><p>Within the work-precision diagrams we use the following time step sizes.</p><pre><code class="language-julia hljs"># set time step sizes
+dts = 1.0 ./ 2.0 .^ (0:1:12)</code></pre><h4 id="Relative-maximum-error-at-the-end-of-the-problem&#39;s-time-span"><a class="docs-heading-anchor" href="#Relative-maximum-error-at-the-end-of-the-problem&#39;s-time-span">Relative maximum error at the end of the problem&#39;s time span</a><a id="Relative-maximum-error-at-the-end-of-the-problem&#39;s-time-span-1"></a><a class="docs-heading-anchor-permalink" href="#Relative-maximum-error-at-the-end-of-the-problem&#39;s-time-span" title="Permalink"></a></h4><p>Again, we start with the relative maximum error at the final time <span>$t = 10.0$</span>.</p><pre><code class="language-julia hljs"># select relative maximum error at the end of the problem&#39;s time span.
+compute_error = rel_max_error_tend</code></pre><p>First, we compare different MPRK methods.  For fixed time step sizes we can also consider <code>MPE()</code> and <code>SSPMPRK43()</code>.</p><pre><code class="language-julia hljs"># choose MPRK methods to compare
+algs = [MPE(); algs; SSPMPRK43()]
+labels = [&quot;MPE()&quot;; labels; &quot;SSPMPRK43&quot;]
+
+# compute work-precision data
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref;
+                          compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;NPZD benchmark&quot;, legend = :bottomleft,
+     color = permutedims([5,repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...,6]),
+     xlims = (10^-10, 1*10^0), xticks = 10.0 .^ (-10:1:0),
+     ylims = (1*10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)</code></pre><img src="dff4dc35.svg" alt="Example block output"/><p>Apart from <code>MPE()</code> the schemes behave very similar and a difference in order can only be observed for the smaller step sizes.  We choose <code>MPRK22(1.0)</code> and <code>MPRK43I(1.0, 0.5)</code> for comparisons with other second- and third-order schemes from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>.</p><pre><code class="language-julia hljs"># compute work-precision data
+wp = work_precision_fixed(prob, [algs1; algs2], [labels1; labels2], dts, alg_ref;
+                               compute_error)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels2]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
+     xlims = (10^-13, 10^2), xticks = 10.0 .^ (-12:2:6),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="f911ce8b.svg" alt="Example block output"/><p>We see that the MPRK schemes are to be preferred for the rather large step sizes <span>$\Delta t \in\lbrace 1.0, 0.5, 0.25, 0.125\rbrace$</span>, for which the other schemes cannot provide nonnegative solutions.</p><pre><code class="language-julia hljs"># solution computed with MPRK43I(1.0, 0.5) and dt = 0.125
+sol_MPRK = solve(prob, MPRK43I(1.0, 0.5); dt = dts[4], adaptive = false);
+
+# plot solution
+npzd_plot(sol_MPRK, ref_sol)</code></pre><img src="cf373403.svg" alt="Example block output"/><p>Finally, we show a comparison of <code>MPRK22(1.0)</code>, <code>MPRK43I(1.0, 0.5)</code> and <a href="https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/">recommended solvers</a> from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>.</p><pre><code class="language-julia hljs"># compute work-precision data
+wp = work_precision_fixed(prob, [algs1; algs3], [labels1; labels3], dts, alg_ref;
+                               compute_error)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels3]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5],4)...,repeat([6],4)...]),
+     xlims = (10^-14, 10^0), xticks = 10.0 .^ (-14:2:10),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="cd15e0ab.svg" alt="Example block output"/><h4 id="Relative-maximum-error-over-all-time-steps-2"><a class="docs-heading-anchor" href="#Relative-maximum-error-over-all-time-steps-2">Relative maximum error over all time steps</a><a class="docs-heading-anchor-permalink" href="#Relative-maximum-error-over-all-time-steps-2" title="Permalink"></a></h4><p>As for the adaptive schemes, we also show work-precisions diagrams where the error is the relative maximum error over all time steps.</p><pre><code class="language-julia hljs"># select relative maximum error over all time steps
+compute_error = rel_max_error_overall</code></pre><pre><code class="language-julia hljs"># compute work-precision
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref;
+                               compute_error)
+
+#plot work-precision diagram
+plot(wp, labels; title = &quot;NPZD benchmark&quot;, legend = :bottomleft,
+     color = permutedims([5,repeat([1], 3)..., 2, repeat([3], 2)..., repeat([4], 2)...,6]),
+     xlims = (10^-4, 10^5), xticks = 10.0 .^ (-4:1:5),
+     ylims = (10^-6, 10^-1), yticks = 10.0 .^ (-6:1:0), minorticks = 10)</code></pre><img src="fed39b8c.svg" alt="Example block output"/><pre><code class="language-julia hljs">wp = work_precision_fixed(prob, algs1, labels1, dts, alg_ref;
+                               compute_error)
+work_precision_fixed!(wp, prob, algs2, labels2, dts, alg_ref;
+                     compute_error)
+
+plot(wp, [labels1; labels2]; title = &quot;NPZD benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 4)...]),
+     xlims = (10^-4, 10^6), xticks = 10.0 .^ (-12:1:6),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="a205dc5b.svg" alt="Example block output"/><pre><code class="language-julia hljs">wp = work_precision_fixed(prob, algs1, labels1, dts, alg_ref;
+                               compute_error)
+work_precision_fixed!(wp, prob, algs3, labels3, dts, alg_ref;
+                     compute_error)
+
+plot(wp, [labels1; labels3]; title = &quot;NPZD benchmark&quot;, legend = :bottomleft,
+     color = permutedims([1, 3, repeat([4], 5)..., 5, repeat([7], 3)...]),
+     xlims = (10^-12, 10^6), xticks = 10.0 .^ (-12:2:6),
+     ylims = (10^-6, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="2f6a7465.svg" alt="Example block output"/><h2 id="Package-versions"><a class="docs-heading-anchor" href="#Package-versions">Package versions</a><a id="Package-versions-1"></a><a class="docs-heading-anchor-permalink" href="#Package-versions" title="Permalink"></a></h2><p>These results were obtained using the following versions.</p><pre><code class="language-julia hljs">using InteractiveUtils
+versioninfo()
+println()
+
+using Pkg
+Pkg.status([&quot;PositiveIntegrators&quot;, &quot;StaticArrays&quot;, &quot;LinearSolve&quot;,
+            &quot;OrdinaryDiffEqLowOrderRK&quot;, &quot;OrdinaryDiffEqSDIRK&quot;,
+            &quot;OrdinaryDiffEqRosenbrock&quot;, &quot;OrdinaryDiffEqTsit5&quot;,
+            &quot;OrdinaryDiffEqVerner&quot;],
+           mode = PKGMODE_MANIFEST)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.4
+Commit 8561cc3d68d (2025-03-10 11:36 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LLVM: libLLVM-16.0.6 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_PKG_SERVER_REGISTRY_PREFERENCE = eager
+
+<span class="sgr32"><span class="sgr1">Status</span></span> `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl/docs/Manifest.toml`
+<span class="sgr33">⌅</span> <span class="sgr90">[7ed4a6bd] </span>LinearSolve v2.39.0
+  <span class="sgr90">[1344f307] </span>OrdinaryDiffEqLowOrderRK v1.2.0
+  <span class="sgr90">[43230ef6] </span>OrdinaryDiffEqRosenbrock v1.8.0
+  <span class="sgr90">[2d112036] </span>OrdinaryDiffEqSDIRK v1.3.0
+  <span class="sgr90">[b1df2697] </span>OrdinaryDiffEqTsit5 v1.1.0
+  <span class="sgr90">[79d7bb75] </span>OrdinaryDiffEqVerner v1.1.1
+  <span class="sgr90">[d1b20bf0] </span>PositiveIntegrators v0.2.9-DEV `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl`
+  <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.13
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../convergence/">« Experimental order of convergence</a><a class="docs-footer-nextpage" href="../robertson_benchmark/">Robertson problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Monday 24 March 2025 02:51">Monday 24 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
