@@ -100,7 +100,6 @@ end
 
 rel_l2_error_tend(sol, ref_sol) = rel_l2_error_tend(sol.u, ref_sol.u)
 
-
 ### Functions to compute work-precision diagrams ##########################################
 function _compute_time(benchmark_f, seconds, numruns)
     benchmark_f() # pre-compile
