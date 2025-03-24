@@ -212,30 +212,29 @@ function linear_advection_fd_upwind_D!(D, u, p, t)
 end
 
 @testset "PositiveIntegrators.jl tests" begin
-    @testset "Aqua.jl" begin
-        # We do not test ambiguities since we get a lot of
-        # false positives from dependencies.
-        ambiguities = false
-        # The persistent_tasks test fails in the Downgrade CI
-        # action but not in regular CI - we just skip it there.
-        if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
-            persistent_tasks = false
-        else
-            persistent_tasks = true
-        end
-        # The stale_deps test fails in the Downstream CI action
+    @testset "Aqua.jl" begin    
+        # The Aqua.jl tests fails in the Downstream CI action
         # of OrdinaryDiffEq.jl but not in our regular CI - we just
         # skip it there.
         if !isempty(get(ENV, "GROUP", ""))
             @info "Skipping tests from Aqua.jl"
         else
             @info "Running tests from Aqua.jl"
+            # We do not test ambiguities since we get a lot of
+            # false positives from dependencies.
+            ambiguities = false
+            # The persistent_tasks test fails in the Downgrade CI
+            # action but not in regular CI - we just skip it there.
+            if !isempty(get(ENV, "POSITIVEINTEGRATORS_DOWNGRADE_CI", ""))
+                persistent_tasks = false
+            else
+                persistent_tasks = true
+            end
             Aqua.test_all(PositiveIntegrators;
                       ambiguities = ambiguities,
                       piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
                       persistent_tasks = persistent_tasks)
         end
-
     end
 
     @testset "ExplicitImports.jl" begin
