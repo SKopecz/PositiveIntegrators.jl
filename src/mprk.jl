@@ -260,7 +260,7 @@ struct MPE{F, T} <: OrdinaryDiffEqAlgorithm
     small_constant_function::T
 end
 
-function MPE(; linsolve = LUFactorization(), small_constant = nothing)
+function MPE(; linsolve = KLUFactorization(), small_constant = nothing)
     if isnothing(small_constant)
         small_constant_function = floatmin
     elseif small_constant isa Number
@@ -494,7 +494,7 @@ struct MPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function MPRK22(alpha; linsolve = LUFactorization(),
+function MPRK22(alpha; linsolve = KLUFactorization(),
                 small_constant = nothing)
     if isnothing(small_constant)
         small_constant_function = floatmin
@@ -904,7 +904,7 @@ struct MPRK43I{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function MPRK43I(alpha, beta; linsolve = LUFactorization(),
+function MPRK43I(alpha, beta; linsolve = KLUFactorization(),
                  small_constant = nothing)
     if isnothing(small_constant)
         small_constant_function = floatmin
@@ -1016,7 +1016,7 @@ function small_constant_function_MPRK43II(type)
     return small_constant
 end
 
-function MPRK43II(gamma; linsolve = LUFactorization(),
+function MPRK43II(gamma; linsolve = KLUFactorization(),
                   small_constant = small_constant_function_MPRK43II)
     if small_constant isa Number
         small_constant_function = Returns(small_constant)

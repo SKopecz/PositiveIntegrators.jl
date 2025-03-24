@@ -24,7 +24,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqCore, OrdinaryDiffEqAlgorithm, ODESoluti
 
 using SymbolicIndexingInterface: SymbolicIndexingInterface
 
-using LinearSolve: LinearSolve, LinearProblem, LUFactorization, solve!
+using LinearSolve: LinearSolve, LinearProblem, KLUFactorization, solve!
 
 import SciMLBase: interp_summary
 

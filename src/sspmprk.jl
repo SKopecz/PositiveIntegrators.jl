@@ -48,7 +48,7 @@ struct SSPMPRK22{T, F, T2} <: OrdinaryDiffEqAdaptiveAlgorithm
     small_constant_function::T2
 end
 
-function SSPMPRK22(alpha, beta; linsolve = LUFactorization(),
+function SSPMPRK22(alpha, beta; linsolve = KLUFactorization(),
                    small_constant = nothing)
     if isnothing(small_constant)
         small_constant_function = floatmin
@@ -466,7 +466,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. To display the default value for data type `type` evaluate 
+to avoid divisions by zero. To display the default value for data type `type` evaluate
 `SSPMPRK43. small_constant_function(type)`, where `type` can be, e.g.,
 `Float64`.
 
@@ -506,7 +506,7 @@ function small_constant_function_SSPMPRK43(type)
     return small_constant
 end
 
-function SSPMPRK43(; linsolve = LUFactorization(),
+function SSPMPRK43(; linsolve = KLUFactorization(),
                    small_constant = small_constant_function_SSPMPRK43)
     if small_constant isa Number
         small_constant_function = Returns(small_constant)
