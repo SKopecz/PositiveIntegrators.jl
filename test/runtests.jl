@@ -1339,8 +1339,8 @@ end
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    alg_lu = alg(LUFactorization())
-                    alg_klu = alg(KLUFactorization())
+                    alg_lu = alg(; linsolve = LUFactorization())
+                    alg_klu = alg(; linsolve = KLUFactorization())
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu; dt,
                                                adaptive = false)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu; dt,
@@ -1432,8 +1432,8 @@ end
                     prob_sparse_op = ConservativePDSProblem(prod, u0, tspan;
                                                             p_prototype = P_sparse)
 
-                    alg_lu = alg(LUFactorization())
-                    alg_klu = alg(KLUFactorization())
+                    alg_lu = alg(; linsolve = LUFactorization())
+                    alg_klu = alg(; linsolve = KLUFactorization())
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu; dt)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu; dt)
                     sol_dense_ip = solve(prob_dense_ip, alg_lu; dt)
@@ -1560,8 +1560,8 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    alg_lu = alg(LUFactorization())
-                    alg_klu = alg(KLUFactorization())
+                    alg_lu = alg(; linsolve = LUFactorization())
+                    alg_klu = alg(; linsolve = KLUFactorization())
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu;
                                                dt, adaptive = false)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu;
@@ -1695,8 +1695,8 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    alg_lu = alg(LUFactorization())
-                    alg_klu = alg(KLUFactorization())
+                    alg_lu = alg(; linsolve = LUFactorization())
+                    alg_klu = alg(; linsolve = KLUFactorization())
                     sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg_lu;
                                                dt)
                     sol_tridiagonal_op = solve(prob_tridiagonal_op, alg_lu;
@@ -1796,9 +1796,9 @@ end
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
                     if prob == prob_sparse || prob == prob_sparse2
-                        alg_ = alg(KLUFactorization())
+                        alg_ = alg(; linsolve = KLUFactorization())
                     else
-                        alg_ = alg(LUFactorization())
+                        alg_ = alg(; linsolve = LUFactorization())
                     end
                     sol1 = solve(prob, alg_; dt, adaptive = false)
 
