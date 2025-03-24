@@ -429,9 +429,7 @@ end
     build_mprk_matrix!(P, P, σ, dt)
 
     # Same as linres = P \ uprev
-    display(linsolve.A)
     linsolve.A = P
-    display(linsolve.A)
     linres = solve!(linsolve)
 
     u .= linres

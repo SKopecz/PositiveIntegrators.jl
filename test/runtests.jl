@@ -1276,16 +1276,10 @@ end
         # deliver the same results
         @testset "Different matrix types (conservative)" begin
             prod_1! = (P, u, p, t) -> begin
-                # fill!(P, zero(eltype(P)))
-                for j in axes(P, 2)
-                    for idx in nzrange(P, j)
-                        i = rowvals(P)[idx]
-                        nonzeros(P)[idx] = i * u[i]
-                    end
+                fill!(P, zero(eltype(P)))
+                for i in 1:(length(u) - 1)
+                    P[i, i + 1] = i * u[i]
                 end
-                # for i in 1:(length(u) - 1)
-                #     P[i, i + 1] = i * u[i]
-                # end
                 return nothing
             end
 
