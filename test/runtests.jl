@@ -212,7 +212,7 @@ function linear_advection_fd_upwind_D!(D, u, p, t)
 end
 
 @testset "PositiveIntegrators.jl tests" begin
-    @testset "Aqua.jl" begin    
+    @testset "Aqua.jl" begin
         # The Aqua.jl tests fails in the Downstream CI action
         # of OrdinaryDiffEq.jl but not in our regular CI - we just
         # skip it there.
@@ -231,9 +231,9 @@ end
                 persistent_tasks = true
             end
             Aqua.test_all(PositiveIntegrators;
-                      ambiguities = ambiguities,
-                      piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
-                      persistent_tasks = persistent_tasks)
+                          ambiguities = ambiguities,
+                          piracies = (; treat_as_own = [RecipesBase.apply_recipe],),
+                          persistent_tasks = persistent_tasks)
         end
     end
 
