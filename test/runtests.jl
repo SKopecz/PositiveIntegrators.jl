@@ -2334,9 +2334,9 @@ end
             labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
             dts = (last(prob.tspan) - first(prob.tspan)) / 10.0 * 0.5 .^ (4:13)
             alg_ref = Vern7()
-            wp = work_precision_fixed(prob, [alg; alg; alg; alg; alg], labelsA, dts,
+            wp = work_precision_fixed(prob, algs, labelsA, dts,
                                       alg_ref)
-            work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
+            work_precision_fixed!(wp, prob, algs, labelsB, dts,
                                   alg_ref)
 
             # check that errors agree
@@ -2369,12 +2369,10 @@ end
                 abstols = 1 ./ 10 .^ (4:8)
                 reltols = 1 ./ 10 .^ (3:7)
                 alg_ref = Vern7()
-                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
-                                             abstols,
-                                             reltols, alg_ref)
-                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
-                                         abstols,
-                                         reltols, alg_ref)
+                wp = work_precision_adaptive(prob, algs, labelsA,
+                                             abstols, reltols, alg_ref)
+                work_precision_adaptive!(wp, prob, algs, labelsB,
+                                         abstols, reltols, alg_ref)
 
                 # check that errors agree
                 for (i, _) in enumerate(abstols)
@@ -2402,12 +2400,10 @@ end
                 abstols = 1 ./ 10 .^ (4:8)
                 reltols = 1 ./ 10 .^ (3:7)
                 alg_ref = Rodas4P()
-                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
-                                             abstols,
-                                             reltols, alg_ref; adaptive_ref = true)
-                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
-                                         abstols,
-                                         reltols, alg_ref; adaptive_ref = true)
+                wp = work_precision_adaptive(prob, algs, labelsA,
+                                             abstols, reltols, alg_ref; adaptive_ref = true)
+                work_precision_adaptive!(wp, prob, algs, labelsB,
+                                         abstols, reltols, alg_ref; adaptive_ref = true)
 
                 # check that errors agree
                 for (i, _) in enumerate(abstols)
