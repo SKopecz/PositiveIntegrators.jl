@@ -2360,7 +2360,7 @@ end
         # that the errors are identical and that the computing times
         # differ only slightly.
         @testset "work-precision adaptive" begin
-            @testset "adatpive_ref = false" begin
+            @testset "adaptive_ref = false" begin
                 prob = prob_pds_nonlinmod
                 alg = MPRK22(1.0)
                 algs = [alg; alg; alg; alg; alg]
@@ -2393,7 +2393,7 @@ end
                 end
             end
 
-            @testset "adatpive_ref = true" begin
+            @testset "adaptive_ref = true" begin
                 prob = prob_pds_robertson
                 alg = MPRK22(1.0)
                 algs = [alg; alg; alg; alg; alg]
