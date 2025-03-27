@@ -3,6 +3,7 @@ using LinearAlgebra
 using SparseArrays
 using Statistics: mean, median
 
+using DoubleFloats
 using StaticArrays: MVector, @SVector, SA
 
 using Unitful: @u_str, ustrip
