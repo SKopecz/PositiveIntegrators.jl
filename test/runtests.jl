@@ -2560,7 +2560,7 @@ end
         end
 
         # Here we run a single scheme multiple times and check
-        # that the errors are identical and that the computing times 
+        # that the errors are identical and that the computing times
         # differ only slightly.
         @testset "work-precision fixed" begin
             prob = prob_pds_nonlinmod
@@ -2581,7 +2581,7 @@ end
                 @test all(y -> y == v[1], v)
             end
 
-            # check that computing times are close enough 
+            # check that computing times are close enough
             for (i, _) in enumerate(dts)
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
@@ -2593,10 +2593,10 @@ end
         end
 
         # Here we run a single scheme multiple times and check
-        # that the errors are identical and that the computing times 
+        # that the errors are identical and that the computing times
         # differ only slightly.
         @testset "work-precision adaptive" begin
-            @testset "adatpive_ref = false" begin
+            @testset "adaptive_ref = false" begin
                 prob = prob_pds_nonlinmod
                 alg = MPRK22(1.0)
                 algs = [alg; alg; alg; alg; alg]
@@ -2618,18 +2618,18 @@ end
                     @test all(y -> y == v[1], v)
                 end
 
-                # check that computing times are close enough 
+                # check that computing times are close enough
                 for (i, _) in enumerate(abstols)
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
-                    # differences won't be significant.        
+                    # differences won't be significant.
                     @test maximum((v .- m1) ./ m1) < 1.5
                 end
             end
 
-            @testset "adatpive_ref = true" begin
+            @testset "adaptive_ref = true" begin
                 prob = prob_pds_robertson
                 alg = MPRK22(1.0)
                 algs = [alg; alg; alg; alg; alg]
@@ -2651,13 +2651,13 @@ end
                     @test all(y -> y == v[1], v)
                 end
 
-                # check that computing times are close enough 
+                # check that computing times are close enough
                 for (i, _) in enumerate(abstols)
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
-                    # differences won't be significant.        
+                    # differences won't be significant.
                     @test maximum((v .- m1) ./ m1) < 1.5
                 end
             end
