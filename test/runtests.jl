@@ -4,7 +4,7 @@ using SparseArrays
 using Statistics: mean, median
 
 using DoubleFloats
-using StaticArrays: MVector, @SVector, SVector, SA
+using StaticArrays: SMatrix, MVector, @SVector, SVector, SA
 
 using Unitful: @u_str, ustrip
 
