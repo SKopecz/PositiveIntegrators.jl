@@ -559,11 +559,11 @@ end
     N = length(uprev)
 
     if uprev isa StaticArray
-        C = MMatrix{N, M + 1}(zeros(N, M + 1))
-        C2 = MMatrix{N, M + 1}(zeros(N, M + 1))
+        C = MMatrix{N, M + 1}(zeros(eltype(uprev), N, M + 1))
+        C2 = MMatrix{N, M + 1}(zeros(eltype(uprev), N, M + 1))
     else
-        C = zeros(N, M + 1)
-        C2 = zeros(N, M + 1)
+        C = zeros(eltype(uprev), N, M + 1)
+        C2 = zeros(eltype(uprev), N, M + 1)
     end
 
     for i in 1:(M + 1)

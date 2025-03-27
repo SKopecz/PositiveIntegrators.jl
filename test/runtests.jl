@@ -1911,7 +1911,6 @@ end
             end
         end
 
-        #TODO: Check order of MPDeC(K) for K ≥ 4
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
         @testset "Convergence tests (conservative)" begin
@@ -1929,7 +1928,6 @@ end
 
         # Here we check the convergence order of pth-order schemes for which
         # no interpolation of order p is available
-        #TODO: Check order of MPDeC(K), K≥ 5
         @testset "Convergence tests (nonconservative)" begin
             dts = 0.5 .^ (4:12)
             problems = (prob_pds_linmod_nonconservative,
@@ -1968,7 +1966,6 @@ end
             end
         end
 
-        #TODO: Check MPDeC(K) order for K ≥ 4
         @testset "Check convergence order (nonautonomous conservative PDS)" begin
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -1999,7 +1996,6 @@ end
             end
         end
 
-        #TODO: Check order of MPDeC(K), K≥ 6
         @testset "Check convergence order (nonautonomous nonconservative PDS)" begin
             prod! = (P, u, p, t) -> begin
                 fill!(P, zero(eltype(P)))
@@ -2041,6 +2037,179 @@ end
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
                 orders = experimental_orders_of_convergence(prob_ip, alg, dts)
                 @test check_order(orders, PositiveIntegrators.alg_order(alg), atol = 0.2)
+            end
+        end
+
+        @testset "Convergence of higher order schemes (autonomous)" begin
+            function f_analytic(u0, p, t)
+                u₁⁰, u₂⁰ = u0
+                a, b = p
+                c = a + b
+                return ((u₁⁰ + u₂⁰) * [b; a] +
+                        exp(-c * t) * (a * u₁⁰ - b * u₂⁰) * [1; -1]) / c
+            end
+
+            # linear model problem - conservative
+            function linmodP!(P, u, p, t)
+                P[1, 2] = u[2]
+                P[2, 1] = 5u[1]
+                return nothing
+            end
+            function linmodP(u, p, t)
+                P = zeros(eltype(u), 2, 2)
+                linmodP!(P, u, p, t)
+                return SMatrix{2, 2}(P)
+            end
+
+            # linear model problem - nonconservative -  in-place
+            function linmodP_noncons!(P, u, p, t)
+                P[1, 1] = u[2] / 2
+                P[1, 2] = u[2] / 2
+                P[2, 1] = 3u[1]
+                P[2, 2] = 2u[1]
+                return nothing
+            end
+            function linmodD_noncons!(D, u, p, t)
+                D[1] = 2u[1]
+                D[2] = u[2] / 2
+                return nothing
+            end
+            function linmodP_noncons(u, p, t)
+                P = zeros(eltype(u), 2, 2)
+                linmodP_noncons!(P, u, p, t)
+                return SMatrix{2, 2}(P)
+            end
+            function linmodD_noncons(u, p, t)
+                D = zeros(eltype(u), 2, 1)
+                linmodD_noncons!(D, u, p, t)
+                return SVector{2}(D)
+            end
+
+            u0 = [Double64(9) / 10; Double64(1) / 10]
+            p = [Double64(5); Double64(1)]
+            tspan = (Double64(0), Double64(1))
+
+            prob_ip = ConservativePDSProblem(linmodP!, u0, tspan, p; analytic = f_analytic)
+            prob_op = ConservativePDSProblem(linmodP, SVector{2}(u0), tspan, SVector{2}(p);
+                                             analytic = f_analytic)
+            prob_ip_noncons = PDSProblem(linmodP_noncons!, linmodD_noncons!, u0, tspan, p;
+                                         analytic = f_analytic)
+            prob_op_noncons = PDSProblem(linmodP_noncons, linmodD_noncons, SVector{2}(u0),
+                                         tspan,
+                                         SVector{2}(p); analytic = f_analytic)
+
+            dts = 0.5 .^ (8:13)
+
+            algs = []
+            for K in 4:10
+                push!(algs, MPDeC(K))
+                push!(algs, MPDeC(K, nodes = :lagrange))
+            end
+
+            atol = 0.3
+            @testset "$alg" for alg in algs
+                orders = experimental_orders_of_convergence(prob_ip, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_op, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_ip_noncons, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_op_noncons, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+            end
+        end
+
+        @testset "Convergence of higher order schemes (nonautonomous)" begin
+            prod! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                P[1, 2] = sin(t)^2 * u[2]
+                P[2, 1] = cos(t)^2 * u[1]
+                return nothing
+            end
+            prod = (u, p, t) -> begin
+                P = similar(u, (length(u), length(u)))
+                prod!(P, u, p, t)
+                return SMatrix{2, 2}(P)
+            end
+            function fct!(du, u, p, t)
+                du[1] = sin(t)^2 * u[2] - cos(t)^2 * u[1]
+                du[2] = -sin(t)^2 * u[2] + cos(t)^2 * u[1]
+                return nothing
+            end
+            fct = (u, p, t) -> begin
+                f = similar(u)
+                fct!(f, u, p, t)
+                return SVector{2}(f)
+            end
+
+            prod_noncons! = (P, u, p, t) -> begin
+                fill!(P, zero(eltype(P)))
+                P[1, 2] = sin(t)^2 * u[2]
+                P[2, 1] = cos(2 * t)^2 * u[1]
+                P[2, 2] = cos(t)^2 * u[2]
+                return nothing
+            end
+            dest_noncons! = (d, u, p, t) -> begin
+                fill!(d, zero(eltype(d)))
+                d[1] = sin(2 * t)^2 * u[1]
+                d[2] = sin(0.5 * t)^2 * u[2]
+                return nothing
+            end
+            prod_noncons = (u, p, t) -> begin
+                P = similar(u, (length(u), length(u)))
+                prod_noncons!(P, u, p, t)
+                return SMatrix{2, 2}(P)
+            end
+            dest_noncons = (u, p, t) -> begin
+                d = similar(u, (length(u),))
+                dest_noncons!(d, u, p, t)
+                return SVector{2}(d)
+            end
+            fct_noncons! = (du, u, p, t) -> begin
+                du[1] = sin(t)^2 * u[2] - cos(2 * t)^2 * u[1] - sin(2 * t)^2 * u[1]
+                du[2] = -sin(t)^2 * u[2] + cos(2 * t)^2 * u[1] + cos(t)^2 * u[2] -
+                        sin(0.5 * t)^2 * u[2]
+                return nothing
+            end
+            fct_noncons = (u, p, t) -> begin
+                f = similar(u)
+                fct_noncons!(f, u, p, t)
+                return SVector{2}(f)
+            end
+
+            u0 = [Double64(11) / 10; Double64(9) / 10] # values close to zero may decrease the order
+            tspan = (Double64(0), Double64(1))
+            prob_op = ConservativePDSProblem(prod, SVector{2}(u0), tspan; std_rhs = fct) #out-of-place
+            prob_ip = ConservativePDSProblem(prod!, u0, tspan; std_rhs = fct!) #in-place
+            prob_op_noncons = PDSProblem(prod_noncons, dest_noncons, SVector{2}(u0), tspan;
+                                         std_rhs = fct_noncons) #out-of-place
+            prob_ip_noncons = PDSProblem(prod_noncons!, dest_noncons!, u0, tspan;
+                                         std_rhs = fct_noncons!) #in-place
+
+            dts = 0.5 .^ (5:10)
+
+            algs = []
+            for K in 4:10
+                push!(algs, MPDeC(K))
+                push!(algs, MPDeC(K, nodes = :lagrange))
+            end
+
+            atol = 0.3
+            @testset "$alg" for alg in algs
+                orders = experimental_orders_of_convergence(prob_ip, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_op, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_ip_noncons, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
+
+                orders = experimental_orders_of_convergence(prob_op_noncons, alg, dts)
+                @test check_order(orders, PositiveIntegrators.alg_order(alg); atol)
             end
         end
 
