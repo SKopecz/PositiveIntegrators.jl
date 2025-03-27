@@ -12,6 +12,9 @@ for human readability.
 
 - The minimum required Julia version was updated to v1.10
 
+### Added
+
+- MPDeC methods of Öffner and Torlo
 
 ## Changes when updating to v0.2 from v0.1.x
 

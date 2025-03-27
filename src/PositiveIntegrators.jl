@@ -6,7 +6,7 @@ using Statistics: median
 
 using SparseArrays: SparseArrays, AbstractSparseMatrix,
                     issparse, nonzeros, nzrange, rowvals, spdiagm
-using StaticArrays: SVector, SMatrix, StaticArray, @SVector, @SMatrix
+using StaticArrays: SVector, SMatrix, StaticArray, @SVector, @SMatrix, MMatrix
 
 using FastBroadcast: @..
 using MuladdMacro: @muladd
@@ -48,6 +48,7 @@ export ConservativePDSFunction, ConservativePDSProblem
 
 export MPE, MPRK22, MPRK43I, MPRK43II
 export SSPMPRK22, SSPMPRK43
+export MPDeC
 
 export prob_pds_linmod, prob_pds_linmod_inplace, prob_pds_nonlinmod,
        prob_pds_robertson, prob_pds_brusselator, prob_pds_sir,
@@ -68,6 +69,9 @@ include("mprk.jl")
 
 # modified Patankar-Runge-Kutta based on the SSP formulation of RK methods (SSPMPRK)
 include("sspmprk.jl")
+
+# MPDeC methods
+include("mpdec.jl")
 
 # interpolation for dense output
 include("interpolation.jl")
