@@ -15,7 +15,9 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqVerner: Vern7, Vern9
 using PositiveIntegrators
 
-using LinearSolve: RFLUFactorization, LUFactorization, KrylovJL_GMRES
+# load RecursiveFactorization to get RFLUFactorization
+using RecursiveFactorization: RecursiveFactorization
+using LinearSolve: RFLUFactorization, LUFactorization, KLUFactorization, KrylovJL_GMRES
 
 using Aqua: Aqua
 using RecipesBase: RecipesBase # only for Aqua tests
@@ -1667,18 +1669,12 @@ end
                     prob_sparse_op = PDSProblem(prod, dest, u0, tspan;
                                                 p_prototype = P_sparse)
 
-                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg;
-                                               dt)
-                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg;
-                                               dt)
-                    sol_dense_ip = solve(prob_dense_ip, alg;
-                                         dt)
-                    sol_dense_op = solve(prob_dense_op, alg;
-                                         dt)
-                    sol_sparse_ip = solve(prob_sparse_ip, alg;
-                                          dt)
-                    sol_sparse_op = solve(prob_sparse_op, alg;
-                                          dt)
+                    sol_tridiagonal_ip = solve(prob_tridiagonal_ip, alg; dt)
+                    sol_tridiagonal_op = solve(prob_tridiagonal_op, alg; dt)
+                    sol_dense_ip = solve(prob_dense_ip, alg; dt)
+                    sol_dense_op = solve(prob_dense_op, alg; dt)
+                    sol_sparse_ip = solve(prob_sparse_ip, alg; dt)
+                    sol_sparse_op = solve(prob_sparse_op, alg; dt)
 
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
                     @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
@@ -1751,7 +1747,7 @@ end
                                      p_prototype = P_dense)
             prob_sparse2 = PDSProblem(prod_sparse!, dest!, u0, tspan;
                                       p_prototype = P_sparse)
-            #solve and test
+            # solve and test
             for alg in (MPE(), MPRK22(0.5), MPRK22(1.0), MPRK43I(1.0, 0.5),
                         MPRK43I(0.5, 0.75),
                         MPRK43II(2.0 / 3.0), MPRK43II(0.5), SSPMPRK22(0.5, 1.0),
@@ -2026,7 +2022,7 @@ end
 
         # Check that approximations, and thus the Patankar weights,
         # remain positive to avoid division by zero.
-        @testset "Positvity check" begin
+        @testset "Positivity check" begin
             # For this problem u[1] decreases montonically to 0 very fast.
             # We perform 10^5 steps and check that u[end] does not contain any NaNs
             u0 = [0.9, 0.1]
@@ -2293,9 +2289,9 @@ end
             labelsB = ["B_1"; "B_2"; "B_3"; "B_4"; "B_5"]
             dts = (last(prob.tspan) - first(prob.tspan)) / 10.0 * 0.5 .^ (4:13)
             alg_ref = Vern7()
-            wp = work_precision_fixed(prob, [alg; alg; alg; alg; alg], labelsA, dts,
+            wp = work_precision_fixed(prob, algs, labelsA, dts,
                                       alg_ref)
-            work_precision_fixed!(wp, prob, [alg; alg; alg; alg; alg], labelsB, dts,
+            work_precision_fixed!(wp, prob, algs, labelsB, dts,
                                   alg_ref)
 
             # check that errors agree
@@ -2328,12 +2324,10 @@ end
                 abstols = 1 ./ 10 .^ (4:8)
                 reltols = 1 ./ 10 .^ (3:7)
                 alg_ref = Vern7()
-                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
-                                             abstols,
-                                             reltols, alg_ref)
-                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
-                                         abstols,
-                                         reltols, alg_ref)
+                wp = work_precision_adaptive(prob, algs, labelsA,
+                                             abstols, reltols, alg_ref)
+                work_precision_adaptive!(wp, prob, algs, labelsB,
+                                         abstols, reltols, alg_ref)
 
                 # check that errors agree
                 for (i, _) in enumerate(abstols)
@@ -2361,12 +2355,10 @@ end
                 abstols = 1 ./ 10 .^ (4:8)
                 reltols = 1 ./ 10 .^ (3:7)
                 alg_ref = Rodas4P()
-                wp = work_precision_adaptive(prob, [alg; alg; alg; alg; alg], labelsA,
-                                             abstols,
-                                             reltols, alg_ref; adaptive_ref = true)
-                work_precision_adaptive!(wp, prob, [alg; alg; alg; alg; alg], labelsB,
-                                         abstols,
-                                         reltols, alg_ref; adaptive_ref = true)
+                wp = work_precision_adaptive(prob, algs, labelsA,
+                                             abstols, reltols, alg_ref; adaptive_ref = true)
+                work_precision_adaptive!(wp, prob, algs, labelsB,
+                                         abstols, reltols, alg_ref; adaptive_ref = true)
 
                 # check that errors agree
                 for (i, _) in enumerate(abstols)
