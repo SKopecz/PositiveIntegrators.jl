@@ -2101,7 +2101,7 @@ end
 
             dts = 0.5 .^ (8:13)
 
-            algs = []
+            algs = MPDeC[]
             for K in 4:10
                 push!(algs, MPDeC(K))
                 push!(algs, MPDeC(K, nodes = :lagrange))

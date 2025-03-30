@@ -52,7 +52,7 @@ end
 function small_constant_function_MPDeC(type)
     if type == Float64
         # small_constant is chosen such that 
-        # the testet "Zero initial values" passes.
+        # the testset "Zero initial values" passes.
         small_constant = 1e-300
     else
         small_constant = floatmin(type)
@@ -72,8 +72,10 @@ function MPDeC(K::Integer;
 
     if nodes === :lagrange
         M = K - 1
-    else # :gausslobatto 
+    elseif nodes === :gausslobatto
         M = cld(K, 2)
+    else
+        throw(ArgumentError("Unknown node choice for MPDeC. Possible options are :gauslobatto or :lagrange"))
     end
 
     MPDeC{typeof(nodes), typeof(linsolve), typeof(small_constant_function)}(K, M,
@@ -87,7 +89,7 @@ isfsal(::MPDeC) = false
 
 function get_constant_parameters(alg::MPDeC, type)
     oneType = one(type)
-    if alg.nodes == :lagrange
+    if alg.nodes === :lagrange
         nodes = collect(i * oneType / alg.M for i in 0:(alg.M))
         # M is one less than the methods order
         if alg.M == 1
@@ -157,7 +159,7 @@ function get_constant_parameters(alg::MPDeC, type)
         else
             error("MPDeC requires 2 ≤ K ≤ 10.")
         end
-    else # alg.nodes == :gausslobatto 
+    else # alg.nodes === :gausslobatto 
         if alg.M == 1
             nodes = [0, oneType]
             theta = [0 oneType/2; 0 oneType/2]
@@ -267,7 +269,6 @@ end
 @muladd function _build_mpdec_matrix_and_rhs_oop(uprev, m, prod, C, p, t, dt, nodes, theta,
                                                  small_constant, dest = nothing)
     N, M = size(C)
-    M = M - 1
 
     # Create linear system matrix and rhs
     if uprev isa StaticArray
@@ -286,7 +287,7 @@ end
 
     σ = add_small_constant(C[:, m], small_constant)
 
-    @fastmath @inbounds @simd for r in 1:(M + 1)
+    @fastmath @inbounds @simd for r in 1:M
         th = theta[r, m]
         dt_th = dt * th
         P = prod(C[:, r], p, t + nodes[r] * dt)
@@ -306,12 +307,11 @@ end
                                                 nodes, theta, small_constant,
                                                 dest = nothing, d = nothing)
     N, M = size(C)
-    M = M - 1
 
     oneMmat = one(eltype(Mmat))
     zeroMmat = zero(eltype(Mmat))
 
-    #Initialize Mmat as identity matrix
+    # Initialize Mmat as identity matrix
     if Mmat isa Tridiagonal
         Mmat.d .= oneMmat
         Mmat.du .= zeroMmat
@@ -340,7 +340,7 @@ end
 
     σ .= C[:, m] .+ small_constant
 
-    @fastmath @inbounds @simd for r in 1:(M + 1)
+    @fastmath @inbounds @simd for r in 1:M
         th = theta[r, m]
         dt_th = dt * th
 
