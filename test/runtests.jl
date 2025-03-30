@@ -1741,7 +1741,6 @@ end
                     sol_sparse_ip = solve(prob_sparse_ip, alg)
                     sol_sparse_op = solve(prob_sparse_op, alg)
 
-
                     @test isapprox(sol_tridiagonal_ip.t, sol_tridiagonal_op.t; rtol)
                     @test isapprox(sol_dense_ip.t, sol_dense_op.t; rtol)
                     @test isapprox(sol_sparse_ip.t, sol_sparse_op.t; rtol)
@@ -1824,7 +1823,6 @@ end
             end
             #solve and test
             for alg in algs
-
                 for prob in (prob_default, prob_tridiagonal, prob_dense, prob_sparse,
                              prob_default2,
                              prob_tridiagonal2, prob_dense2, prob_sparse2)
