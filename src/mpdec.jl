@@ -268,7 +268,7 @@ end
 # out-of-place for dense arrays
 @muladd function _build_mpdec_matrix_and_rhs_oop(uprev, m, prod, C, p, t, dt, nodes, theta,
                                                  small_constant, dest = nothing)
-    N, M = size(C)
+    N, M_plus_1 = size(C)
 
     # Create linear system matrix and rhs
     if uprev isa StaticArray
@@ -287,7 +287,7 @@ end
 
     σ = add_small_constant(C[:, m], small_constant)
 
-    @fastmath @inbounds @simd for r in 1:M
+    @fastmath @inbounds @simd for r in 1:M_plus_1
         th = theta[r, m]
         dt_th = dt * th
         P = prod(C[:, r], p, t + nodes[r] * dt)
@@ -306,7 +306,7 @@ end
 @muladd function build_mpdec_matrix_and_rhs_ip!(Mmat, rhs, m, prod, P, C, p, t, dt, σ, tmp,
                                                 nodes, theta, small_constant,
                                                 dest = nothing, d = nothing)
-    N, M = size(C)
+    N, M_plus_1 = size(C)
 
     oneMmat = one(eltype(Mmat))
     zeroMmat = zero(eltype(Mmat))
@@ -340,7 +340,7 @@ end
 
     σ .= C[:, m] .+ small_constant
 
-    @fastmath @inbounds @simd for r in 1:M
+    @fastmath @inbounds @simd for r in 1:M_plus_1
         th = theta[r, m]
         dt_th = dt * th
 
