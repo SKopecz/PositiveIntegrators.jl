@@ -240,7 +240,9 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     if f isa ConservativePDSFunction
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK22ConservativeCache(tmp, P, P2, σ,
@@ -248,7 +250,9 @@ function alg_cache(alg::SSPMPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
                                    linsolve)
     elseif f isa PDSFunction
         linprob = LinearProblem(P2, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK22Cache(tmp, P, P2,
@@ -466,7 +470,7 @@ You can optionally choose the linear solver to be used by passing an
 algorithm from [LinearSolve.jl](https://github.com/SciML/LinearSolve.jl)
 as keyword argument `linsolve`.
 You can also choose the parameter `small_constant` which is added to all Patankar-weight denominators
-to avoid divisions by zero. To display the default value for data type `type` evaluate 
+to avoid divisions by zero. To display the default value for data type `type` evaluate
 `SSPMPRK43. small_constant_function(type)`, where `type` can be, e.g.,
 `Float64`.
 
@@ -775,7 +779,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     if f isa ConservativePDSFunction
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
         SSPMPRK43ConservativeCache(tmp, tmp2, P, P2, P3, σ, ρ, tab, linsolve)
     elseif f isa PDSFunction
@@ -784,7 +790,9 @@ function alg_cache(alg::SSPMPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
         D3 = similar(u)
 
         linprob = LinearProblem(P3, _vec(tmp))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         SSPMPRK43Cache(tmp, tmp2, P, P2, P3, D, D2, D3, σ, ρ, tab, linsolve)
