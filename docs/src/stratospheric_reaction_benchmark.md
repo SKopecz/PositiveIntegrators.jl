@@ -23,7 +23,7 @@ function stratreac_plot(sols, labels = fill("", length(sols)), sol_ref = nothing
         labels = [labels]
     end
 
-    tspan = prob.tspan
+    tspan = prob_pds_stratreac.tspan
     layout = (3, 2)
     linewidth = 2
     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4))
