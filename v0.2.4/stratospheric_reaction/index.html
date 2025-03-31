@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Stratospheric reaction problem · PositiveIntegrators.jl</title><meta name="title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta property="og:title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta property="twitter:title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta name="description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:description" content="Documentation for PositiveIntegrators.jl."/><meta property="twitter:description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction/"/><meta property="twitter:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction/"/><link rel="canonical" href="https://SKopecz.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">PositiveIntegrators.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../npzd_model/">NPZD model</a></li><li><a class="tocitem" href="../robertson/">Robertson problem</a></li><li class="is-active"><a class="tocitem" href>Stratospheric reaction problem</a><ul class="internal"><li><a class="tocitem" href="#Definition-of-the-production-destruction-system"><span>Definition of the production-destruction system</span></a></li><li><a class="tocitem" href="#Solution-of-the-production-destruction-system"><span>Solution of the production-destruction system</span></a></li><li><a class="tocitem" href="#Package-versions"><span>Package versions</span></a></li></ul></li><li><a class="tocitem" href="../linear_advection/">Linear Advection</a></li><li><a class="tocitem" href="../heat_equation_neumann/">Heat Equation, Neumann BCs</a></li><li><a class="tocitem" href="../heat_equation_dirichlet/">Heat Equation, Dirichlet BCs</a></li></ul></li><li><a class="tocitem" href="../faq/">Troubleshooting, FAQ</a></li><li><a class="tocitem" href="../api_reference/">API reference</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../code_of_conduct/">Code of conduct</a></li><li><a class="tocitem" href="../license/">License</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Stratospheric reaction problem</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Stratospheric reaction problem</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/docs/src/stratospheric_reaction.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="tutorial-stratos"><a class="docs-heading-anchor" href="#tutorial-stratos">Tutorial: Solution of a stratospheric reaction problem</a><a id="tutorial-stratos-1"></a><a class="docs-heading-anchor-permalink" href="#tutorial-stratos" title="Permalink"></a></h1><p>This tutorial is about the efficient solution of a stiff non-autonomous and non-conservative production-destruction systems (PDS) with a small number of differential equations.  We will compare the use of standard arrays and static arrays from <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/">StaticArrays.jl</a> and assess their efficiency.</p><h2 id="Definition-of-the-production-destruction-system"><a class="docs-heading-anchor" href="#Definition-of-the-production-destruction-system">Definition of the production-destruction system</a><a id="Definition-of-the-production-destruction-system-1"></a><a class="docs-heading-anchor-permalink" href="#Definition-of-the-production-destruction-system" title="Permalink"></a></h2><p>This stratospheric reaction problem was described by Adrian Sandu in <a href="https://doi.org/10.1006/jcph.2001.6750">Positive Numerical Integration Methods for Chemical Kinetic Systems</a>, see also the paper <a href="https://doi.org/10.2140/camcos.2021.16.155">Positivity-preserving adaptive Runge–Kutta methods</a> by Stefan Nüßlein, Hendrik Ranocha and David I. Ketcheson. The governing equations are</p><p class="math-container">\[\begin{aligned}
+\frac{dO^{1D}}{dt} &amp;= r_5 - r_6 -  r_7,\\
+\frac{dO}{dt} &amp;= 2r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11},\\
+\frac{dO_3}{dt} &amp;= r_2 - r_3 - r_4 - r_5 - r_7 - r_8,\\
+\frac{dO_2}{dt} &amp;= -r_1 -r_2 + r_3 + 2r_4+r_5+2r_7+r_8+r_9,\\
+\frac{dNO}{dt} &amp;= -r_8+r_9+r_{10}-r_{11},\\
+\frac{dNO_2}{dt} &amp;= r_8-r_9-r_{10}+r_{11},
+\end{aligned}\]</p><p>with reaction rates</p><p class="math-container">\[\begin{aligned}
+r_1 &amp;=2.643⋅ 10^{-10}σ^3 O_2, &amp; r_2 &amp;=8.018⋅10^{-17}O O_2 , &amp; r_3 &amp;=6.12⋅10^{-4}σ O_3,\\
+r_4 &amp;=1.567⋅10^{-15}O_3 O , &amp; r_5 &amp;= 1.07⋅ 10^{-3}σ^2O_3,  &amp; r_6 &amp;= 7.11⋅10^{-11}⋅ 8.12⋅10^6 O^{1D},\\
+r_7 &amp;= 1.2⋅10^{-10}O^{1D} O_3, &amp; r_8 &amp;= 6.062⋅10^{-15}O_3 NO, &amp; r_9 &amp;= 1.069⋅10^{-11}NO_2 O,\\
+r_{10} &amp;= 1.289⋅10^{-2}σ NO_2, &amp; r_{11} &amp;= 10^{-8}NO O,
+\end{aligned}\]</p><p>where</p><p class="math-container">\[\begin{aligned}
+T &amp;= t/3600 \mod 24,\quad T_r=4.5,\quad T_s = 19.5,\\
+σ(T) &amp;= \begin{cases}1, &amp; T_r≤ T≤ T_s,\\0, &amp; \text{otherwise}.\end{cases}
+\end{aligned}\]</p><p>Setting <span>$\mathbf u = (O^{1D}, O, O_3, O_2, NO, NO_2)$</span> the initial value is <span>$\mathbf{u}_0 = (9.906⋅10^1, 6.624⋅10^8, 5.326⋅10^{11}, 1.697⋅10^{16}, 4⋅10^6, 1.093⋅10^9)^T$</span>. The time domain in seconds is <span>$[4.32⋅10^{4}, 3.024⋅10^5]$</span>, which corresponds to <span>$[12.0, 84.0]$</span> in hours. There are two independent linear invariants, e.g. <span>$u_1+u_2+3u_3+2u_4+u_5+2u_6=(1,1,3,2,1,2)\cdot\mathbf{u}_0$</span> and <span>$u_5+u_6 = 1.097⋅10^9$</span>.</p><p>The stratospheric reaction problem can be represented as a (non-conservative) PDS with production terms</p><p class="math-container">\[\begin{aligned}
+p_{13} &amp;= r_5, &amp; p_{21} &amp;= r_6, &amp; p_{22} &amp;= r_1+r_{10},\\
+p_{23} &amp;= r_3, &amp; p_{24} &amp;= r_1,&amp; p_{32} &amp;= r_2,\\
+p_{41} &amp;= r_7, &amp; p_{42}&amp;= r_4+r_9, &amp; p_{43}&amp;= r_4+r_7+r_8,\\
+p_{44} &amp;= r_3+r_5, &amp; p_{56}&amp;=r_9+r_{10}, &amp; p_{65}&amp;=r_8+r_{11}.
+\end{aligned}\]</p><p>and additional destruction terms</p><p class="math-container">\[\begin{aligned}
+d_{22}&amp;= r_{11}, &amp; d_{44}&amp;=r_2.
+\end{aligned}\]</p><p>In addition, all production and destruction terms not listed have the value zero.</p><h2 id="Solution-of-the-production-destruction-system"><a class="docs-heading-anchor" href="#Solution-of-the-production-destruction-system">Solution of the production-destruction system</a><a id="Solution-of-the-production-destruction-system-1"></a><a class="docs-heading-anchor-permalink" href="#Solution-of-the-production-destruction-system" title="Permalink"></a></h2><p>Now we are ready to define a <a href="../api_reference/#PositiveIntegrators.PDSProblem"><code>PDSProblem</code></a> and to solve this problem with a method of <a href="https://github.com/SKopecz/PositiveIntegrators.jl">PositiveIntegrators.jl</a> or <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>. </p><p>As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are</p><ol><li>an out-of-place implementation with standard (dynamic) matrices and vectors,</li><li>an in-place implementation with standard (dynamic) matrices and vectors,</li><li>an out-of-place implementation with static matrices and vectors from <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/">StaticArrays.jl</a>.</li></ol><h3 id="Standard-out-of-place-implementation"><a class="docs-heading-anchor" href="#Standard-out-of-place-implementation">Standard out-of-place implementation</a><a id="Standard-out-of-place-implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Standard-out-of-place-implementation" title="Permalink"></a></h3><p>Here we create an out-of-place function to compute the production matrix with return type <code>Matrix{Float64}</code> and a second out-of-place function for the destruction vector with return type <code>Vector{Float64}</code>.</p><pre><code class="language-julia hljs">using PositiveIntegrators # load PDSProblem
+
+function prod(u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    Tr = 4.5
+    Ts = 19.5
+    T = mod(t / 3600, 24)
+    if (Tr &lt;= T) &amp;&amp; (T &lt;= Ts)
+        Tfrac = (2 * T - Tr - Ts) / (Ts - Tr)
+        sigma = 0.5 + 0.5 * cos(pi * abs(Tfrac) * Tfrac)
+    else
+        sigma = 0.0
+    end
+
+    M = 8.120e16
+
+    k1 = 2.643e-10 * sigma^3
+    k2 = 8.018e-17
+    k3 = 6.120e-4 * sigma
+    k4 = 1.567e-15
+    k5 = 1.070e-3 * sigma^2
+    k6 = 7.110e-11
+    k7 = 1.200e-10
+    k8 = 6.062e-15
+    k9 = 1.069e-11
+    k10 = 1.289e-2 * sigma
+    k11 = 1.0e-8
+
+    r1 = k1 * O2
+    r2 = k2 * O * O2
+    r3 = k3 * O3
+    r4 = k4 * O3 * O
+    r5 = k5 * O3
+    r6 = k6 * M * O1D
+    r7 = k7 * O1D * O3
+    r8 = k8 * O3 * NO
+    r9 = k9 * NO2 * O
+    r10 = k10 * NO2
+    r11 = k11 * NO * O
+
+    return [0.0 0.0 r5 0.0 0.0 0.0;
+            r6 r1+r10 r3 r1 0.0 0.0;
+            0.0 r2 0.0 0.0 0.0 0.0;
+            r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 r9+r10;
+            0.0 0.0 0.0 0.0 r8+r11 0.0]
+end
+
+function dest(u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    k2 = 8.018e-17
+    k11 = 1.0e-8
+
+    r2 = k2 * O * O2
+    r11 = k11 * NO * O
+
+    return [0.0, r11, 0.0, r2, 0.0, 0.0]
+end</code></pre><p>The solution of the stratospheric reaction problem can now be computed as follows.</p><pre><code class="language-julia hljs">u0 = [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
+tspan = (4.32e4, 3.024e5) # time domain
+prob_oop = PDSProblem(prod, dest, u0, tspan) # create the PDS
+
+sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))</code></pre><p>Plotting the solution shows that the components <span>$O¹ᴰ$</span>, <span>$O$</span> and <span>$NO$</span> are in danger of becoming negative. </p><pre><code class="language-julia hljs">using Plots
+
+plot(sol_oop,
+    layout=(3,2),
+    xguide = &quot;t [h]&quot;,
+    xguidefontsize = 8,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    yguide=[&quot;O¹ᴰ&quot; &quot;O&quot; &quot;O₃&quot; &quot;O₂&quot; &quot;NO&quot; &quot;NO₂&quot;],
+    tickfontsize = 7,
+    legend = :none,
+    widen = true
+    )</code></pre><img src="a31c481d.svg" alt="Example block output"/><p><a href="https://github.com/SKopecz/PositiveIntegrators.jl">PositiveIntegrators.jl</a> provides the function <a href="../api_reference/#PositiveIntegrators.isnonnegative"><code>isnonnegative</code></a> (and also <a href="../api_reference/#PositiveIntegrators.isnegative"><code>isnegative</code></a>) to check if the solution is actually nonnegative, as expected from an MPRK scheme.</p><pre><code class="language-julia hljs">isnonnegative(sol_oop)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><h3 id="Standard-in-place-implementation"><a class="docs-heading-anchor" href="#Standard-in-place-implementation">Standard in-place implementation</a><a id="Standard-in-place-implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Standard-in-place-implementation" title="Permalink"></a></h3><p>Next we create in-place functions for the production matrix and the destruction vector.</p><pre><code class="language-julia hljs">function prod!(P, u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    Tr = 4.5
+    Ts = 19.5
+    T = mod(t / 3600, 24)
+    if (Tr &lt;= T) &amp;&amp; (T &lt;= Ts)
+        Tfrac = (2 * T - Tr - Ts) / (Ts - Tr)
+        sigma = 0.5 + 0.5 * cos(pi * abs(Tfrac) * Tfrac)
+    else
+        sigma = 0.0
+    end
+
+    M = 8.120e16
+
+    k1 = 2.643e-10 * sigma^3
+    k2 = 8.018e-17
+    k3 = 6.120e-4 * sigma
+    k4 = 1.567e-15
+    k5 = 1.070e-3 * sigma^2
+    k6 = 7.110e-11
+    k7 = 1.200e-10
+    k8 = 6.062e-15
+    k9 = 1.069e-11
+    k10 = 1.289e-2 * sigma
+    k11 = 1.0e-8
+
+    r1 = k1 * O2
+    r2 = k2 * O * O2
+    r3 = k3 * O3
+    r4 = k4 * O3 * O
+    r5 = k5 * O3
+    r6 = k6 * M * O1D
+    r7 = k7 * O1D * O3
+    r8 = k8 * O3 * NO
+    r9 = k9 * NO2 * O
+    r10 = k10 * NO2
+    r11 = k11 * NO * O
+
+    fill!(P, zero(eltype(P)))
+    P[1, 3] = r5
+    P[2, 1] = r6
+    P[2, 2] = r1 + r10
+    P[2, 3] = r3
+    P[2, 4] = r1
+    P[3, 2] = r2
+    P[4, 1] = r7
+    P[4, 2] = r4 + r9
+    P[4, 3] = r4 + r7 + r8
+    P[4, 4] = r3 + r5
+    P[5, 6] = r9 + r10
+    P[6, 5] = r8 + r11
+    return nothing
+end
+
+function dest!(D, u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    k2 = 8.018e-17
+    k11 = 1.0e-8
+
+    r2 = k2 * O * O2
+    r11 = k11 * NO * O
+
+    fill!(D, zero(eltype(D)))
+
+    D[2] = r11
+    D[4] = r2
+
+    return nothing
+end</code></pre><p>The solution of the in-place implementation of the stratospheric reaction problem can now be computed as follows.</p><pre><code class="language-julia hljs">prob_ip = PDSProblem(prod!, dest!, u0, tspan) # create the PDS
+sol_ip = solve(prob_ip, MPRK43I(1.0, 0.5))</code></pre><pre><code class="language-julia hljs">plot(sol_ip,
+    layout=(3,2),
+    xguide = &quot;t [h]&quot;,
+    xguidefontsize = 8,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    yguide=[&quot;O¹ᴰ&quot; &quot;O&quot; &quot;O₃&quot; &quot;O₂&quot; &quot;NO&quot; &quot;NO₂&quot;],
+    tickfontsize = 7,
+    legend = :none,
+    widen = true
+    )</code></pre><img src="db69655e.svg" alt="Example block output"/><p>We also check that the in-place and out-of-place solutions are equivalent.</p><pre><code class="language-julia hljs">sol_oop.t ≈ sol_ip.t &amp;&amp; sol_oop.u ≈ sol_ip.u</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><h3 id="Using-static-arrays"><a class="docs-heading-anchor" href="#Using-static-arrays">Using static arrays</a><a id="Using-static-arrays-1"></a><a class="docs-heading-anchor-permalink" href="#Using-static-arrays" title="Permalink"></a></h3><p>For PDS with a small number of differential equations like the stratospheric reaction model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the <code>@SMatrix</code> macro. Accordingly, we use the <code>@SVector</code> macro for the destruction vector. </p><pre><code class="language-julia hljs">using StaticArrays
+
+function prod_static(u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    Tr = 4.5
+    Ts = 19.5
+    T = mod(t / 3600, 24)
+    if (Tr &lt;= T) &amp;&amp; (T &lt;= Ts)
+        Tfrac = (2 * T - Tr - Ts) / (Ts - Tr)
+        sigma = 0.5 + 0.5 * cos(pi * abs(Tfrac) * Tfrac)
+    else
+        sigma = 0.0
+    end
+
+    M = 8.120e16
+
+    k1 = 2.643e-10 * sigma^3
+    k2 = 8.018e-17
+    k3 = 6.120e-4 * sigma
+    k4 = 1.567e-15
+    k5 = 1.070e-3 * sigma^2
+    k6 = 7.110e-11
+    k7 = 1.200e-10
+    k8 = 6.062e-15
+    k9 = 1.069e-11
+    k10 = 1.289e-2 * sigma
+    k11 = 1.0e-8
+
+    r1 = k1 * O2
+    r2 = k2 * O * O2
+    r3 = k3 * O3
+    r4 = k4 * O3 * O
+    r5 = k5 * O3
+    r6 = k6 * M * O1D
+    r7 = k7 * O1D * O3
+    r8 = k8 * O3 * NO
+    r9 = k9 * NO2 * O
+    r10 = k10 * NO2
+    r11 = k11 * NO * O
+
+    return @SMatrix [0.0 0.0 r5 0.0 0.0 0.0;
+            r6 r1+r10 r3 r1 0.0 0.0;
+            0.0 r2 0.0 0.0 0.0 0.0;
+            r7 r4+r9 r4+r7+r8 r3+r5 0.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 r9+r10;
+            0.0 0.0 0.0 0.0 r8+r11 0.0]
+end
+
+function dest_static(u, p, t)
+    O1D, O, O3, O2, NO, NO2 = u
+
+    k2 = 8.018e-17
+    k11 = 1.0e-8
+
+    r2 = k2 * O * O2
+    r11 = k11 * NO * O
+
+    return @SVector [0.0, r11, 0.0, r2, 0.0, 0.0]
+end</code></pre><p>In addition we also want to use a static vector to hold the initial conditions.</p><pre><code class="language-julia hljs">u0_static = @SVector [9.906e1, 6.624e8, 5.326e11, 1.697e16, 4e6, 1.093e9] # initial values
+prob_static = PDSProblem(prod_static, dest_static, u0_static, tspan) # create the PDS
+
+sol_static = solve(prob_static, MPRK43I(1.0, 0.5))</code></pre><p>This solution is also nonnegative.</p><pre><code class="language-julia hljs">isnonnegative(sol_static)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><pre><code class="language-julia hljs">using Plots
+
+plot(sol_static,
+    layout=(3,2),
+    xguide = &quot;t [h]&quot;,
+    xguidefontsize = 8,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    yguide=[&quot;O¹ᴰ&quot; &quot;O&quot; &quot;O₃&quot; &quot;O₂&quot; &quot;NO&quot; &quot;NO₂&quot;],
+    tickfontsize = 7,
+    legend = :none,
+    widen = true
+    )</code></pre><img src="cad2c54f.svg" alt="Example block output"/><p>The above implementation of the stratospheric reaction problem using <code>StaticArrays</code> can also be found in the <a href="https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems">Example Problems</a> as <a href="../api_reference/#PositiveIntegrators.prob_pds_stratreac"><code>prob_pds_stratreac</code></a>.</p><h3 id="Preservation-of-linear-invariants"><a class="docs-heading-anchor" href="#Preservation-of-linear-invariants">Preservation of linear invariants</a><a id="Preservation-of-linear-invariants-1"></a><a class="docs-heading-anchor-permalink" href="#Preservation-of-linear-invariants" title="Permalink"></a></h3><p>As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.</p><pre><code class="language-julia hljs">linear_invariant(a, u) = sum(a .* u)
+
+function relerr_lininv(a, u0, sol)
+    c = linear_invariant(a, u0)
+    return abs.(c .- (x -&gt; linear_invariant(a, x)).(sol.u))./c
+end
+
+a1 = [1; 1; 3; 2; 1; 2] # first linear invariant
+a2 = [0; 0; 0; 0; 1; 1] # second linear invariant
+
+p1 = plot(sol_oop.t, relerr_lininv(a1, u0, sol_oop))
+p2 = plot(sol_oop.t, relerr_lininv(a2, u0, sol_oop))
+plot(p1, p2,
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+    legend = :none)</code></pre><img src="846ce6f1.svg" alt="Example block output"/><p>In contrast to MPRK schemes, Runge-Kutta and Rosenbrock methods preserve all linear invariants, but are not guaranteed to generate nonnegative solutions. One way to enforce nonnegative solutions of such schemes is passing <a href="../api_reference/#PositiveIntegrators.isnegative"><code>isnegative</code></a> to the solver option <a href="https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/"><code>isoutofdomain</code></a>. We show this using the Rosenbrock scheme <code>Rosenbrock23</code> as an example.</p><pre><code class="language-julia hljs">using OrdinaryDiffEq
+
+sol_tmp = solve(prob_oop, Rosenbrock23());
+isnonnegative(sol_tmp)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><pre><code class="language-julia hljs">sol_Ros23 = solve(prob_oop, Rosenbrock23(), isoutofdomain = isnegative);
+isnonnegative(sol_Ros23)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><pre><code class="language-julia hljs">p3 = plot(sol_Ros23.t, relerr_lininv(a1, u0, sol_Ros23))
+p4 = plot(sol_Ros23.t, relerr_lininv(a2, u0, sol_Ros23))
+plot(p3, p4,
+     xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4)),
+     legend = :none)</code></pre><img src="89e84d72.svg" alt="Example block output"/><h3 id="Performance-comparison"><a class="docs-heading-anchor" href="#Performance-comparison">Performance comparison</a><a id="Performance-comparison-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-comparison" title="Permalink"></a></h3><p>Finally, we use <a href="https://github.com/JuliaCI/BenchmarkTools.jl">BenchmarkTools.jl</a> to compare the different implementations and to show the benefit of using static arrays.</p><pre><code class="language-julia hljs">using BenchmarkTools
+@benchmark solve(prob_oop, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 4 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">1.311 s</span></span> … <span class="sgr35">  1.375 s</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span>2.90% … 6.59%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">1.343 s              </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span>2.83%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">1.343 s</span></span> ± <span class="sgr32">27.963 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>3.10% ± 2.70%
+
+  █                 <span class="sgr34">█</span>          <span class="sgr32"> </span>         █                █  
+  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁<span class="sgr34">█</span>▁▁▁▁▁▁▁▁▁▁<span class="sgr32">▁</span>▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  1.31 s<span class="sgr90">         Histogram: frequency by time</span>        1.38 s <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">390.12 MiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">4912676</span>.</code></pre><pre><code class="language-julia hljs">using BenchmarkTools
+@benchmark solve(prob_ip, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 67 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">62.013 ms</span></span> … <span class="sgr35">129.063 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span>0.00% … 45.64%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">74.919 ms               </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span>0.00%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">75.658 ms</span></span> ± <span class="sgr32"> 10.916 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>5.69% ±  9.77%
+
+  ▆                     █<span class="sgr34">▆</span> <span class="sgr32">▂</span>  ▄                                 
+  █▄██▁▁▄▄▁▄▁▁▄▄▁▁▄▁█▁▁██<span class="sgr34">█</span>▄<span class="sgr32">█</span>█▄█▄▁▁▁▁▁▁▁▄▄▁▁▁▄▄▁▁▁▆▁▁▄▄▄▁▁▄▁▄▄▄ ▁
+  62 ms<span class="sgr90">           Histogram: frequency by time</span>         94.7 ms <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">37.24 MiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">181827</span>.</code></pre><pre><code class="language-julia hljs">@benchmark solve(prob_static, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 137 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">26.788 ms</span></span> … <span class="sgr35">88.187 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span>0.00% … 60.60%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">36.648 ms              </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span>0.00%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">36.591 ms</span></span> ± <span class="sgr32"> 7.780 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>7.57% ± 13.45%
+
+  ▅               ▃<span class="sgr34">█</span>▂                                          
+  █▄▇▄█▁▁▁▁▄▁▄▇▇▆▁█<span class="sgr34">█</span>█▄▁▄▁▁▁▁▁▁▁▁▁▇▆▄▄▄▁▄▁▁▁▆▆▄▆▄▁▁▁▁▁▁▁▁▁▁▁▁▄ ▄
+  26.8 ms<span class="sgr90">      Histogram: <span class="sgr1">log(</span>frequency<span class="sgr1">)</span> by time</span>      60.3 ms <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">25.29 MiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">90923</span>.</code></pre><h2 id="Package-versions"><a class="docs-heading-anchor" href="#Package-versions">Package versions</a><a id="Package-versions-1"></a><a class="docs-heading-anchor-permalink" href="#Package-versions" title="Permalink"></a></h2><p>These results were obtained using the following versions.</p><pre><code class="language-julia hljs">using InteractiveUtils
+versioninfo()
+println()
+
+using Pkg
+Pkg.status([&quot;PositiveIntegrators&quot;, &quot;StaticArrays&quot;, &quot;LinearSolve&quot;, &quot;OrdinaryDiffEq&quot;],
+           mode=PKGMODE_MANIFEST)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.10.4
+Commit 48d4fd48430 (2024-06-04 10:41 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-15.0.7 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_PKG_SERVER_REGISTRY_PREFERENCE = eager
+
+<span class="sgr32"><span class="sgr1">Status</span></span> `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl/docs/Manifest.toml`
+  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v2.33.0
+  <span class="sgr90">[1dea7af3] </span>OrdinaryDiffEq v6.87.0
+  <span class="sgr90">[d1b20bf0] </span>PositiveIntegrators v0.2.4 `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl`
+  <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.7</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../robertson/">« Robertson problem</a><a class="docs-footer-nextpage" href="../linear_advection/">Linear Advection »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.5.0 on <span class="colophon-date" title="Tuesday 20 August 2024 15:11">Tuesday 20 August 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

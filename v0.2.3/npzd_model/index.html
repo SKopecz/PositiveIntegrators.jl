@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>NPZD model · PositiveIntegrators.jl</title><meta name="title" content="NPZD model · PositiveIntegrators.jl"/><meta property="og:title" content="NPZD model · PositiveIntegrators.jl"/><meta property="twitter:title" content="NPZD model · PositiveIntegrators.jl"/><meta name="description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:description" content="Documentation for PositiveIntegrators.jl."/><meta property="twitter:description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model/"/><meta property="twitter:url" content="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model/"/><link rel="canonical" href="https://SKopecz.github.io/PositiveIntegrators.jl/stable/npzd_model/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">PositiveIntegrators.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li class="is-active"><a class="tocitem" href>NPZD model</a><ul class="internal"><li><a class="tocitem" href="#Definition-of-the-production-destruction-system"><span>Definition of the production-destruction system</span></a></li><li><a class="tocitem" href="#Solution-of-the-production-destruction-system"><span>Solution of the production-destruction system</span></a></li><li><a class="tocitem" href="#Package-versions"><span>Package versions</span></a></li></ul></li><li><a class="tocitem" href="../robertson/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction/">Stratospheric reaction problem</a></li><li><a class="tocitem" href="../linear_advection/">Linear Advection</a></li><li><a class="tocitem" href="../heat_equation_neumann/">Heat Equation, Neumann BCs</a></li><li><a class="tocitem" href="../heat_equation_dirichlet/">Heat Equation, Dirichlet BCs</a></li></ul></li><li><a class="tocitem" href="../faq/">Troubleshooting, FAQ</a></li><li><a class="tocitem" href="../api_reference/">API reference</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../code_of_conduct/">Code of conduct</a></li><li><a class="tocitem" href="../license/">License</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>NPZD model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>NPZD model</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/docs/src/npzd_model.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="tutorial-npzd"><a class="docs-heading-anchor" href="#tutorial-npzd">Tutorial: Solution of an NPZD model</a><a id="tutorial-npzd-1"></a><a class="docs-heading-anchor-permalink" href="#tutorial-npzd" title="Permalink"></a></h1><p>This tutorial is about the efficient solution of production-destruction systems (PDS) with a small number of differential equations. We will compare the use of standard arrays and static arrays from <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/">StaticArrays.jl</a> and assess their efficiency.</p><h2 id="Definition-of-the-production-destruction-system"><a class="docs-heading-anchor" href="#Definition-of-the-production-destruction-system">Definition of the production-destruction system</a><a id="Definition-of-the-production-destruction-system-1"></a><a class="docs-heading-anchor-permalink" href="#Definition-of-the-production-destruction-system" title="Permalink"></a></h2><p>The NPZD model we want to solve was described by Burchard, Deleersnijder and Meister in <a href="https://doi.org/10.1007/s10236-005-0001-x">Application of modified Patankar schemes to stiff biogeochemical models for the water column</a>. The model reads</p><p class="math-container">\[\begin{aligned}
+N&#39; &amp;= 0.01P + 0.01Z + 0.003D - \frac{NP}{0.01 + N},\\
+P&#39; &amp;= \frac{NP}{0.01 + N}- 0.01P - 0.5( 1 - e^{-1.21P^2})Z - 0.05P,\\
+Z&#39; &amp;= 0.5(1 - e^{-1.21P^2})Z - 0.01Z - 0.02Z,\\
+D&#39; &amp;= 0.05P + 0.02Z - 0.003D,
+\end{aligned}\]</p><p>and we consider the initial conditions <span>$N=8$</span>, <span>$P=2$</span>, <span>$Z=1$</span> and <span>$D=4$</span>. The time domain of interest is <span>$t\in[0,10]$</span>. </p><p>The model can be represented as a conservative PDS with production terms</p><p class="math-container">\[\begin{aligned}
+p_{12} &amp;= 0.01 P, &amp; p_{13} &amp;= 0.01 Z, &amp; p_{14} &amp;= 0.003 D,\\
+p_{21} &amp;= \frac{NP}{0.01 + N}, &amp; p_{32} &amp;= 0.5  (1.0 - e^{-1.21  P^2})  Z,&amp; p_{42} &amp;= 0.05  P,\\
+p_{43} &amp;= 0.02  Z,
+\end{aligned}\]</p><p>whereby production terms not listed have the value zero. Since the PDS is conservative, we have <span>$d_{i,j}=p_{j,i}$</span> and the system is fully determined by the production matrix <span>$(p_{ij})_{i,j=1}^4$</span>.</p><h2 id="Solution-of-the-production-destruction-system"><a class="docs-heading-anchor" href="#Solution-of-the-production-destruction-system">Solution of the production-destruction system</a><a id="Solution-of-the-production-destruction-system-1"></a><a class="docs-heading-anchor-permalink" href="#Solution-of-the-production-destruction-system" title="Permalink"></a></h2><p>Now we are ready to define a <a href="../api_reference/#PositiveIntegrators.ConservativePDSProblem"><code>ConservativePDSProblem</code></a> and to solve this problem with a method of <a href="https://github.com/SKopecz/PositiveIntegrators.jl">PositiveIntegrators.jl</a> or <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>. </p><p>As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are</p><ol><li>an out-of-place implementation with standard (dynamic) matrices and vectors,</li><li>an in-place implementation with standard (dynamic) matrices and vectors,</li><li>an out-of-place implementation with static matrices and vectors from <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/">StaticArrays.jl</a>.</li></ol><h3 id="Standard-out-of-place-implementation"><a class="docs-heading-anchor" href="#Standard-out-of-place-implementation">Standard out-of-place implementation</a><a id="Standard-out-of-place-implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Standard-out-of-place-implementation" title="Permalink"></a></h3><p>Here we create a function to compute the production matrix with return type <code>Matrix{Float64}</code>.</p><pre><code class="language-julia hljs">using PositiveIntegrators # load ConservativePDSProblem
+
+function prod(u, p, t)
+    N, P, Z, D = u
+
+    p12 = 0.01 * P
+    p13 = 0.01 * Z
+    p14 = 0.003 * D
+    p21 = N / (0.01 + N) * P
+    p32 = 0.5 * (1.0 - exp(-1.21 * P^2)) * Z
+    p42 = 0.05 * P
+    p43 = 0.02 * Z
+
+    return [0.0 p12 p13 p14;
+            p21 0.0 0.0 0.0;
+            0.0 p32 0.0 0.0;
+            0.0 p42 p43 0.0]
+end</code></pre><p>The solution of the NPZD model can now be computed as follows.</p><pre><code class="language-julia hljs">u0 = [8.0, 2.0, 1.0, 4.0] # initial values
+tspan = (0.0, 10.0) # time domain
+prob_oop = ConservativePDSProblem(prod, u0, tspan) # create the PDS
+
+sol_oop = solve(prob_oop, MPRK43I(1.0, 0.5))</code></pre><p>Plotting the solution shows that the components <span>$N$</span> and <span>$P$</span> are in danger of becoming negative. </p><pre><code class="language-julia hljs">using Plots
+
+plot(sol_oop; label = [&quot;N&quot; &quot;P&quot; &quot;Z&quot; &quot;D&quot;], xguide = &quot;t&quot;)</code></pre><img src="84de513e.svg" alt="Example block output"/><p><a href="https://github.com/SKopecz/PositiveIntegrators.jl">PositiveIntegrators.jl</a> provides the function <a href="../api_reference/#PositiveIntegrators.isnonnegative"><code>isnonnegative</code></a> (and also <a href="../api_reference/#PositiveIntegrators.isnegative"><code>isnegative</code></a>) to check if the solution is actually nonnegative, as expected from an MPRK scheme.</p><pre><code class="language-julia hljs">isnonnegative(sol_oop)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><h3 id="Standard-in-place-implementation"><a class="docs-heading-anchor" href="#Standard-in-place-implementation">Standard in-place implementation</a><a id="Standard-in-place-implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Standard-in-place-implementation" title="Permalink"></a></h3><p>Next we create an in-place function for the production matrix.</p><pre><code class="language-julia hljs">function prod!(PMat, u, p, t)
+    N, P, Z, D = u
+
+    p12 = 0.01 * P
+    p13 = 0.01 * Z
+    p14 = 0.003 * D
+    p21 = N / (0.01 + N) * P
+    p32 = 0.5 * (1.0 - exp(-1.21 * P^2)) * Z
+    p42 = 0.05 * P
+    p43 = 0.02 * Z
+
+    fill!(PMat, zero(eltype(PMat)))
+
+    PMat[1, 2] = p12
+    PMat[1, 3] = p13
+    PMat[1, 4] = p14
+    PMat[2, 1] = p21
+    PMat[3, 2] = p32
+    PMat[4, 2] = p42
+    PMat[4, 3] = p43
+
+    return nothing
+end</code></pre><p>The solution of the in-place implementation of the NPZD model can now be computed as follows.</p><pre><code class="language-julia hljs">prob_ip = ConservativePDSProblem(prod!, u0, tspan)
+sol_ip = solve(prob_ip, MPRK43I(1.0, 0.5))</code></pre><pre><code class="language-julia hljs">plot(sol_ip; label = [&quot;N&quot; &quot;P&quot; &quot;Z&quot; &quot;D&quot;], xguide = &quot;t&quot;)</code></pre><img src="b5803dc7.svg" alt="Example block output"/><p>We also check that the in-place and out-of-place solutions are equivalent.</p><pre><code class="language-julia hljs">sol_oop.t ≈ sol_ip.t &amp;&amp; sol_oop.u ≈ sol_ip.u</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><h3 id="Using-static-arrays"><a class="docs-heading-anchor" href="#Using-static-arrays">Using static arrays</a><a id="Using-static-arrays-1"></a><a class="docs-heading-anchor-permalink" href="#Using-static-arrays" title="Permalink"></a></h3><p>For PDS with a small number of differential equations like the NPZD model the use of static arrays will be more efficient. To create a function which computes the production matrix and returns a static matrix, we only need to add the <code>@SMatrix</code> macro.</p><pre><code class="language-julia hljs">using StaticArrays
+
+function prod_static(u, p, t)
+    N, P, Z, D = u
+
+    p12 = 0.01 * P
+    p13 = 0.01 * Z
+    p14 = 0.003 * D
+    p21 = N / (0.01 + N) * P
+    p32 = 0.5 * (1.0 - exp(-1.21 * P^2)) * Z
+    p42 = 0.05 * P
+    p43 = 0.02 * Z
+
+    return @SMatrix [0.0 p12 p13 p14;
+                     p21 0.0 0.0 0.0;
+                     0.0 p32 0.0 0.0;
+                     0.0 p42 p43 0.0]
+end</code></pre><p>In addition we also want to use a static vector to hold the initial conditions.</p><pre><code class="language-julia hljs">u0_static = @SVector [8.0, 2.0, 1.0, 4.0] # initial values
+prob_static = ConservativePDSProblem(prod_static, u0_static, tspan) # create the PDS
+
+sol_static = solve(prob_static, MPRK43I(1.0, 0.5))</code></pre><pre><code class="language-julia hljs">using Plots
+
+plot(sol_static; label = [&quot;N&quot; &quot;P&quot; &quot;Z&quot; &quot;D&quot;], xguide = &quot;t&quot;)</code></pre><img src="1bb67b39.svg" alt="Example block output"/><p>This solution is also nonnegative.</p><pre><code class="language-julia hljs">isnonnegative(sol_static)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><p>The above implementation of the NPZD model using <code>StaticArrays</code> can also be found in the <a href="https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems">Example Problems</a> as <a href="../api_reference/#PositiveIntegrators.prob_pds_npzd"><code>prob_pds_npzd</code></a>.</p><h3 id="Performance-comparison"><a class="docs-heading-anchor" href="#Performance-comparison">Performance comparison</a><a id="Performance-comparison-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-comparison" title="Permalink"></a></h3><p>Finally, we use <a href="https://github.com/JuliaCI/BenchmarkTools.jl">BenchmarkTools.jl</a> to show the benefit of using static arrays.</p><pre><code class="language-julia hljs">using BenchmarkTools
+@benchmark solve(prob_oop, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 2263 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">1.298 ms</span></span> … <span class="sgr35">356.572 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span> 0.00% … 99.56%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">1.453 ms               </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span> 0.00%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">2.206 ms</span></span> ± <span class="sgr32">  7.591 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>16.03% ± 12.24%
+
+  █<span class="sgr34">▂</span>▁   <span class="sgr32">▂</span>▇                                                     
+  █<span class="sgr34">█</span>██▆▇<span class="sgr32">█</span>█▆▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▃▅▇▆▇ █
+  1.3 ms<span class="sgr90">       Histogram: <span class="sgr1">log(</span>frequency<span class="sgr1">)</span> by time</span>      10.8 ms <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">2.62 MiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">24802</span>.</code></pre><pre><code class="language-julia hljs">using BenchmarkTools
+@benchmark solve(prob_ip, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 4870 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">796.835 μs</span></span> … <span class="sgr35">361.909 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span>0.00% … 99.71%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">989.263 μs               </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span>0.00%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">  1.026 ms</span></span> ± <span class="sgr32">  5.195 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>9.75% ±  5.17%
+
+  █▆▃          ▇<span class="sgr34">█</span>▅<span class="sgr32">▂</span>                                             ▁
+  ████▆▇▆▆▄▅▄▃▁█<span class="sgr34">█</span>█<span class="sgr32">█</span>█▇▇▅▄▄▁▁▁▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▁▁▃▁▁▁▃▁▃▁▁▁▁▃▁▅▁▅▅▆ █
+  797 μs<span class="sgr90">        Histogram: <span class="sgr1">log(</span>frequency<span class="sgr1">)</span> by time</span>       1.65 ms <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">460.72 KiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">3464</span>.</code></pre><pre><code class="language-julia hljs">@benchmark solve(prob_static, MPRK43I(1.0, 0.5))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range <span class="sgr90">(</span><span class="sgr36"><span class="sgr1">min</span></span> … <span class="sgr35">max</span><span class="sgr90">):  </span><span class="sgr36"><span class="sgr1">287.115 μs</span></span> … <span class="sgr35">346.045 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>min … max<span class="sgr90">): </span> 0.00% … 99.87%
+ Time  <span class="sgr90">(</span><span class="sgr34"><span class="sgr1">median</span></span><span class="sgr90">):     </span><span class="sgr34"><span class="sgr1">371.061 μs               </span></span><span class="sgr90">┊</span> GC <span class="sgr90">(</span>median<span class="sgr90">):    </span> 0.00%
+ Time  <span class="sgr90">(</span><span class="sgr32"><span class="sgr1">mean</span></span> ± <span class="sgr32">σ</span><span class="sgr90">):   </span><span class="sgr32"><span class="sgr1">384.593 μs</span></span> ± <span class="sgr32">  3.468 ms</span>  <span class="sgr90">┊</span> GC <span class="sgr90">(</span>mean ± σ<span class="sgr90">):  </span>12.03% ±  4.12%
+
+  ▇█▅▃▁▁▃▂▁                                    ▄<span class="sgr34">▆</span>▆▆▆▅▅▅▅<span class="sgr32">▄</span>▂▁▁▁▁  ▂
+  ████████████▇█▆▇▇▆▃▅▃▅▃▄▁▃▃▃▁▁▁▄▃▃▃▃▁▄▁▁▃▅▆▆██<span class="sgr34">█</span>███████<span class="sgr32">█</span>██████ █
+  287 μs<span class="sgr90">        Histogram: <span class="sgr1">log(</span>frequency<span class="sgr1">)</span> by time</span>        398 μs <span class="sgr1">&lt;</span>
+
+ Memory estimate<span class="sgr90">: </span><span class="sgr33">261.53 KiB</span>, allocs estimate<span class="sgr90">: </span><span class="sgr33">1737</span>.</code></pre><h2 id="Package-versions"><a class="docs-heading-anchor" href="#Package-versions">Package versions</a><a id="Package-versions-1"></a><a class="docs-heading-anchor-permalink" href="#Package-versions" title="Permalink"></a></h2><p>These results were obtained using the following versions.</p><pre><code class="language-julia hljs">using InteractiveUtils
+versioninfo()
+println()
+
+using Pkg
+Pkg.status([&quot;PositiveIntegrators&quot;, &quot;StaticArrays&quot;, &quot;LinearSolve&quot;, &quot;OrdinaryDiffEq&quot;],
+           mode=PKGMODE_MANIFEST)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.10.4
+Commit 48d4fd48430 (2024-06-04 10:41 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-15.0.7 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_PKG_SERVER_REGISTRY_PREFERENCE = eager
+
+<span class="sgr32"><span class="sgr1">Status</span></span> `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl/docs/Manifest.toml`
+  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v2.33.0
+  <span class="sgr90">[1dea7af3] </span>OrdinaryDiffEq v6.87.0
+  <span class="sgr90">[d1b20bf0] </span>PositiveIntegrators v0.2.3 `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl`
+  <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.7</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../robertson/">Robertson problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.5.0 on <span class="colophon-date" title="Monday 19 August 2024 15:31">Monday 19 August 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
