@@ -54,6 +54,15 @@ All implemented schemes were originally introduced for conservative production-d
 
 Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the following papers: @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023
 
+Existing software libraries do not have a strong focus on unconditional positivity and, to the authors' knowledge, there is no other software library which offers MPRK schemes. 
+
+A common strategy to obtain nonnegative solutions used in the `PositiveDomain` callback of `Differentialequtions'jl` or the commercial package `Matlab` is described by @Shampine2005. In this approach negative components of approximate solutions that have been accepted by the adaptive time stepping algorithm are set to zero.
+
+Another possibility is to reduce the chosen time step size beyond accuracy considerations until a non-negative approximation is calculated. This can be achieved in `DifferentialEquations.jl` using the solver option `isoutofdomain`.
+
+Some papers on MPRK schemes offer supplementary codes. However, these are mainly small scripts for the reproduction of results shown in the papers and are not intended as software libraries.
+
+
 TODO
 
 @bartel2024structure
