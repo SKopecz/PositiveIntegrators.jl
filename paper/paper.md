@@ -44,7 +44,7 @@ TODO
 # Related research and software
 
 
-The first MPRK schemes were introduced in @burchard2003. These are the first order scheme `MPE` and a second order scheme based on Heun's method. To avoid the restricion to Heun's method, the second order `MPRK22` schemes were developed in @kopeczmeister2018order2. The techniques developed therein, also enabled a generalization to third order schemes and thus the introduction of `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
+The first MPRK schemes were introduced in @burchard2003. These are the first order scheme `MPE` and a second order scheme based on Heun's method. To avoid the restriction to Heun's method, the second order `MPRK22` schemes were developed in @kopeczmeister2018order2. The techniques developed therein, also enabled a generalization to third order schemes and thus the introduction of `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
 
 All aforementioned schemes were derived from the classical formulation of Runge-Kutta schemes. Using the Shu-Osher formulation instead lead to the introduction of the second order schemes `SSPMPRK22` in @huang2019order2 and the third order scheme `SSPMPRK43` in @huang2019order3.
 
