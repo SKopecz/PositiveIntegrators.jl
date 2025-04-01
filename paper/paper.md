@@ -43,11 +43,14 @@ TODO
 
 # Related research and software
 
-The first order scheme `MPE` together with the first second order MPRK scheme were introduced in @burchard2003. Based on these, the family of `MPRK22` schemes was developed in @kopeczmeister2018order2. This also lead to the introduction of the `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
+
+The first MPRK schemes were introduced in @burchard2003. These are the first order scheme `MPE` and a second order scheme based on Heun's method. To avoid the restricion to Heun's method, the second order `MPRK22` schemes were developed in @kopeczmeister2018order2. The techniques developed therein, also enabled a generalization to third order schemes and thus the introduction of `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
 
 All aforementioned schemes were derived from the classical formulation of Runge-Kutta schemes. Using the Shu-Osher formulation instead lead to the introduction of the second order schemes `SSPMPRK22` in @huang2019order2 and the third order scheme `SSPMPRK43` in @huang2019order3.
 
-The implemented schemes were originally introduced only for conservative production-destruction systems. An extension to non-conservative production-destruction-systems was presented in @benzmeister2015. We implemented a modification of the algorithm suggested in @benzmeister2015, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
+Starting from a low order scheme, the deferred correction approach can be used to increase the scheme's approximation order iteratively. In @OeffnerTorlo2020 deferred correction was combined with the MPRK idea to devise MPRK schemes of arbitrary order. These are implemented as `MPDeC` schemes. 
+
+All implemented schemes were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction-systems was presented in @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
 
 Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the following papers: @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023
 
