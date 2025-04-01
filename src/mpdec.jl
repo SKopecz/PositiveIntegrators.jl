@@ -4,7 +4,7 @@
 A family of arbitrary order modified Patankar-Runge-Kutta algorithms for
 production-destruction systems. Each member of this family is an adaptive, one-step method which is
 Kth order accurate, unconditionally positivity-preserving, and linearly
-implicit. The integer K must be chosen to satisfy 2 ≤ K ≤ 10. 
+implicit. The integer K must be chosen to satisfy 2 ≤ K ≤ 10.
 Available node choices are Lagrange or Gauss-Lobatto nodes, with the latter being the default.
 These methods support adaptive time stepping, using the numerical solution obtained with one correction step less as a lower-order approximation to estimate the error.
 The MPDeC schemes were introduced by Torlo and Öffner (2020) for autonomous conservative production-destruction systems and
@@ -12,7 +12,7 @@ further investigated in Torlo, Öffner and Ranocha (2022).
 
 For nonconservative production–destruction systems we use a straight forward extension
 analogous to [`MPE`](@ref).
-A general discussion of DeC schemes applied to non-autonomous differential equations 
+A general discussion of DeC schemes applied to non-autonomous differential equations
 and using general integration nodes is given by Ong and Spiteri (2020).
 
 The MPDeC methods require the special structure of a
@@ -51,7 +51,7 @@ end
 
 function small_constant_function_MPDeC(type)
     if type == Float64
-        # small_constant is chosen such that 
+        # small_constant is chosen such that
         # the testset "Zero initial values" passes.
         small_constant = 1e-300
     else
@@ -159,7 +159,7 @@ function get_constant_parameters(alg::MPDeC, type)
         else
             error("MPDeC requires 2 ≤ K ≤ 10.")
         end
-    else # alg.nodes === :gausslobatto 
+    else # alg.nodes === :gausslobatto
         if alg.M == 1
             nodes = [0, oneType]
             theta = [0 oneType/2; 0 oneType/2]
@@ -247,12 +247,12 @@ function build_mpdec_matrix_and_rhs_oop(uprev, m, f, C, p, t, dt, nodes, theta,
                                         small_constant)
     N = length(uprev)
     if f isa PDSFunction
-        # Additional destruction terms 
+        # Additional destruction terms
         Mmat, rhs = _build_mpdec_matrix_and_rhs_oop(uprev, m, f.p, C, p, t, dt, nodes,
                                                     theta,
                                                     small_constant, f.d)
     else
-        # No additional destruction terms 
+        # No additional destruction terms
         Mmat, rhs = _build_mpdec_matrix_and_rhs_oop(uprev, m, f.p, C, p, t, dt, nodes,
                                                     theta,
                                                     small_constant)
@@ -479,14 +479,14 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
     fill!(tmp, zero(eltype(tmp)))
 
     if dt_th ≥ 0
-        for j in 1:n # run through columns of P  
+        for j in 1:n # run through columns of P
             for idx_P in nzrange(P, j) # run through rows of P
                 i = P_rows[idx_P]
                 dt_th_P = dt_th * P_vals[idx_P]
                 if i != j
                     for idx_M in nzrange(M, j)
                         if M_rows[idx_M] == i
-                            M_vals[idx_M] -= dt_th_P / σ[j] # M_ij <- P_ij 
+                            M_vals[idx_M] -= dt_th_P / σ[j] # M_ij <- P_ij
                             break
                         end
                     end
@@ -513,9 +513,9 @@ function _build_mpdec_matrix_and_rhs!(M::AbstractSparseMatrix, rhs, P::AbstractS
             end
         end
     else # dt ≤ 0
-        for j in 1:n # j is column index 
+        for j in 1:n # j is column index
             for idx_P in nzrange(P, j)
-                i = P_rows[idx_P] # i is row index 
+                i = P_rows[idx_P] # i is row index
                 dt_th_P = dt_th * P_vals[idx_P]
                 if i != j
                     for idx_M in nzrange(M, i)
@@ -635,13 +635,13 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
     P2 = p_prototype(u, f) # stores the linear system matrix
     if issparse(P2)
         # We need to ensure that evaluating the production function does
-        # not alter the sparsity pattern given by the production matrix prototype 
+        # not alter the sparsity pattern given by the production matrix prototype
         f.p(P2, uprev, p, t)
         @assert P.rowval == P2.rowval&&P.colptr == P2.colptr "Evaluation of the production terms must not alter the sparsity pattern given by the prototype."
 
         if alg.K > 2
             # Negative weights of MPDeC(K) , K > 2 require
-            # a symmetric sparsity pattern of the linear system matrix P2 
+            # a symmetric sparsity pattern of the linear system matrix P2
             P2 = P + P'
         end
     end
@@ -657,7 +657,9 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
         # not be altered, since it is needed to compute the adaptive time step
         # size.
         linprob = LinearProblem(P2, _vec(linsolve_rhs))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPDeCConservativeCache(tmp, P, P2, σ, C, C2,
@@ -666,7 +668,9 @@ function alg_cache(alg::MPDeC, u, rate_prototype, ::Type{uEltypeNoUnits},
                                linsolve)
     elseif f isa PDSFunction
         linprob = LinearProblem(P2, _vec(linsolve_rhs))
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve,
+                        alias = LinearSolve.LinearAliasSpecifier(; alias_A = true,
+                                                                 alias_b = true),
                         assumptions = LinearSolve.OperatorAssumptions(true))
 
         MPDeCCache(tmp, P, P2, d, σ, C, C2,
