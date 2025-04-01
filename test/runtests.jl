@@ -2589,9 +2589,16 @@ end
                 v = [value[i][2] for (key, value) in wp]
                 m1 = mean(v)
                 # This test allows computing times that are
-                # 3.5 times the mean value. In a loglog plot these
+                # 2.5 times the mean value. In a loglog plot these
                 # differences won't be significant.
-                @test maximum((v .- m1) ./ m1) < 2.5
+                @test maximum((v .- m1) ./ m1) < 1.5
+                allowed = 1.5
+                if Sys.isapple()
+                    # On macOS, the time differences are larger
+                    # than on other platforms in CI sometimes.
+                    allowed = 10.0
+                end
+                @test maximum((v .- m1) ./ m1) < allowed
             end
         end
 
@@ -2624,9 +2631,15 @@ end
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
-                    # 3.5 times the mean value. In a loglog plot these
+                    # 2.5 times the mean value. In a loglog plot these
                     # differences won't be significant.
-                    @test maximum((v .- m1) ./ m1) < 2.5
+                    allowed = 1.5
+                    if Sys.isapple()
+                        # On macOS, the time differences are larger
+                        # than on other platforms in CI sometimes.
+                        allowed = 10.0
+                    end
+                    @test maximum((v .- m1) ./ m1) < allowed
                 end
             end
 
@@ -2655,9 +2668,15 @@ end
                     v = [value[i][2] for (key, value) in wp]
                     m1 = mean(v)
                     # This test allows computing times that are
-                    # 3.5 times the mean value. In a loglog plot these
+                    # 2.5 times the mean value. In a loglog plot these
                     # differences won't be significant.
-                    @test maximum((v .- m1) ./ m1) < 2.5
+                    allowed = 1.5
+                    if Sys.isapple()
+                        # On macOS, the time differences are larger
+                        # than on other platforms in CI sometimes.
+                        allowed = 10.0
+                    end
+                    @test maximum((v .- m1) ./ m1) < allowed
                 end
             end
         end
