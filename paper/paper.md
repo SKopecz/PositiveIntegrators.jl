@@ -47,6 +47,7 @@ TODO
 
 # Related research and software
 
+## Research
 
 The first MPRK schemes were introduced in @burchard2003. These are the first order scheme `MPE` and a second order scheme based on Heun's method. To avoid the restriction to Heun's method, the second order `MPRK22` schemes were developed in @kopeczmeister2018order2. The techniques developed therein, also enabled a generalization to third order schemes and thus the introduction of `MPRK43I` and `MPRK43II` schemes in @kopeczmeister2018order3.
 
@@ -54,15 +55,17 @@ All aforementioned schemes were derived from the classical formulation of Runge-
 
 Starting from a low order scheme, the deferred correction approach can be used to increase the scheme's approximation order iteratively. In @OeffnerTorlo2020 deferred correction was combined with the MPRK idea to devise MPRK schemes of arbitrary order. These are implemented as `MPDeC` schemes. 
 
-All implemented schemes were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction-systems was presented in @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
+The implemented schemes were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction-systems was presented in @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
 
 Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the following papers: @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023
 
+## Software
+
 Existing software libraries do not have a strong focus on unconditional positivity and, to the authors' knowledge, there is no other software library which offers MPRK schemes. 
-A common strategy to obtain nonnegative solutions used in the `PositiveDomain` callback of `Differentialequtions'jl` or the commercial package `Matlab` is described by @Shampine2005. In this approach negative components of approximate solutions that have been accepted by the adaptive time stepping algorithm are set to zero.
+A common strategy to obtain nonnegative solutions used in the `PositiveDomain` callback of `Differentialequtions.jl` or the commercial package `Matlab` is described by @Shampine2005. In this approach negative components of approximate solutions that have been accepted by the adaptive time stepping algorithm are set to zero.
 Another possibility is to reduce the chosen time step size beyond accuracy considerations until a non-negative approximation is calculated. This can be achieved in `DifferentialEquations.jl` using the solver option `isoutofdomain`.
 
-In addition, some papers on MPRK schemes offer supplementary codes. However, these are mainly small scripts for the reproduction of results shown in the papers and are not intended as software libraries.
+We also mention that some papers on MPRK schemes offer supplementary codes. However, these are mainly small scripts for the reproduction of results shown in the papers and are not intended as software libraries.
 
 
 TODO
