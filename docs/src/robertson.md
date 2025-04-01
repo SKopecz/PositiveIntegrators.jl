@@ -58,7 +58,7 @@ plot(sol, tspan = (1e-6, 1e11),  xaxis = :log,
 isnonnegative(sol)
 ```
 
-### Using callbacks to solve the Robertson problem with non-adatpive schemes
+### Using callbacks to solve the Robertson problem with non-adaptive schemes
 
 The `SSPMPRK43()` scheme is only available with fixed time stepping. With a scheme like this, it would take a huge amount of time to solve the Robertson problem, since the time step must be chosen very small to accurately solve the problem in its initial phase. However, the use of a `callback` allows us to modify the time step size after each step, which makes a solution with a fixed step method possible.
 
