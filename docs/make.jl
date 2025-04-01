@@ -18,11 +18,12 @@ DocMeta.setdocmeta!(PositiveIntegrators,
 # as necessary
 open(joinpath(@__DIR__, "src", "license.md"), "w") do io
     # Point to source license file
-    println(io, """
-    ```@meta
-    EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/LICENSE"
-    ```
-    """)
+    println(io,
+            """
+```@meta
+EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/LICENSE"
+```
+""")
     # Write the modified contents
     println(io, "# License")
     println(io, "")
@@ -51,11 +52,12 @@ end
 
 open(joinpath(@__DIR__, "src", "contributing.md"), "w") do io
     # Point to source license file
-    println(io, """
-    ```@meta
-    EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md"
-    ```
-    """)
+    println(io,
+            """
+```@meta
+EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md"
+```
+""")
     # Write the modified contents
     println(io, "# Contributing")
     println(io, "")
