@@ -27,7 +27,7 @@ whereby production terms not listed have the value zero. Since the PDS is conser
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with any method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which is suited for stiff problems.
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with any method of [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) which is suited for stiff problems.
 
 Since this PDS consists of only three differential equations we provide an out-of-place implementation for the production matrix. Furthermore, we use static arrays from [StaticArrays.jl](https://juliaarrays.github.io/StaticArrays.jl/stable/) for additional efficiency. See also the tutorials on the solution of [an NPZD model](@ref tutorial-npzd) or [an stratospheric reaction problem](@ref tutorial-stratos).
 
@@ -53,7 +53,7 @@ plot(sol, tspan = (1e-6, 1e11),  xaxis = :log,
      idxs = [(0, 1), ((x, y) -> (x, 1e4 .* y), 0, 2), (0, 3)],
      label = ["u₁" "10⁴u₂" "u₃"])
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example robertson
 isnonnegative(sol)
 ```

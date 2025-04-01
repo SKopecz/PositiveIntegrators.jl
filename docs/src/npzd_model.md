@@ -28,7 +28,7 @@ whereby production terms not listed have the value zero. Since the PDS is conser
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
@@ -76,7 +76,7 @@ using Plots
 
 plot(sol_oop; label = ["N" "P" "Z" "D"], xguide = "t")
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example NPZD
 isnonnegative(sol_oop)
 ```
@@ -173,7 +173,7 @@ This solution is also nonnegative.
 isnonnegative(sol_static)
 ```
 
-The above implementation of the NPZD model using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_npzd`](@ref).
+The above implementation of the NPZD model using `StaticArrays` can also be found in the [Example Problems](https://NumericalMathematics.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_npzd`](@ref).
 
 ### Performance comparison
 

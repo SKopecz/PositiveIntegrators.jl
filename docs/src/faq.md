@@ -3,7 +3,7 @@
 ## Sparse matrices
 
 You can use sparse matrices for the linear systems arising in
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl),
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl),
 as described, e.g., in the [tutorial on linear advection](@ref tutorial-linear-advection).
 However, you need to make sure that you do not change the sparsity pattern
 of the production term matrix since we assume that the structural nonzeros

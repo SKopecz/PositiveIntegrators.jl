@@ -20,7 +20,7 @@ open(joinpath(@__DIR__, "src", "license.md"), "w") do io
     # Point to source license file
     println(io, """
     ```@meta
-    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE"
+    EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/LICENSE"
     ```
     """)
     # Write the modified contents
@@ -37,7 +37,7 @@ open(joinpath(@__DIR__, "src", "code_of_conduct.md"), "w") do io
     println(io,
             """
             ```@meta
-            EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CODE_OF_CONDUCT.md"
+            EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/CODE_OF_CONDUCT.md"
             ```
             """)
     # Write the modified contents
@@ -53,7 +53,7 @@ open(joinpath(@__DIR__, "src", "contributing.md"), "w") do io
     # Point to source license file
     println(io, """
     ```@meta
-    EditURL = "https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md"
+    EditURL = "https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md"
     ```
     """)
     # Write the modified contents
@@ -69,7 +69,7 @@ end
 makedocs(modules = [PositiveIntegrators],
          sitename = "PositiveIntegrators.jl",
          format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true",
-                                  canonical = "https://SKopecz.github.io/PositiveIntegrators.jl/stable"),
+                                  canonical = "https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable"),
          # Explicitly specify documentation structure
          pages = [
              "Home" => "index.md",
@@ -95,6 +95,6 @@ makedocs(modules = [PositiveIntegrators],
              "License" => "license.md"
          ])
 
-deploydocs(repo = "github.com/SKopecz/PositiveIntegrators.jl",
+deploydocs(repo = "github.com/NumericalMathematics/PositiveIntegrators.jl",
            devbranch = "main",
            push_preview = true)

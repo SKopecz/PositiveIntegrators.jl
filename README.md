@@ -1,10 +1,10 @@
 # PositiveIntegrators.jl
 
-[![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://SKopecz.github.io/PositiveIntegrators.jl/stable)
-[![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://SKopecz.github.io/PositiveIntegrators.jl/dev)
-[![Build Status](https://github.com/SKopecz/PositiveIntegrators.jl/workflows/CI/badge.svg)](https://github.com/SKopecz/PositiveIntegrators.jl/actions?query=workflow%3ACI)
-[![Codecov](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SKopecz/PositiveIntegrators.jl)
-[![Coveralls](https://coveralls.io/repos/github/SKopecz/PositiveIntegrators.jl/badge.svg?branch=main)](https://coveralls.io/github/SKopecz/PositiveIntegrators.jl?branch=main)
+[![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable)
+[![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://NumericalMathematics.github.io/PositiveIntegrators.jl/dev)
+[![Build Status](https://github.com/NumericalMathematics/PositiveIntegrators.jl/workflows/CI/badge.svg)](https://github.com/NumericalMathematics/PositiveIntegrators.jl/actions?query=workflow%3ACI)
+[![Codecov](https://codecov.io/gh/NumericalMathematics/PositiveIntegrators.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/NumericalMathematics/PositiveIntegrators.jl)
+[![Coveralls](https://coveralls.io/repos/github/NumericalMathematics/PositiveIntegrators.jl/badge.svg?branch=main)](https://coveralls.io/github/NumericalMathematics/PositiveIntegrators.jl?branch=main)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10868393.svg)](https://doi.org/10.5281/zenodo.10868393)
@@ -20,12 +20,12 @@ by
   modified Patankar-Runge-Kutta (MPRK) schemes
 
 Please find more information online in the
-[documentation](https://skopecz.github.io/PositiveIntegrators.jl/stable).
+[documentation](https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable).
 
 
 ## Installation
 
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl)
 is a registered Julia package. Thus, you can install it from the Julia REPL via
 ```julia
 julia> using Pkg; Pkg.add("PositiveIntegrators")
@@ -40,7 +40,7 @@ julia> using Pkg; Pkg.update("PositiveIntegrators")
 ## Referencing
 
 If you use
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl)
 for your research, please cite it using the bibtex entry
 ```bibtex
 @misc{PositiveIntegrators.jl,
@@ -49,7 +49,7 @@ for your research, please cite it using the bibtex entry
   author={Kopecz, Stefan and Lampert, Joshua and Ranocha, Hendrik},
   year={2023},
   doi={10.5281/zenodo.10868393},
-  url={https://github.com/SKopecz/PositiveIntegrators.jl}
+  url={https://github.com/NumericalMathematics/PositiveIntegrators.jl}
 }
 ```
 
@@ -57,8 +57,8 @@ for your research, please cite it using the bibtex entry
 ## License and contributing
 
 This project is licensed under the MIT license
-(see [License](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/LICENSE)).
+(see [License](https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/LICENSE)).
 Since it is an open-source project, we are very happy to accept contributions
 from the community. Please refer to the section
-[Contributing](https://github.com/SKopecz/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md)
+[Contributing](https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/CONTRIBUTING.md)
 for more details.

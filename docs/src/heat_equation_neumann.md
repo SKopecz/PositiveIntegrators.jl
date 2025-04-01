@@ -50,7 +50,7 @@ and destruction terms ``d_{i,j} = p_{j,i}``. In addition, all production and des
 
 Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this
 problem with a method of
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) or
 [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 In the following we use ``N = 100`` nodes and the time domain ``t \in [0,1]``.
 Moreover, we choose the initial condition

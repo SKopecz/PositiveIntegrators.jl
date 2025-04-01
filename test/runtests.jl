@@ -176,7 +176,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
 # Function definitions for testset "Linear advection"
 # Functions are defined outside the testset to avoid failing allocation tests,
-# see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
+# see https://github.com/NumericalMathematics/PositiveIntegrators.jl/pull/89.
 #
 # in-place syntax for f
 function linear_advection_fd_upwind_f!(du, u, p, t)
