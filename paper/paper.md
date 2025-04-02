@@ -26,28 +26,34 @@ bibliography: paper.bib
 
 # Summary
 
-Many systems of ordinary differential equations that model real-life applications have positive solutions, and it is quite natural to require that numerical solutions of such systems also remain positive. Unfortunately, positivity is a property that standard time integration schemes, such as Runge–Kutta methods, Rosenbrock methods, or linear multistep methods, do not preserve. Consequently, various new, unconditionally positive schemes have been introduced in recent years. Unfortunately, these new methods are not widely available, making them inaccessible to most users and limiting their comparability within the scientific community.
-
-We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various positive time integration schemes, making these methods usable and comparable.
+We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various modified Patankar--Runge--Kutta (MPRK) schemes, making these methods accessible for users and comparable for researchers. MPRK schemes are unconditionally positive time integration schemes for the the solution of positive differential equations. In addition, the numerical solutions preserve the conservation property when applied to a conservative system.
+The package is fully compatible with `DifferentialEquations.jl`, which allows a direct comparison of MPRK and standard schemes.
 
 
 # Statement of need
 
-Positivity-preserving time integration methods are helpful or even necessary to obtain meaningful solutions of specific ordinary differential equations. The only standard scheme with which unconditional positivity can be achieved is the implicit Euler method. However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iterations poses a problem. Another strategy for preserving positivity used in existing open source or commercial packages is to set negative solution components that are accepted by the step size control to zero, which can have a negative impact on possible conservations properties of the ODE system. Other approaches in the literature are additional projections after the calculation of negative solutions or it is tried to reduce the time step until a non-negative solution is calculated. Finally, SSP Runge-Kutta methods can also be used, although the preservation of positivity is again subject to step size limitations. Other approaches, especially modified Patankar--Runge--Kutta methods, are not yet available in software packages. We make these methods available to make them usable for users and comparable for researchers.
+Many systems of ordinary differential equations that model real-life applications have positive solutions, and it is quite natural to require that numerical solutions of such systems also remain positive.
+For some of these systems unconditionally positivity-preserving time integration methods are helpful or even necessary to obtain meaningful solutions. 
+Unfortunately, positivity is a property that almost all standard time integration schemes, such as Runge–Kutta methods, Rosenbrock methods, or linear multistep methods, do not preserve.
+The only standard scheme with which unconditional positivity can be achieved is the implicit Euler method. However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iteration process poses a problem. 
+Another strategy for preserving positivity used in existing open source or commercial packages (Matlab) is to set negative solution components that are accepted by the step size control to zero. Unfortunately, this can have a negative impact on possible conservation properties. Other approaches in the literature include additional projections inbetween time steps, if a negative solution was computed, or it is tried to reduce the time step size as long as a non-negative solution is calculated. Finally, SSP Runge-Kutta methods can also be used, but the preservation of positivity is again subject to step size limitations. 
+
+Consequently, various new, unconditionally positive schemes, especially modified Patankar--Runge--Kutta (MPRK) methods, have been introduced in recent years.
+Unfortunately, these new methods are not yet available in software packages, making them inaccessible to most users and limiting their comparability within the scientific community. `PositiveIntegrators.jl` makes these methods available and thus usable and comparable.
 
 
 # Features
 
-The package is fully compatible with `DifferentialEquations.jl` and therefore many features that are available there can be used directly.
-It offers implementations of conservative and non-conservative production-destruction systems, including conversions to standard `ODEProblem`s from `DifferentialEquations.jl`. 
-Production-destruction systems are the building blocks for solving differential equations with MPRK schemes. 
+The package is fully compatible with `DifferentialEquations.jl` and therefore many features that are available there can be used directly. In particular, this allows a direct comparison of MPRK and standard schemes. 
+The package offers implementations of conservative as well as non-conservative production-destruction systems (PDS), which are the building blocks for solving differential equations with MPRK schemes. Furthermore, conversions of these PDS to standard `ODEProblem`s from `DifferentialEquations.jl` are provided.
 
-The package provides several MPRK methods to solve production-destruction systems:
+The package contains several MPRK methods:
+
 - The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
 - The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
 - The `MPDeC` methods of Öffner and Torlo combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
 
-In addition, the methods mentioned above have been extended so that non-conservative and non-autonomous production-destruction systems can be solved as well. Furthermore, adaptive step size control is available for most schemes.
+In addition, all implemented MPRK methods have been extended so that non-conservative and non-autonomous production-destruction systems can be solved as well. Furthermore, adaptive step size control is available for almost all schemes.
 
 # Related research and software
 
