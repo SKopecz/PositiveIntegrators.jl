@@ -35,6 +35,7 @@ SSPMPRK22
 MPRK43I
 MPRK43II
 SSPMPRK43
+MPDeC
 ```
 
 ## Auxiliary functions
@@ -42,4 +43,12 @@ SSPMPRK43
 ```@docs
 isnegative
 isnonnegative
+rel_max_error_tend
+rel_max_error_overall
+rel_l1_error_tend
+rel_l2_error_tend
+work_precision_adaptive
+work_precision_adaptive!
+work_precision_fixed
+work_precision_fixed!
 ```
