@@ -33,7 +33,7 @@ We introduce PositiveIntegrators.jl, a Julia package that provides efficient imp
 
 # Statement of need
 
-TODO
+Positivity-preserving time integration methods are helpful or even necessary to obtain meaningful solutions of specific ordinary differential equations. The only standard scheme with which unconditional positivity can be achieved is the implicit Euler method. However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iterations poses a problem. Another strategy for preserving positivity used in existing open source or commercial packages is to set negative solution components that are accepted by the step size control to zero, which can have a negative impact on possible conservations properties of the ODE system. Other approaches in the literature are additional projections after the calculation of negative solutions or it is tried to reduce the time step until a non-negative solution is calculated. Finally, SSP Runge-Kutta methods can also be used, although the preservation of positivity is again subject to step size limitations. Other approaches, especially modified Patankar--Runge--Kutta methods, are not yet available in software packages. We make these methods available to make them usable for users and comparable for researchers.
 
 
 # Features
