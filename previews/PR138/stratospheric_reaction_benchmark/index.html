@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Stratospheric reaction problem · PositiveIntegrators.jl</title><meta name="title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta property="og:title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta property="twitter:title" content="Stratospheric reaction problem · PositiveIntegrators.jl"/><meta name="description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:description" content="Documentation for PositiveIntegrators.jl."/><meta property="twitter:description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:url" content="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction_benchmark/"/><meta property="twitter:url" content="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction_benchmark/"/><link rel="canonical" href="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/stratospheric_reaction_benchmark/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">PositiveIntegrators.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../npzd_model/">NPZD model</a></li><li><a class="tocitem" href="../robertson/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction/">Stratospheric reaction problem</a></li><li><a class="tocitem" href="../linear_advection/">Linear Advection</a></li><li><a class="tocitem" href="../heat_equation_neumann/">Heat Equation, Neumann BCs</a></li><li><a class="tocitem" href="../heat_equation_dirichlet/">Heat Equation, Dirichlet BCs</a></li><li><a class="tocitem" href="../scalar_pds/">Scalar equation</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../convergence/">Experimental order of convergence</a></li><li><a class="tocitem" href="../npzd_model_benchmark/">NPZD model</a></li><li><a class="tocitem" href="../robertson_benchmark/">Robertson problem</a></li><li class="is-active"><a class="tocitem" href>Stratospheric reaction problem</a><ul class="internal"><li><a class="tocitem" href="#Work-Precision-diagrams"><span>Work-Precision diagrams</span></a></li><li><a class="tocitem" href="#Package-versions"><span>Package versions</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../faq/">Troubleshooting, FAQ</a></li><li><a class="tocitem" href="../api_reference/">API reference</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../code_of_conduct/">Code of conduct</a></li><li><a class="tocitem" href="../license/">License</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Benchmarks</a></li><li class="is-active"><a href>Stratospheric reaction problem</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Stratospheric reaction problem</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/NumericalMathematics/PositiveIntegrators.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/docs/src/stratospheric_reaction_benchmark.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="benchmark-stratos"><a class="docs-heading-anchor" href="#benchmark-stratos">Benchmark: Solution of a stratospheric reaction problem</a><a id="benchmark-stratos-1"></a><a class="docs-heading-anchor-permalink" href="#benchmark-stratos" title="Permalink"></a></h1><p>We use the stiff stratospheric reaction problem <a href="../api_reference/#PositiveIntegrators.prob_pds_stratreac"><code>prob_pds_stratreac</code></a> to assess the efficiency of different solvers from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> and <a href="https://github.com/NumericalMathematics/PositiveIntegrators.jl">PositiveIntegrators.jl</a>.</p><pre><code class="language-julia hljs">using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using PositiveIntegrators
+# select problem
+prob = prob_pds_stratreac</code></pre><p>To keep the following code as clear as possible, we define a helper function <code>stratreac_plot</code> that we use for plotting.</p><pre><code class="language-julia hljs">using Plots
+
+function stratreac_plot(sols, labels = fill(&quot;&quot;, length(sols)), sol_ref = nothing)
+    if !(sols isa Vector)
+        sols = [sols]
+    end
+    if !(labels isa Vector)
+        labels = [labels]
+    end
+
+    tspan = prob_pds_stratreac.tspan
+    layout = (3, 2)
+    linewidth = 2
+    xticks = (range(first(tspan), last(tspan), 4), range(12.0, 84.0, 4))
+    tickfontsize = 7
+    xguide = &quot;t [h]&quot; #fill(&quot;t [h]&quot;, 1, 6)
+    xguidefontsize = 8
+    yguide = [&quot;O¹ᴰ&quot; &quot;O&quot; &quot;O₃&quot; &quot;O₂&quot; &quot;NO&quot; &quot;NO₂&quot;]
+    ylims = [(-20, 120) (-1e8, 7e8) (2e11, 6e11) (1.69699e16, 1.69705e16) (-2e6, 1.2e7) (1.084e9,
+                                                                                         1.098e9)]
+    legend = :outertop
+    legend_column = -1
+    widen = true
+
+    if !isnothing(sol_ref)
+        p = plot(ref_sol; layout, linestyle = :dash, label = &quot;Ref.&quot;, linewidth)
+        for (sol, label) in zip(sols, labels)
+            plot!(p, sol; xguide, xguidefontsize, xticks, tickfontsize, yguide, legend,
+                  legend_column, widen, ylims, linewidth, label, denseplot = false)
+        end
+    else
+        p = plot(sols[1]; layout, xguide, xguidefontsize, xticks, tickfontsize, yguide,
+                 legend, legend_column, widen, ylims, linewidth,
+                 label = labels[1])
+        if length(sols) &gt; 1
+            for (sol, label) in zip(sols[2:end], labels[2:end])
+                plot!(p, sol; layout, xguide, xguidefontsize, xticks, tickfontsize, yguide,
+                      legend, legend_column, widen, label, denseplot = false, linewidth,
+                      ylims)
+            end
+        end
+    end
+    return p
+end</code></pre><p>First, we show approximations of <code>Rosenbrock23()</code> using loose tolerances.</p><pre><code class="language-julia hljs"># compute reference solution for plotting
+ref_sol = solve(prob, Rodas4P(); abstol = 1e-12, reltol = 1e-11);
+
+# compute solution with low tolerances
+abstol = 1e-3
+reltol = 1e-2
+sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol);
+
+# plot solution
+stratreac_plot(sol_Ros23,  &quot;Ros23&quot;, ref_sol)</code></pre><img src="d68d39bd.svg" alt="Example block output"/><p>Although not visible in the plots, the <code>Rosenbrock23</code> solution contains negative values.</p><pre><code class="language-julia hljs">isnonnegative(sol_Ros23)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">false</code></pre><p>Nevertheless, <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> provides the solver option <code>isoutofdomain</code>, which can be used in combination with <a href="../api_reference/#PositiveIntegrators.isnegative"><code>isnegative</code></a> to guarantee nonnegative solutions.</p><pre><code class="language-julia hljs"># compute solution with isoutofdomain = isnegative
+sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol,
+                  isoutofdomain = isnegative); #reject negative solutions
+
+# plot solution
+stratreac_plot(sol_Ros23,  &quot;Ros23&quot;, ref_sol)</code></pre><img src="8f539bc3.svg" alt="Example block output"/><p>For this problem, using adaptive MPRK schemes with loose tolerances will generally lead to poor approximations, particularly regarding the O₂ component.</p><pre><code class="language-julia hljs">sol_MPRK = solve(prob, MPRK22(1.0); abstol, reltol);
+
+# plot solutions
+stratreac_plot(sol_MPRK, &quot;MPRK22(1.0)&quot;, ref_sol)</code></pre><img src="fe4dea74.svg" alt="Example block output"/><p>To improve the solution of the MPRK scheme we can inrecase the method&#39;s <code>small_constant</code>. Trial and error has shown that <code>small_constant = 1e-6</code> is a good value for this problem and the given tolerances.</p><pre><code class="language-julia hljs"># compute MPRK solution with modified small_constant
+sol_MPRK = solve(prob, MPRK22(1.0, small_constant = 1e-6); abstol, reltol);
+
+# plot solution
+stratreac_plot(sol_MPRK, &quot;MPRK22(1.0)&quot;, ref_sol)</code></pre><img src="4cd8e685.svg" alt="Example block output"/><p>The remaining poor approximation of the O₂ component could be due to the fact that the MPRK methods do not preserve all linear invariants, as is the case with standard methods like Runge-Kutta or Rosenbrock schemes.</p><h2 id="Work-Precision-diagrams"><a class="docs-heading-anchor" href="#Work-Precision-diagrams">Work-Precision diagrams</a><a id="Work-Precision-diagrams-1"></a><a class="docs-heading-anchor-permalink" href="#Work-Precision-diagrams" title="Permalink"></a></h2><p>In the following we show several work-precision diagrams, which compare different methods with respect to computing times and errors. First we focus on adaptive methods, afterwards we also show results obtained with fixed time step sizes.</p><p>Since the stratospheric reaction problem is stiff, we need to use a suited implicit scheme to compute its reference solution.</p><pre><code class="language-julia hljs"># select solver to compute reference solution
+alg_ref = Rodas4P()</code></pre><p>The error chosen to compare the performances of different solvers is the relative maximum error at the final time <span>$t = 84$</span> hours (<span>$t = 302400$</span> seconds).</p><pre><code class="language-julia hljs"># select relative maximum error at the end of the problem&#39;s time span.
+compute_error = rel_max_error_tend</code></pre><h3 id="Adaptive-time-stepping"><a class="docs-heading-anchor" href="#Adaptive-time-stepping">Adaptive time stepping</a><a id="Adaptive-time-stepping-1"></a><a class="docs-heading-anchor-permalink" href="#Adaptive-time-stepping" title="Permalink"></a></h3><p>We use the functions <a href="../api_reference/#PositiveIntegrators.work_precision_adaptive"><code>work_precision_adaptive</code></a> and <a href="../api_reference/#PositiveIntegrators.work_precision_adaptive!"><code>work_precision_adaptive!</code></a> to compute the data for the diagrams. Furthermore, the following absolute and relative tolerances are used.</p><pre><code class="language-julia hljs">abstols = 1.0 ./ 10.0 .^ (2:1:5)
+reltols = 10.0 .* abstols</code></pre><p>We also note that MPRK schemes with stricter tolerances, quickly require more than a million time steps, which makes these schemes inefficient in such situations.</p><p>First we compare different MPRK schemes. In addition to the default version we also use the schemes with <code>small_constant = 1e-6</code>.</p><pre><code class="language-julia hljs"># choose methods to compare
+algs = [MPRK22(1.0); MPRK22(1.0, small_constant = 1e-6); SSPMPRK22(0.5, 1.0); SSPMPRK22(0.5, 1.0, small_constant = 1e-6);
+        MPRK43I(1.0, 0.5); MPRK43I(1.0, 0.5, small_constant = 1e-6); MPRK43I(0.5, 0.75); MPRK43I(0.5, 0.75, small_constant = 1e-6)
+        MPRK43II(0.5); MPRK43II(0.5, small_constant = 1e-6); MPRK43II(2.0 / 3.0); MPRK43II(2.0 / 3.0, small_constant = 1e-6)]
+labels = [&quot;MPRK22(1.0)&quot;; &quot;MPRK22(1.0, sc=1e-6)&quot;; &quot;SSPMPRK22(0.5,1.0)&quot;; &quot;SSPMPRK22(0.5,1.0, sc=1e-6)&quot;;
+          &quot;MPRK43I(1.0,0.5)&quot;; &quot;MPRK43I(1.0,0.5, sc=1e-6)&quot;; &quot;MPRK43I(0.5,0.75)&quot;; &quot;MPRK43I(0.5,0.75, sc=1e-6)&quot;; &quot;MPRK43II(0.5)&quot;; &quot;MPRK43II(0.5, sc=1e-6)&quot;
+          &quot;MPRK43II(2.0/3.0)&quot;; &quot;MPRK43II(2.0/3.0, sc=1e-6)&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref; compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;Stratospheric reaction benchmark&quot;, legend = :bottomleft,
+     color = permutedims([repeat([1],2)..., repeat([2],2)..., repeat([3],4)..., repeat([4],4)...]),
+     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (10^-5, 10^1), yticks = 10.0 .^ (-5:1:1), minorticks = 10)</code></pre><img src="bdc9fe72.svg" alt="Example block output"/><p>We see that using <code>small_constant = 1e-6</code> clearly improves the performance of most methods. For comparisons with other second- and third-order schemes from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> we choose the second-order scheme <code>MPRK22(1.0, small_constant = 1e-6)</code> and the third-order scheme <code>MPRK43I(0.5, 0.75)</code>. To guarantee positive solutions of the <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> methods, we select the solver option <code>isoutofdomain = isnegative</code>.</p><pre><code class="language-julia hljs"># select reference MPRK methods
+algs1 = [MPRK22(1.0, small_constant = 1e-6); MPRK43I(0.5, 0.75)]
+labels1 = [&quot;MPRK22(1.0, sc=1e-6)&quot;; &quot;MPRK43I(0.5,0.75)&quot;]
+
+# select OrdinaryDiffEq methods
+algs2 = [TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock23()]
+labels2 = [&quot;TRBDF2&quot;; &quot;Kvearno3&quot;; &quot;KenCarp3&quot;; &quot;Rodas3&quot;; &quot;ROS2&quot;; &quot;ROS3&quot;; &quot;Rosenbrock23&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref; compute_error,
+                        isoutofdomain = isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels2]; title = &quot;Stratospheric reaction benchmark&quot;, legend = :bottomleft,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)...]),
+     xlims = (10^-8, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="b587e5ef.svg" alt="Example block output"/><p>We see that MPRK methods are advantageous if low accuracy is acceptable.</p><p>In addition,  we compare <code>MPRK22(1.0, small_constant = 1e-6)</code> and  <code>MPRK43I(0.5, 0.75)</code> to some <a href="https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/">recommended solvers</a> of higher order from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>. Again, to guarantee positive solutions we select the solver option <code>isoutofdomain = isnegative</code>.</p><pre><code class="language-julia hljs"># select OrdinaryDiffEq methods
+algs3 = [Rodas5P(); Rodas4P(); RadauIIA5()]
+labels3 = [&quot;Rodas5P&quot;; &quot;Rodas4P&quot;; &quot;RadauIIA5&quot;]
+
+# compute work-precision data
+wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref; compute_error)
+work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref; compute_error,
+                        isoutofdomain = isnegative)
+
+# plot work-precision diagram
+plot(wp, [labels1; labels3]; title = &quot;Stratospheric reaction benchmark&quot;, legend = :topright,
+     color = permutedims([1, 3, repeat([4], 3)...]),
+     xlims = (10^-7, 10^0), xticks = 10.0 .^ (-8:1:0),
+     ylims = (2*10^-4, 5*10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="2a7f7a52.svg" alt="Example block output"/><p>Again, it can be seen that MPRK methods are only advantageous if low accuracy is acceptable.</p><h3 id="Fixed-time-steps-sizes"><a class="docs-heading-anchor" href="#Fixed-time-steps-sizes">Fixed time steps sizes</a><a id="Fixed-time-steps-sizes-1"></a><a class="docs-heading-anchor-permalink" href="#Fixed-time-steps-sizes" title="Permalink"></a></h3><p>Here we use fixed time step sizes instead of adaptive time stepping. We use the functions <a href="../api_reference/#PositiveIntegrators.work_precision_fixed"><code>work_precision_fixed</code></a> and <a href="../api_reference/#PositiveIntegrators.work_precision_fixed!"><code>work_precision_fixed!</code></a> to compute the data for the diagrams. Please note that these functions set error and computing time to <code>Inf</code>, whenever a solution contains negative elements. Consequently, such cases are not visible in the work-precision diagrams.</p><p>Within the work-precision diagrams we use the following time step sizes.</p><pre><code class="language-julia hljs"># set time step sizes
+dt0 = 48 * 60 # 48 minutes
+dts = dt0 ./ 2.0 .^ (0:1:10)</code></pre><p>In contrast to the adaptive methods, increasing <code>small_constant</code> does not have a positive effect on accuracy, but actually worsens it. To demonstrate this we compare the default version of <code>MPRK22(1.0)</code> to versions with <code>small_constant = 1e-6</code> and <code>small_constant = 1e-100</code>.</p><pre><code class="language-julia hljs"># solve prob with large step size
+sol1 = solve(prob, MPRK22(1.0); dt = dt0, adaptive = false)
+# plot solution
+stratreac_plot(sol1, &quot;MPRK22(1.0)&quot;, ref_sol)</code></pre><img src="6bb5234b.svg" alt="Example block output"/><pre><code class="language-julia hljs">sol2 = solve(prob, MPRK22(1.0, small_constant = 1e-6); dt = dt0, adaptive = false)
+stratreac_plot(sol2, &quot;MPRK22(1.0, sc=1e-6)&quot;, ref_sol)</code></pre><img src="7c8fd333.svg" alt="Example block output"/><pre><code class="language-julia hljs">sol3 = solve(prob, MPRK22(1.0, small_constant = 1e-100); dt = dt0, adaptive = false)
+stratreac_plot(sol3, &quot;MPRK22(1.0, sc=1e-100)&quot;, ref_sol)</code></pre><img src="baa15540.svg" alt="Example block output"/><p>Based on the above comparison, we will only consider schemes in which <code>small_constant</code> is set to the default value in the following.</p><pre><code class="language-julia hljs"># select schemes
+algs = [MPRK22(1.0); SSPMPRK22(0.5, 1.0); MPRK43I(1.0, 0.5); MPRK43I(0.5, 0.75); MPRK43II(0.5); MPRK43II(2.0 / 3.0);
+        SSPMPRK43()]
+labels = [&quot;MPRK22(1.0)&quot;; &quot;SSPMPRK22(0.5,1.0)&quot;; &quot;MPRK43I(1.0,0.5)&quot;; &quot;MPRK43I(0.5,0.75)&quot;;  &quot;MPRK43II(0.5)&quot;; &quot;MPRK43II(2.0/3.0)&quot;;
+          &quot;SSPMPRK43()&quot;]
+
+# compute work-precision data
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;Stratospheric reaction benchmark&quot;, legend = :bottomleft,
+     color = permutedims([1, 2, repeat([3],2)..., repeat([4],2)..., 5]),
+     xlims = (10^-6, 10^2), xticks = 10.0 .^ (-8:1:2),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:1), minorticks = 10)</code></pre><img src="69d946a4.svg" alt="Example block output"/><p>Apart from <code>SSPMPRK22(0.5, 1.0)</code> all schemes perform quite similar. We choose <code>MPRK22(1.0)</code> and <code>MPRK43II(0.5)</code> for comparisons with other schemes.</p><p>For the chosen time step sizes none of the above used standard schemes provides nonnegative solutions.</p><pre><code class="language-julia hljs"># select reference MPRK methods
+algs = [MPRK22(1.0); MPRK43II(0.5); TRBDF2(); Kvaerno3(); KenCarp3(); Rodas3(); ROS2(); ROS3(); Rosenbrock23();
+         Rodas5P(); Rodas4P()]
+labels = [&quot;MPRK22(1.0)&quot;; &quot;MPRK43II(0.5)&quot;; &quot;TRBDF2&quot;; &quot;Kvearno3&quot;; &quot;KenCarp3&quot;; &quot;Rodas3&quot;; &quot;ROS2&quot;; &quot;ROS3&quot;; &quot;Rosenbrock23&quot;;
+          &quot;Rodas5P&quot;; &quot;Rodas4P&quot;]
+
+# compute work-precision data
+wp = work_precision_fixed(prob, algs, labels, dts, alg_ref; compute_error)
+
+# plot work-precision diagram
+plot(wp, labels; title = &quot;Stratospheric reaction benchmark&quot;, legend = :bottomleft,
+     color = permutedims([1, 3, repeat([4], 3)..., repeat([5], 4)..., repeat([6], 3)...]),
+     xlims = (10^-6, 10^1), xticks = 10.0 .^ (-12:2:4),
+     ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)</code></pre><img src="af604d71.svg" alt="Example block output"/><h2 id="Package-versions"><a class="docs-heading-anchor" href="#Package-versions">Package versions</a><a id="Package-versions-1"></a><a class="docs-heading-anchor-permalink" href="#Package-versions" title="Permalink"></a></h2><p>These results were obtained using the following versions.</p><pre><code class="language-julia hljs">using InteractiveUtils
+versioninfo()
+println()
+
+using Pkg
+Pkg.status([&quot;PositiveIntegrators&quot;, &quot;StaticArrays&quot;, &quot;LinearSolve&quot;,
+            &quot;OrdinaryDiffEqFIRK&quot;, &quot;OrdinaryDiffEqRosenbrock&quot;,
+            &quot;OrdinaryDiffEqSDIRK&quot;],
+           mode = PKGMODE_MANIFEST)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.4
+Commit 8561cc3d68d (2025-03-10 11:36 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LLVM: libLLVM-16.0.6 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_PKG_SERVER_REGISTRY_PREFERENCE = eager
+
+<span class="sgr32"><span class="sgr1">Status</span></span> `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl/docs/Manifest.toml`
+  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v3.7.2
+<span class="sgr32">⌃</span> <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v1.9.0
+<span class="sgr32">⌃</span> <span class="sgr90">[43230ef6] </span>OrdinaryDiffEqRosenbrock v1.8.0
+  <span class="sgr90">[2d112036] </span>OrdinaryDiffEqSDIRK v1.3.0
+  <span class="sgr90">[d1b20bf0] </span>PositiveIntegrators v0.2.11 `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl`
+  <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.13
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> have new versions available and may be upgradable.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../robertson_benchmark/">« Robertson problem</a><a class="docs-footer-nextpage" href="../faq/">Troubleshooting, FAQ »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Wednesday 2 April 2025 21:23">Wednesday 2 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

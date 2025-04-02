@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Scalar equation · PositiveIntegrators.jl</title><meta name="title" content="Scalar equation · PositiveIntegrators.jl"/><meta property="og:title" content="Scalar equation · PositiveIntegrators.jl"/><meta property="twitter:title" content="Scalar equation · PositiveIntegrators.jl"/><meta name="description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:description" content="Documentation for PositiveIntegrators.jl."/><meta property="twitter:description" content="Documentation for PositiveIntegrators.jl."/><meta property="og:url" content="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/scalar_pds/"/><meta property="twitter:url" content="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/scalar_pds/"/><link rel="canonical" href="https://NumericalMathematics.github.io/PositiveIntegrators.jl/stable/scalar_pds/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">PositiveIntegrators.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../npzd_model/">NPZD model</a></li><li><a class="tocitem" href="../robertson/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction/">Stratospheric reaction problem</a></li><li><a class="tocitem" href="../linear_advection/">Linear Advection</a></li><li><a class="tocitem" href="../heat_equation_neumann/">Heat Equation, Neumann BCs</a></li><li><a class="tocitem" href="../heat_equation_dirichlet/">Heat Equation, Dirichlet BCs</a></li><li class="is-active"><a class="tocitem" href>Scalar equation</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#scalar-example-1"><span>Example 1</span></a></li><li class="toplevel"><a class="tocitem" href="#scalar-example-2"><span>Example 2</span></a></li><li><a class="tocitem" href="#Package-versions"><span>Package versions</span></a></li></ul></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../convergence/">Experimental order of convergence</a></li><li><a class="tocitem" href="../npzd_model_benchmark/">NPZD model</a></li><li><a class="tocitem" href="../robertson_benchmark/">Robertson problem</a></li><li><a class="tocitem" href="../stratospheric_reaction_benchmark/">Stratospheric reaction problem</a></li></ul></li><li><a class="tocitem" href="../faq/">Troubleshooting, FAQ</a></li><li><a class="tocitem" href="../api_reference/">API reference</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li><li><a class="tocitem" href="../code_of_conduct/">Code of conduct</a></li><li><a class="tocitem" href="../license/">License</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Scalar equation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Scalar equation</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/NumericalMathematics/PositiveIntegrators.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/NumericalMathematics/PositiveIntegrators.jl/blob/main/docs/src/scalar_pds.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="tutorial-scalar-pds"><a class="docs-heading-anchor" href="#tutorial-scalar-pds">Tutorial: Solving a scalar production-destruction equation with MPRK schemes</a><a id="tutorial-scalar-pds-1"></a><a class="docs-heading-anchor-permalink" href="#tutorial-scalar-pds" title="Permalink"></a></h1><p>Originally, modified Patankar-Runge-Kutta (MPRK) schemes were designed to solve positive and conservative systems of ordinary differential equations. The conservation property requires that the system consists of at least two scalar differential equations. Nevertheless, we can also apply the idea of the Patankar trick to a scalar production-destruction system (PDS)</p><p class="math-container">\[u&#39;(t)=p(u(t))-d(u(t)),\quad u(0)=u_0&gt;0\]</p><p>with nonnegative functions <span>$p$</span> and <span>$d$</span>. Since conservation is not an issue here, we can apply the Patankar trick to the destruction term <span>$d$</span> to ensure positivity and leave the production term <span>$p$</span> unweighted. A first-order scheme of this type, based on the forward Euler method, reads</p><p class="math-container">\[u^{n+1}= u^n + Δ t p(u^n) - Δ t d(u^n)\frac{u^{n+1}}{u^n}\]</p><p>and this idea can easily be generalized to higher-order explicit Runge-Kutta schemes.</p><p>By closer inspection we realize that this is exactly the approach the MPRK schemes of <a href="https://github.com/NumericalMathematics/PositiveIntegrators.jl">PositiveIntegrators.jl</a> use to solve non-conservative PDS for which the production matrix is diagonal. Hence, we can use the existing schemes to solve a scalar PDS by regarding the production term as a <span>$1×1$</span>-matrix and the destruction term as a <span>$1$</span>-vector.</p><h1 id="scalar-example-1"><a class="docs-heading-anchor" href="#scalar-example-1">Example 1</a><a id="scalar-example-1-1"></a><a class="docs-heading-anchor-permalink" href="#scalar-example-1" title="Permalink"></a></h1><p>We want to solve</p><p class="math-container">\[u&#39; =  u^2 - u,\quad u(0) = 0.95\]</p><p>for <span>$0≤ t≤ 10$</span>. Here,  we can choose <span>$p(u)=u^2$</span> as production term and <span>$d(u)=u$</span> as destruction term. The exact solution of this problem is</p><p class="math-container">\[u(t) = \frac{19}{19+e^{t}}.\]</p><p>Next, we show how to solve this scalar PDS in the way discussed above. Please note that we must use <a href="../api_reference/#PositiveIntegrators.PDSProblem"><code>PDSProblem</code></a> to create the problem. Furthermore, we use static matrices and vectors from <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/">StaticArrays.jl</a> instead of standard arrays for efficiency.</p><pre><code class="language-julia hljs">using PositiveIntegrators, StaticArrays, Plots
+
+u0 = @SVector [0.95] # 1-vector
+tspan = (0.0, 10.0)
+
+# Attention: Input u is a 1-vector
+prod(u, p, t) = @SMatrix [u[1]^2] # create static 1x1-matrix
+dest(u, p, t) = @SVector [u[1]] # create static 1-vector
+prob = PDSProblem(prod, dest, u0, tspan)
+
+sol = solve(prob, MPRK22(1.0))
+
+# plot
+tt = 0:0.1:10
+f(t) = 19.0 / (19.0 + exp(t)) # exact solution
+plot(tt, f.(tt), label=&quot;exact&quot;)
+plot!(sol, label=&quot;u&quot;)</code></pre><img src="b9c980e1.svg" alt="Example block output"/><h1 id="scalar-example-2"><a class="docs-heading-anchor" href="#scalar-example-2">Example 2</a><a id="scalar-example-2-1"></a><a class="docs-heading-anchor-permalink" href="#scalar-example-2" title="Permalink"></a></h1><p>Next, we want to compute positive solutions of a more challenging scalar PDS. In <a href="#scalar-example-1">Example 1</a>, we could have also used standard schemes from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a> and use the solver option <code>isoutofdomain</code> to ensure positivity. But this is not always the case as the following example will show.</p><p>We want to compute the nonnegative solution of</p><p class="math-container">\[u&#39;(t) = -\sqrt{\lvert u(t)\rvert },\quad u(0)=1.\]</p><p>for <span>$t≥ 0$</span>. Please note that this initial value problem has infinitely many solutions</p><p class="math-container">\[u(t) = \begin{cases} \frac{1}{4}(t-2)^2, &amp; 0≤ t&lt; 2,\\ 0, &amp; 2≤ t &lt; t^*,\\ -\frac{1}{4}(t-2)^2, &amp; t^*≤  t, \end{cases}\]</p><p>where <span>$t^*≥ 2$</span> is arbitrary. But among these, the only nonnegative solution is</p><p class="math-container">\[u(t) = \begin{cases} \frac{1}{4}(t-2)^2, &amp; 0≤ t&lt; 2,\\ 0, &amp; 2≤ t. \end{cases}\]</p><p>This is the solution we want to compute.</p><p>First, we try this using a standard solver from <a href="https://docs.sciml.ai/OrdinaryDiffEq/stable/">OrdinaryDiffEq.jl</a>. We try to enforce positivity with the solver option <code>isoutofdomain</code> by specifying that negative solution components are not acceptable.</p><pre><code class="language-julia hljs">using OrdinaryDiffEqRosenbrock
+
+tspan = (0.0, 3.0)
+u0 = 1.0
+
+f(u, p, t) = -sqrt(abs(u))
+prob = ODEProblem(f, u0, tspan)
+
+sol = solve(prob, Rosenbrock23(); isoutofdomain = (u, p, t) -&gt; any(&lt;(0), u))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">retcode: Unstable
+Interpolation: specialized 2nd order &quot;free&quot; stiffness-aware interpolation
+t: 83-element Vector{Float64}:
+ 0.0
+ 0.003163858403911277
+ 0.034802442443024044
+ 0.09367771717181361
+ 0.17538247876115193
+ 0.289520297678292
+ 0.4225451283138154
+ 0.5773542035170329
+ 0.7383044438936105
+ 0.904052247269852
+ ⋮
+ 1.9960526866394865
+ 1.9960526866395492
+ 1.9960526866395742
+ 1.9960526866395842
+ 1.9960526866395882
+ 1.9960526866395962
+ 1.9960526866396122
+ 1.9960526866396135
+ 1.996052686639614
+u: 83-element Vector{Float64}:
+ 1.0
+ 0.9968386434463932
+ 0.965499712213253
+ 0.908511318269506
+ 0.8322910840841042
+ 0.7313873654216926
+ 0.621992024565334
+ 0.5057980826645783
+ 0.3976922095042322
+ 0.2998942510751979
+ ⋮
+ 3.8149886585940746e-27
+ 8.646781239421471e-28
+ 2.763213158726151e-28
+ 1.3389541665994338e-28
+ 9.146973148338877e-29
+ 2.999872984387982e-29
+ 2.1464764270874556e-30
+ 6.5547154986337885e-31
+ 3.0324240953021175e-31</code></pre><p>We see that <code>isoutofdomain</code> cannot be used to ensure nonnegative solutions in this case, as the computation stops at about <span>$t≈ 2$</span> before the desired final time is reached. For at least first- and second-order explicit Runge-Kutta schemes, this can also be shown analytically. A brief computation reveals that to ensure nonnegative solutions, the time step size must tend to zero if the numerical solution tends to zero.</p><p>Next, we want to use an MPRK scheme. We can choose <span>$p(u)=0$</span> as the production term and <span>$d(u)=\sqrt{\lvert u\rvert }$</span> as the destruction term. Furthermore, we create the <a href="../api_reference/#PositiveIntegrators.PDSProblem"><code>PDSProblem</code></a> in the same way as in <a href="#scalar-example-1">Example 1</a>.</p><pre><code class="language-julia hljs">using PositiveIntegrators, StaticArrays, Plots
+
+tspan = (0.0, 3.0)
+u0 = @SVector [1.0]
+
+prod(u, p, t) = @SMatrix zeros(1,1)
+dest(u, p, t) = @SVector [sqrt(abs(first(u)))]
+prob = PDSProblem(prod, dest, u0, tspan)
+
+sol = solve(prob, MPRK22(1.0))
+
+# plot
+tt = 0:0.03:3
+f(t) = 0.25 * (t - 2)^2 * (t &lt;= 2) # exact solution
+plot(tt, f.(tt), label=&quot;exact&quot;)
+plot!(sol, label=&quot;u&quot;)</code></pre><img src="ffa65699.svg" alt="Example block output"/><p>We can see that the MPRK scheme used is well suited to solve the problem.</p><h2 id="Package-versions"><a class="docs-heading-anchor" href="#Package-versions">Package versions</a><a id="Package-versions-1"></a><a class="docs-heading-anchor-permalink" href="#Package-versions" title="Permalink"></a></h2><p>These results were obtained using the following versions.</p><pre><code class="language-julia hljs">using InteractiveUtils
+versioninfo()
+println()
+
+using Pkg
+Pkg.status([&quot;PositiveIntegrators&quot;, &quot;StaticArrays&quot;, &quot;OrdinaryDiffEqRosenbrock&quot;],
+           mode = PKGMODE_MANIFEST)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.4
+Commit 8561cc3d68d (2025-03-10 11:36 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LLVM: libLLVM-16.0.6 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_PKG_SERVER_REGISTRY_PREFERENCE = eager
+
+<span class="sgr32"><span class="sgr1">Status</span></span> `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl/docs/Manifest.toml`
+<span class="sgr32">⌃</span> <span class="sgr90">[43230ef6] </span>OrdinaryDiffEqRosenbrock v1.8.0
+  <span class="sgr90">[d1b20bf0] </span>PositiveIntegrators v0.2.11 `~/work/PositiveIntegrators.jl/PositiveIntegrators.jl`
+  <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.13
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> have new versions available and may be upgradable.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../heat_equation_dirichlet/">« Heat Equation, Dirichlet BCs</a><a class="docs-footer-nextpage" href="../convergence/">Experimental order of convergence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Wednesday 2 April 2025 22:43">Wednesday 2 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
