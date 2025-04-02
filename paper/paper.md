@@ -34,6 +34,7 @@ The package is fully compatible with `DifferentialEquations.jl`, which allows a 
 
 Many systems of ordinary differential equations that model real-life applications have positive solutions, and it is quite natural to require that numerical solutions of such systems also remain positive.
 For some of these systems unconditionally positivity-preserving time integration methods are helpful or even necessary to obtain meaningful solutions. 
+
 Unfortunately, positivity is a property that almost all standard time integration schemes, such as Runge–Kutta methods, Rosenbrock methods, or linear multistep methods, do not preserve.
 The only standard scheme with which unconditional positivity can be achieved is the implicit Euler method. However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iteration process poses a problem. 
 Another strategy for preserving positivity used in existing open source or commercial packages (Matlab) is to set negative solution components that are accepted by the step size control to zero. Unfortunately, this can have a negative impact on possible conservation properties. Further approaches in the literature include projections inbetween time steps, if a negative solution was computed, or it is tried to reduce the time step size as long as a non-negative solution is calculated. Finally, SSP Runge-Kutta methods can also be used to preserve positivity, but this is again subject to step size limitations. 
