@@ -38,12 +38,16 @@ Positivity-preserving time integration methods are helpful or even necessary to 
 
 # Features
 
-- Production-destruction problems `PDSProblem` and `ConservativePDSProblem`, including conversions to standard ODEProblems from `DifferentialEquations.jl`
-- Modified Patankar methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister
-- SSP MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu
-- `MPDeC` methods of Öffner and Torlo
-- Extensions of the above schemes for non-conservative and non-autonomous production-destruction systems, mostly using adaptive time stepping
+The package is fully compatible with `DifferentialEquations.jl` and therefore many features that are available there can be used directly.
+It offers implementations of conservative and non-conservative production-destruction systems, including conversions to standard `ODEProblem`s from `DifferentialEquations.jl`. 
+Production-destruction systems are the building blocks for solving differential equations with MPRK schemes. 
 
+The package provides several MPRK methods to solve production-destruction systems:
+- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
+- The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
+- The `MPDeC` methods of Öffner and Torlo combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
+
+In addition, the methods mentioned above have been extended so that non-conservative and non-autonomous production-destruction systems can be solved as well. Furthermore, adaptive step size control is available for most schemes.
 
 # Related research and software
 
