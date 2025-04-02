@@ -42,7 +42,7 @@ In addition, all production and destruction terms not listed have the value zero
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use ``a=1``, ``N=1000`` and the time domain ``t\in[0,1]``. Moreover, we choose the step function
+Now we are ready to define a [`ConservativePDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/). In the following we use ``a=1``, ``N=1000`` and the time domain ``t\in[0,1]``. Moreover, we choose the step function
 
 ```math
 u_0(x)=\begin{cases}1, & 0.4 ≤ x ≤ 0.6,\\ 0,& \text{elsewhere}\end{cases}
