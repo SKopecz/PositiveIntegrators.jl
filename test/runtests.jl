@@ -176,7 +176,7 @@ const prob_pds_linmod_nonconservative_inplace = PDSProblem(linmodP!, linmodD!, [
 
 # Function definitions for testset "Linear advection"
 # Functions are defined outside the testset to avoid failing allocation tests,
-# see https://github.com/SKopecz/PositiveIntegrators.jl/pull/89.
+# see https://github.com/NumericalMathematics/PositiveIntegrators.jl/pull/89.
 #
 # in-place syntax for f
 function linear_advection_fd_upwind_f!(du, u, p, t)
@@ -2592,6 +2592,13 @@ end
                 # 2.5 times the mean value. In a loglog plot these
                 # differences won't be significant.
                 @test maximum((v .- m1) ./ m1) < 1.5
+                allowed = 1.5
+                if Sys.isapple()
+                    # On macOS, the time differences are larger
+                    # than on other platforms in CI sometimes.
+                    allowed = 10.0
+                end
+                @test maximum((v .- m1) ./ m1) < allowed
             end
         end
 
@@ -2626,7 +2633,13 @@ end
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
                     # differences won't be significant.
-                    @test maximum((v .- m1) ./ m1) < 1.5
+                    allowed = 1.5
+                    if Sys.isapple()
+                        # On macOS, the time differences are larger
+                        # than on other platforms in CI sometimes.
+                        allowed = 10.0
+                    end
+                    @test maximum((v .- m1) ./ m1) < allowed
                 end
             end
 
@@ -2657,7 +2670,13 @@ end
                     # This test allows computing times that are
                     # 2.5 times the mean value. In a loglog plot these
                     # differences won't be significant.
-                    @test maximum((v .- m1) ./ m1) < 1.5
+                    allowed = 1.5
+                    if Sys.isapple()
+                        # On macOS, the time differences are larger
+                        # than on other platforms in CI sometimes.
+                        allowed = 10.0
+                    end
+                    @test maximum((v .- m1) ./ m1) < allowed
                 end
             end
         end

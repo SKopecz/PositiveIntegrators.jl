@@ -1,6 +1,6 @@
 # [Benchmark: Solution of the Robertson problem](@id benchmark-robertson)
 
-Here we use the stiff Robertson problem [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
+Here we use the stiff Robertson problem [`prob_pds_robertson`](@ref) to assess the efficiency of different solvers from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) and [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl).
 
 ```@example ROBER
 using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
@@ -39,7 +39,7 @@ end
 nothing # hide
 ```
 
-For this stiff problem the computation of negative approximations may lead to inaccurate solutions. 
+For this stiff problem the computation of negative approximations may lead to inaccurate solutions.
 This typically occurs when adaptive time stepping uses loose tolerances.
 
 ```@example ROBER
@@ -58,10 +58,10 @@ p2 = robertson_plot(sol_MPRK, ref_sol, "MPRK22(1.0)");
 plot(p1, p2)
 ```
 
-Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used in combination with [`isnegative`](@ref) to guarantee nonnegative solutions. 
+Nevertheless, [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) provides the solver option `isoutofdomain`, which can be used in combination with [`isnegative`](@ref) to guarantee nonnegative solutions.
 
 ```@example ROBER
-sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol, 
+sol_Ros23 = solve(prob, Rosenbrock23(); abstol, reltol,
                   isoutofdomain = isnegative) #reject negative solutions
 
 robertson_plot(sol_Ros23, ref_sol, "Rosenbrock23")
@@ -69,7 +69,7 @@ robertson_plot(sol_Ros23, ref_sol, "Rosenbrock23")
 
 ## Work-Precision diagrams
 
-In the following we show several work-precision diagrams, which compare different methods with respect to computing time and the respective error. 
+In the following we show several work-precision diagrams, which compare different methods with respect to computing time and the respective error.
 We focus solely on adaptive methods, since the time interval ``(0, 10^{11})`` is too large to generate accurate solutions with fixed step sizes.
 
 Since the Robertson problem is stiff, we need to use a suited implicit scheme to compute a reference solution, see the [solver guide](https://docs.sciml.ai/DiffEqDocs/dev/solvers/ode_solve/#Stiff-Problems).
@@ -114,7 +114,7 @@ wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = true, compute_error)
 
 # plot work-precision diagram
-plot(wp, labels; title = "Robertson benchmark", legend = :topright,     
+plot(wp, labels; title = "Robertson benchmark", legend = :topright,
      color = permutedims([repeat([1], 3)..., repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-10, 10^0), xticks = 10.0 .^ (-10:1:0),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -159,7 +159,7 @@ labels2 = ["TRBDF2"; "Kvearno3"; "KenCarp3"; "Rodas3"; "ROS2"; "ROS3"; "Rosenbro
 # compute work-precision data
 wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
-# add work-precision data with isoutofdomain = isnegative                               
+# add work-precision data with isoutofdomain = isnegative
 work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
@@ -181,7 +181,7 @@ labels3 = ["Rodas5P"; "Rodas4P"; "RadauIIA5"]
 # compute work-precision data
 wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
-# add work-precision data with isoutofdomain = isnegative                                 
+# add work-precision data with isoutofdomain = isnegative
 work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
@@ -196,7 +196,7 @@ Again, we see that the MPRK schemes are in general only beneficial if low accura
 
 ### Relative maximum error over all time steps
 
-In this section we do not compare the relative maximum errors at the final time ``t = 10^{11}``, but the relative maximum errors over all time steps. 
+In this section we do not compare the relative maximum errors at the final time ``t = 10^{11}``, but the relative maximum errors over all time steps.
 
 ```@example ROBER
 # select relative maximum error at the end of the problem's time span.
@@ -212,7 +212,7 @@ wp = work_precision_adaptive(prob, algs, labels, abstols, reltols, alg_ref;
                             adaptive_ref = true, compute_error)
 
 # plot work-precision diagram
-plot(wp, labels; title = "Robertson benchmark", legend = :top,     
+plot(wp, labels; title = "Robertson benchmark", legend = :top,
      color = permutedims([repeat([1], 3)..., repeat([3], 2)..., repeat([4], 2)...]),
      xlims = (10^-4, 5*10^1), xticks = 10.0 .^ (-5:1:2),
      ylims = (10^-5, 10^0), yticks = 10.0 .^ (-5:1:0), minorticks = 10)
@@ -230,7 +230,7 @@ labels1 = ["MPRK22(1.0)"; "MPRK43I(0.5,0.75)"]
 # compute work-precision data
 wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
-# add work-precision data with isoutofdomain = isnegative                               
+# add work-precision data with isoutofdomain = isnegative
 work_precision_adaptive!(wp, prob, algs2, labels2, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 
@@ -249,7 +249,7 @@ Finally, we compare `MPRK43I(0.5, 0.75)` and `MPRK22(1.0)` to [recommended solve
 # compute work-precision data
 wp = work_precision_adaptive(prob, algs1, labels1, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error)
-# add work-precision data with isoutofdomain = isnegative                                 
+# add work-precision data with isoutofdomain = isnegative
 work_precision_adaptive!(wp, prob, algs3, labels3, abstols, reltols, alg_ref;
                                adaptive_ref = true, compute_error, isoutofdomain=isnegative)
 

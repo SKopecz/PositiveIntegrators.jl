@@ -54,7 +54,7 @@ In addition, all production and destruction terms not listed have the value zero
 
 ## Solution of the production-destruction system
 
-Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
+Now we are ready to define a [`PDSProblem`](@ref) and to solve this problem with a method of [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) or [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/).
 
 As mentioned above, we will try different approaches to solve this PDS and compare their efficiency. These are
 1. an out-of-place implementation with standard (dynamic) matrices and vectors,
@@ -153,7 +153,7 @@ plot(sol_oop,
     widen = true
     )
 ```
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) provides the function [`isnonnegative`](@ref) (and also [`isnegative`](@ref)) to check if the solution is actually nonnegative, as expected from an MPRK scheme.
 ```@example stratreac
 isnonnegative(sol_oop)
 ```
@@ -358,7 +358,7 @@ plot(sol_static,
     )
 ```
 
-The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://skopecz.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
+The above implementation of the stratospheric reaction problem using `StaticArrays` can also be found in the [Example Problems](https://NumericalMathematics.github.io/PositiveIntegrators.jl/dev/api_reference/#Example-problems) as [`prob_pds_stratreac`](@ref).
 
 ### Preservation of linear invariants
 As MPRK schemes do not preserve general linear invariants, especially when applied to non-conservative PDS, we compute and plot the relative errors with respect to both linear invariants to see how well these are preserved.

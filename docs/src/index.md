@@ -1,14 +1,14 @@
 # PositiveIntegrators.jl
 
 The [Julia](https://julialang.org) library
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl)
 provides several time integration methods developed to preserve the positivity
 of numerical solutions.
 
 
 ## Installation
 
-[PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl)
+[PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl)
 is a registered Julia package. Thus, you can install it from the Julia REPL via
 ```julia
 julia> using Pkg; Pkg.add("PositiveIntegrators")
@@ -88,7 +88,7 @@ tspan = (0.0, 10.0) # time span
 prob = PDSProblem(P, d, u0, tspan)
 nothing #hide
 ```
-Now that the problem has been created, we can solve it with any method of [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl). In the following, we use the method `MPRK22(1.0)`. In addition, we could also use any method provided by [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/), but these might possibly generate negative approximations.
+Now that the problem has been created, we can solve it with any method of [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl). In the following, we use the method `MPRK22(1.0)`. In addition, we could also use any method provided by [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/), but these might possibly generate negative approximations.
 
 ```@example LotkaVolterra
 sol = solve(prob, MPRK22(1.0))
@@ -132,7 +132,7 @@ The corresponding production matrix ``\mathbf P`` is
 \mathbf P(S,I,R) = \begin{pmatrix}0 & 0 & 0\\ \frac{β S I}{N} & 0 & 0\\ 0 & γ I & 0\end{pmatrix}.
 ```
 
-The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)`` using `ConservativePDSProblem` from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl).
+The following example shows how to implement the above SIR model with ``\beta=0.4, \gamma=0.04``, initial conditions ``S(0)=997, I(0)=3, R(0)=0`` and time domain ``(0, 100)`` using `ConservativePDSProblem` from [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl).
 
 ```@example SIR
 using PositiveIntegrators
@@ -158,7 +158,7 @@ tspan = (0.0, 100.0); # time span
 prob = ConservativePDSProblem(P, u0, tspan)
 nothing # hide
 ```
-Since the SIR model is not only conservative but also positive, we can use any scheme from [PositiveIntegrators.jl](https://github.com/SKopecz/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`.
+Since the SIR model is not only conservative but also positive, we can use any scheme from [PositiveIntegrators.jl](https://github.com/NumericalMathematics/PositiveIntegrators.jl) to solve it. Here we use `MPRK22(1.0)`.
 Please note that any method from [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can be used as well, but might possibly generate negative approximations.
 
 ```@example SIR
@@ -186,7 +186,7 @@ for your research, please cite it using the bibtex entry
   author={Kopecz, Stefan and Lampert, Joshua and Ranocha, Hendrik},
   year={2023},
   doi={10.5281/zenodo.10868393},
-  url={https://github.com/SKopecz/PositiveIntegrators.jl}
+  url={https://github.com/NumericalMathematics/PositiveIntegrators.jl}
 }
 ```
 
