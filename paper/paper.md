@@ -26,8 +26,8 @@ bibliography: paper.bib
 
 # Summary
 
-We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various modified Patankar--Runge--Kutta (MPRK) schemes, making these methods accessible for users and comparable for researchers. MPRK schemes are unconditionally positive time integration schemes for the solution of positive differential equations. In addition, the numerical solutions preserve the conservation property when applied to a conservative system.
-The package is fully compatible with DifferentialEquations.jl, which allows a direct comparison of MPRK and standard schemes.
+We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various time integration schemes for the solution of positive ordinary differential equations, making these methods accessible for users and comparable for researchers. Currently, the package provides MPRK, SSP-MPRK and MPDeC schemes, all of which are unconditionally positive and also preserve the conservation property when applied to a conservative system.
+The package is fully compatible with DifferentialEquations.jl, which allows a direct comparison between the provided schemes and standard methods.
 
 
 # Statement of need
@@ -41,8 +41,10 @@ The only standard scheme with which unconditional positivity can be achieved is 
 (assuming that the nonlinear systems are solved exactly). However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iteration process poses a problem. 
 Another strategy for preserving positivity used in existing open source or commercial packages (like MATLAB) is to set negative solution components that are accepted by the step size control to zero. Unfortunately, this can have a negative impact on possible conservation properties. Further approaches in the literature include projections in between time steps [@sandu2001positive; @nusslein2021positivity], if a negative solution was computed, or it is tried to reduce the time step size as long as a non-negative solution is calculated. Finally, strong stability preserving (SSP) methods can also be used to preserve positivity, but this is again subject to step size limitations [@gottlieb2011strong]. 
 
-Consequently, various new, unconditionally positive schemes, especially modified Patankar--Runge--Kutta (MPRK) methods, have been introduced in recent years.
-Unfortunately, these new methods are not yet available in software packages, making them inaccessible to most users and limiting their comparability within the scientific community. PositiveIntegrators.jl makes these methods available and thus usable and comparable.
+Consequently, various new, unconditionally positive schemes have been introduced in recent years, see @burchard2003, @Bruggeman2007, @Broekhuizen2008, @Formaggia2011, @kopeczmeister2018order2, @kopeczmeister2018order3, @huang2019order2, @huang2019order3, @OeffnerTorlo2020, @Martiradonna2020, Avila2020, @Avila2021, @Blanes2022, @Zhu2024, @Izzo2025, @Izgin2025.  
+Among these, most of the literature is devoted to modified Patankar--Runge--Kutta (MPRK) methods.
+
+Unfortunately, these new methods are not yet available in software packages, making them inaccessible to most users and limiting their comparability within the scientific community. PositiveIntegrators.jl aims at making these methods available and thus usable and comparable.
 
 
 # Features
@@ -52,17 +54,17 @@ The package is fully compatible with DifferentialEquations.jl [@rackauckas2017di
 
 The package offers implementations of conservative as well as non-conservative production-destruction systems (PDS), which are the building blocks for the solution of differential equations with MPRK schemes. Furthermore, conversions of these PDS to standard `ODEProblem`s from DifferentialEquations.jl are provided.
 
-The package contains several MPRK methods:
+Currently, the package contains the following methods:
 
 - The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister @kopeczmeister2018order2, @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
 - The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu @huang2019order2, @huang2019order3 are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
 - The `MPDeC` methods of Öffner and Torlo @OeffnerTorlo2020 combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
 
-In addition, all implemented MPRK methods have been extended so that non-conservative and non-autonomous PDS can be solved as well. Furthermore, adaptive step size control is available for almost all schemes.
+In addition, all implemented methods have been extended so that non-conservative and non-autonomous PDS can be solved as well. Furthermore, adaptive step size control is available for almost all schemes.
 
 # Related research and software
 
-The first MPRK method were introduced by @burchard2003. These are the first-order scheme `MPE` and a second-order scheme based on Heun's method. To avoid the restriction to Heun's method, the second-order `MPRK22` schemes were developed by @kopeczmeister2018order2. The techniques developed therein also enabled a generalization to third-order schemes and thus the introduction of `MPRK43I` and `MPRK43II` methods by @kopeczmeister2018order3.
+The first MPRK methods were introduced by @burchard2003. These are the first-order scheme `MPE` and a second-order scheme based on Heun's method. To avoid the restriction to Heun's method, the second-order `MPRK22` schemes were developed by @kopeczmeister2018order2. The techniques developed therein also enabled a generalization to third-order schemes and thus the introduction of `MPRK43I` and `MPRK43II` methods by @kopeczmeister2018order3.
 
 The aforementioned schemes were derived from the classical formulation of Runge-Kutta methods. Using the Shu-Osher formulation instead lead to the introduction of the second-order schemes `SSPMPRK22` by @huang2019order2 and the third-order scheme `SSPMPRK43` by @huang2019order3.
 
