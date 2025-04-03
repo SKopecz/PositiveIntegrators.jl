@@ -49,7 +49,7 @@ Unfortunately, these new methods are not yet available in software packages, mak
 # Features
 
 PositiveIntegrators.jl is written in Julia [@bezanson2017julia] and makes use of its strengths for scientific computing, e.g., ease of use and performance.
-The package is fully compatible with DifferentialEquations.jl [@rackauckas2017differentialequations] and therefore many features that are available there can be used directly. In particular, this allows a direct comparison of MPRK and standard schemes. Moreover, it integrates well with the Julia ecosystem, e.g., by making it simple to visualize numerical solutions using dense output in Plots.jl [@christ2023plots].
+The package is fully compatible with DifferentialEquations.jl [@rackauckas2017differentialequations] and therefore many features that are available there can be used directly. In particular, this allows a direct comparison of the provided methods and standard schemes. Moreover, it integrates well with the Julia ecosystem, e.g., by making it simple to visualize numerical solutions using dense output in Plots.jl [@christ2023plots].
 
 The package offers implementations of conservative as well as non-conservative production-destruction systems (PDS), which are the building blocks for the solution of differential equations with MPRK schemes. Furthermore, conversions of these PDS to standard `ODEProblem`s from DifferentialEquations.jl are provided.
 
