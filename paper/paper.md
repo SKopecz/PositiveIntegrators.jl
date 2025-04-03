@@ -55,9 +55,9 @@ The package offers implementations of conservative as well as non-conservative p
 
 Currently, the package contains the following methods:
 
-- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister @kopeczmeister2018order2, @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
-- The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu @huang2019order2, @huang2019order3 are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
-- The `MPDeC` methods of Öffner and Torlo @OeffnerTorlo2020 combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
+- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of @kopeczmeister2018order2 and @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
+- The MPRK methods `SSPMPRK22` and `SSPMPRK43` of @huang2019order2 and @huang2019order3 are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
+- The `MPDeC` methods of @OeffnerTorlo2020 combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
 
 In addition, all implemented methods have been extended so that non-conservative and non-autonomous PDS can be solved as well. Furthermore, adaptive step size control is available for almost all schemes.
 
