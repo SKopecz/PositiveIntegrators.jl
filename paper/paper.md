@@ -54,21 +54,21 @@ The package offers implementations of conservative as well as non-conservative p
 
 The package contains several MPRK methods:
 
-- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
-- The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
-- The `MPDeC` methods of Öffner and Torlo combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
+- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of Kopecz and Meister @kopeczmeister2018order2, @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
+- The MPRK methods `SSPMPRK22` and `SSPMPRK43` of Huang, Zhao and Shu @huang2019order2, @huang2019order3 are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
+- The `MPDeC` methods of Öffner and Torlo @OeffnerTorlo2020 combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
 
 In addition, all implemented MPRK methods have been extended so that non-conservative and non-autonomous PDS can be solved as well. Furthermore, adaptive step size control is available for almost all schemes.
 
 # Related research and software
 
-The first MPRK schemes were introduced by @burchard2003. These are the first-order scheme `MPE` and a second-order scheme based on Heun's method. To avoid the restriction to Heun's method, the second-order `MPRK22` schemes were developed by @kopeczmeister2018order2. The techniques developed therein also enabled a generalization to third-order schemes and thus the introduction of `MPRK43I` and `MPRK43II` schemes by @kopeczmeister2018order3.
+The first MPRK method were introduced by @burchard2003. These are the first-order scheme `MPE` and a second-order scheme based on Heun's method. To avoid the restriction to Heun's method, the second-order `MPRK22` schemes were developed by @kopeczmeister2018order2. The techniques developed therein also enabled a generalization to third-order schemes and thus the introduction of `MPRK43I` and `MPRK43II` methods by @kopeczmeister2018order3.
 
 The aforementioned schemes were derived from the classical formulation of Runge-Kutta methods. Using the Shu-Osher formulation instead lead to the introduction of the second-order schemes `SSPMPRK22` by @huang2019order2 and the third-order scheme `SSPMPRK43` by @huang2019order3.
 
-Starting from a low-order scheme, the deferred correction approach can be used to increase the scheme's approximation order iteratively. @OeffnerTorlo2020 combined deferred correction with the MPRK idea to devise MPRK schemes of arbitrary order. These are implemented as `MPDeC` schemes for orders 2 up to 10.
+Starting from a low-order method, the deferred correction approach can be used to increase the method's approximation order iteratively. @OeffnerTorlo2020 combined deferred correction with the MPRK idea to devise MPRK schemes of arbitrary order. These are implemented as `MPDeC` schemes for orders 2 up to 10.
 
-The implemented schemes were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction systems was presented by @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
+The implemented methods were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction systems was presented by @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
 
 Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the publications of @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023.
 
