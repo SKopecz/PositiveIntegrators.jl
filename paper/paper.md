@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 # Summary
 
-We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various time integration schemes for the solution of positive ordinary differential equations, making these methods accessible for users and comparable for researchers. Currently, the package provides MPRK, SSP-MPRK and MPDeC schemes, all of which are unconditionally positive and also preserve the conservation property when applied to a conservative system.
+We introduce PositiveIntegrators.jl, a Julia package that provides efficient implementations of various time integration schemes for the solution of positive ordinary differential equations, making these methods accessible for users and comparable for researchers. Currently, the package provides MPRK, SSP-MPRK, and MPDeC schemes, all of which are unconditionally positive and also preserve the conservation property when applied to a conservative system.
 The package is fully compatible with DifferentialEquations.jl, which allows a direct comparison between the provided schemes and standard methods.
 
 
@@ -41,7 +41,7 @@ The only standard scheme with which unconditional positivity can be achieved is 
 (assuming that the nonlinear systems are solved exactly). However, this is only first-order accurate and, in addition, the preservation of positivity within the nonlinear iteration process poses a problem. 
 Another strategy for preserving positivity used in existing open source or commercial packages (like MATLAB) is to set negative solution components that are accepted by the step size control to zero. Unfortunately, this can have a negative impact on possible conservation properties. Further approaches in the literature include projections in between time steps [@sandu2001positive; @nusslein2021positivity], if a negative solution was computed, or it is tried to reduce the time step size as long as a non-negative solution is calculated. Finally, strong stability preserving (SSP) methods can also be used to preserve positivity, but this is again subject to step size limitations [@gottlieb2011strong]. 
 
-Consequently, various new, unconditionally positive schemes have been introduced in recent years, see @burchard2003, @Bruggeman2007, @Broekhuizen2008, @Formaggia2011, @Ortleb2017, @kopeczmeister2018order2, @kopeczmeister2018order3, @huang2019order2, @huang2019order3, @OeffnerTorlo2020, @Martiradonna2020, @Avila2020, @Avila2021, @Blanes2022, @Zhu2024, @Izzo2025, @Izgin2025. Among these, most of the literature is devoted to modified Patankar--Runge--Kutta (MPRK) methods.
+Consequently, various new, unconditionally positive schemes have been introduced in recent years, see @burchard2003, @Bruggeman2007, @Broekhuizen2008, @Formaggia2011, @Ortleb2017, @kopeczmeister2018order2, @kopeczmeister2018order3, @huang2019order2, @huang2019order3, @OeffnerTorlo2020, @Martiradonna2020, @Avila2020, @Avila2021, @Blanes2022, @Zhu2024, @Izzo2025, and @Izgin2025. Among these, most of the literature is devoted to modified Patankar--Runge--Kutta (MPRK) methods.
 
 Unfortunately, these new methods are not yet available in software packages, making them inaccessible to most users and limiting their comparability within the scientific community. PositiveIntegrators.jl aims at making these methods available and thus usable and comparable.
 
@@ -55,7 +55,7 @@ The package offers implementations of conservative as well as non-conservative p
 
 Currently, the package contains the following methods:
 
-- The MPRK methods `MPE`, `MPRK22`, `MPRK43I` and `MPRK43II` of @kopeczmeister2018order2 and @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
+- The MPRK methods `MPE`, `MPRK22`, `MPRK43I`, and `MPRK43II` of @kopeczmeister2018order2 and @kopeczmeister2018order3 are based on the classical formulation of Runge--Kutta schemes and have accuracies from first to third order.
 - The MPRK methods `SSPMPRK22` and `SSPMPRK43` of @huang2019order2 and @huang2019order3 are based on the SSP formulation of Runge--Kutta schemes and are of second or third order. 
 - The `MPDeC` methods of @OeffnerTorlo2020 combine the deferred correction approach with the idea of MPRK schemes to obtain schemes of arbitrary order. In the package methods from second up to 10th order are implemented.
 
@@ -71,7 +71,7 @@ Starting from a low-order method, the deferred correction approach can be used t
 
 The implemented methods were originally introduced for conservative production-destruction systems only. An extension to non-conservative production-destruction systems was presented by @benzmeister2015. We implemented a modification of this algorithm, by treating the non-conservative production and destruction terms separately, weighting the destruction terms and leaving the production terms unweighted.
 
-Readers interested in additional theoretical background and further properties of the implemented schemes are referred to the publications of @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023.
+Readers interested in additional theoretical background, further properties of the implemented schemes, and some applications are referred to the publications of @kopeczmeister2019, @izgin2022stability1, @izgin2022stability2, @huang2023, @torlo2022, @izginoeffner2023, and @bartel2024structure.
 
 Existing software libraries do not have a strong focus on unconditional positivity and, to the authors' knowledge, there is no other software library which offers MPRK schemes. 
 A common strategy to obtain nonnegative solutions used in the `PositiveDomain` callback of Differentialequtions.jl or the commercial package MATLAB is described by @Shampine2005. In this approach negative components of approximate solutions that have been accepted by the adaptive time stepping algorithm are set to zero.
@@ -80,12 +80,12 @@ Another possibility is to reduce the chosen time step size beyond accuracy consi
 We also mention that some papers on MPRK schemes offer supplementary codes. However, these are mainly small scripts for the reproduction of results shown in the papers and are not intended as software libraries.
 
 
-TODO: @bartel2024structure
-
-
 # Acknowledgements
 
-Hendrik Ranocha was supported by
+JL acknowledges the support by the Deutsche Forschungsgemeinschaft (DFG)
+within the Research Training Group GRK 2583 "Modeling, Simulation and
+Optimization of Fluid Dynamic Applications".
+HR was supported by
 the German Research Foundation (Deutsche Forschungsgemeinschaft DFG, project number 513301895) and
 the Daimler und Benz Stiftung (Daimler and Benz foundation, project number 32-10/22).
 
